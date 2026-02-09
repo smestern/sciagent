@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">SciAgent</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/languages/python.min.js"></script>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <h1 class="logo">
+                <span class="logo-icon" id="logoEmoji">🔬</span>
+                <span id="logoName">SciAgent</span>
+            </h1>
+            <span class="tagline" id="tagline">AI-powered scientific analysis</span>
+        </div>
+        <div class="header-right">
+            <div class="status-dot" id="statusDot" title="Disconnected"></div>
+            <button class="icon-btn" id="themeToggle" title="Toggle theme">🌙</button>
+            <a class="icon-btn" id="githubLink" href="#" target="_blank" title="GitHub" style="display:none">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+                    0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+                    -.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2
+                    -3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82
+                    .64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92
+                    .08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0
+                    1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <h3>📂 Data Files</h3>
+                <div id="sampleList" class="sample-list">
+                    <p class="muted">Loading samples…</p>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h3>📤 Upload File</h3>
+                <label class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" hidden>
+                    <span class="upload-text">Drop a file here<br>or click to browse</span>
+                </label>
+                <div id="uploadStatus" class="upload-status"></div>
+            </div>
+            <div class="sidebar-section">
+                <h3>💡 Try asking</h3>
+                <div class="suggestions" id="suggestionsContainer">
+                    <!-- Populated dynamically from /api/config -->
+                </div>
+            </div>
+        </aside>
+
+        <section class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-message" id="welcomeMessage">
+                    <h2 id="welcomeTitle">Welcome</h2>
+                    <p id="welcomeDesc">I'm an AI assistant for scientific data analysis.
+                       Load a sample file or upload your own, then ask me to analyze it.</p>
+                    <p class="muted">Powered by the GitHub Copilot SDK</p>
+                </div>
+            </div>
+
+            <div class="status-bar" id="statusBar" hidden>
+                <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                </div>
+                <span id="statusText">Connecting…</span>
+            </div>
+
+            <form class="input-bar" id="inputForm">
+                <button type="button" class="icon-btn sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">☰</button>
+                <textarea
+                    id="userInput"
+                    placeholder="Ask about your data…"
+                    rows="1"
+                    autofocus
+                ></textarea>
+                <button type="submit" class="send-btn" id="sendBtn" title="Send message" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>
