@@ -25,6 +25,7 @@ src/sciagent/tools/__init__.py
 src/sciagent/tools/code_tools.py
 src/sciagent/tools/fitting_tools.py
 src/sciagent/tools/registry.py
+src/sciagent/tools/session_log.py
 src/sciagent/web/__init__.py
 src/sciagent/web/app.py
 src/sciagent/web/figure_queue.py

@@ -140,6 +140,29 @@ class ScientificCLI:
         text_parts: list[str] = []
         thinking_parts: list[str] = []
 
+        def _flush_thinking():
+            """Print and clear any buffered thinking/reasoning text."""
+            if thinking_parts:
+                snippet = "".join(thinking_parts)
+                console.print(Panel(
+                    snippet[:500] + ("…" if len(snippet) > 500 else ""),
+                    title="💭 Thinking",
+                    style="dim",
+                    expand=False,
+                ))
+                thinking_parts.clear()
+
+        def _flush_text() -> bool:
+            """Print and clear any buffered assistant text. Returns True if anything was printed."""
+            chunk = "".join(text_parts).strip()
+            text_parts.clear()
+            if chunk:
+                console.print()
+                console.print(Markdown(chunk))
+                console.print()
+                return True
+            return False
+
         def _handler(event):
             etype = event.type
 
@@ -159,13 +182,22 @@ class ScientificCLI:
                     text_parts.append(delta)
 
             elif etype == SessionEventType.ASSISTANT_MESSAGE:
+                # Flush thinking first, then accumulated text before tool calls
+                _flush_thinking()
+                flushed = _flush_text()
                 self._print_figures_from_event(event)
-                if not text_parts:
+                # Only extract full content if no deltas were accumulated
+                if not flushed:
                     content = self._extract_content(event)
-                    if content:
-                        text_parts.append(content)
+                    if content and content.strip():
+                        console.print()
+                        console.print(Markdown(content.strip()))
+                        console.print()
 
             elif etype == SessionEventType.TOOL_EXECUTION_START:
+                # Flush any buffered text so it appears before the tool message
+                _flush_thinking()
+                _flush_text()
                 name = getattr(event.data, "tool_name", "tool")
                 console.print(f"  [dim]⚙ Running {name}…[/dim]")
 
@@ -189,21 +221,9 @@ class ScientificCLI:
         finally:
             unsub()
 
-        # Print thinking summary
-        if thinking_parts:
-            console.print(Panel(
-                "".join(thinking_parts)[:500] + ("…" if len("".join(thinking_parts)) > 500 else ""),
-                title="💭 Thinking",
-                style="dim",
-                expand=False,
-            ))
-
-        # Print response
-        full_text = "".join(text_parts).strip()
-        if full_text:
-            console.print()
-            console.print(Markdown(full_text))
-            console.print()
+        # Flush any remaining text that arrived after the last tool call
+        _flush_thinking()
+        _flush_text()
 
     def _print_figures_from_event(self, event):
         tool_results = getattr(event, "tool_results", None)
