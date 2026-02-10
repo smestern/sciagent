@@ -94,6 +94,46 @@ Every script you execute is automatically saved to `OUTPUT_DIR/scripts/`
 for reproducibility.
 """
 
+# ── Reproducible script generation ──────────────────────────────────
+
+REPRODUCIBLE_SCRIPT_POLICY = """\
+## Reproducible Script Generation (MANDATORY)
+
+One of your core responsibilities is to produce a **standalone, reproducible
+Python script** that the user can run independently on new data files.
+
+### How It Works
+- Every piece of code you execute via `execute_code` is automatically
+  recorded in a **session log** (successes AND failures).
+- At any point you can call `get_session_log` to review what was run.
+- When you have completed an analysis, you **MUST** call
+  `save_reproducible_script` to produce a clean, curated script.
+
+### What the Script Must Contain
+1. **Shebang and docstring** — brief description of the analysis
+2. **`argparse`** — with `--input-file` defaulting to the file that was
+   analysed, and `--output-dir` defaulting to `"./output"`
+3. **All necessary imports** — numpy, matplotlib, scipy, domain libraries
+4. **The analysis logic** — cherry-picked from the *successful* steps,
+   cleaned up, well-commented, and in logical order
+5. **`if __name__ == "__main__":` guard** wrapping the argparse and execution
+6. **No dead code or failed attempts** — review the session log and only
+   include what actually worked
+
+### When to Generate the Script
+- **After completing a complex analysis** — proactively offer to export
+- **When the user asks** — e.g. "give me a script", "make this reproducible"
+- The `/export` command in the CLI will ask you to do this
+
+### Important
+- Do NOT just concatenate executed code blocks — that would include
+  failures and dead ends.  You must **curate and compose** the script.
+- The script should work as a standalone `.py` file without the agent.
+- Use the session log for reference, but write the script yourself.
+- The working directory (`OUTPUT_DIR`) is automatically set near the
+  analysed files when possible.
+"""
+
 # ── Thinking out loud ──────────────────────────────────────────────────
 
 THINKING_OUT_LOUD_POLICY = """\
@@ -124,6 +164,7 @@ def build_system_message(
     base_principles: bool = True,
     code_policy: bool = True,
     output_dir_policy: bool = True,
+    reproducible_script_policy: bool = True,
     thinking_policy: bool = True,
     communication_policy: bool = True,
 ) -> str:
@@ -145,6 +186,7 @@ def build_system_message(
         base_principles: Include scientific rigor principles.
         code_policy: Include code-execution policy.
         output_dir_policy: Include OUTPUT_DIR instructions.
+        reproducible_script_policy: Include reproducible script instructions.
         thinking_policy: Include "think out loud" instructions.
         communication_policy: Include communication style guide.
 
@@ -159,6 +201,8 @@ def build_system_message(
         parts.append(CODE_EXECUTION_POLICY)
     if output_dir_policy:
         parts.append(OUTPUT_DIR_POLICY)
+    if reproducible_script_policy:
+        parts.append(REPRODUCIBLE_SCRIPT_POLICY)
     if thinking_policy:
         parts.append(THINKING_OUT_LOUD_POLICY)
     if communication_policy:

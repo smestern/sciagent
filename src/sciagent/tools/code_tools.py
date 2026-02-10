@@ -22,12 +22,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..guardrails.scanner import CodeScanner
 from ..guardrails.validator import SANITY_CHECK_HEADER, validate_data_integrity
+from .session_log import SessionLog, get_session_log, set_session_log
 
 logger = logging.getLogger(__name__)
 
 # Module-level singletons
 _output_dir: Optional[Path] = None
 _scanner = CodeScanner()
+
+# File-load hook — set by the agent to trigger working-dir updates
+_on_file_loaded: Optional[Any] = None
 
 # Base globals for sandboxed execution
 SAFE_GLOBALS: Dict[str, Any] = {"__builtins__": __builtins__}
@@ -46,6 +50,36 @@ def set_output_dir(path: "str | Path") -> Path:
 def get_output_dir() -> Optional[Path]:
     """Return the current output directory (may be ``None``)."""
     return _output_dir
+
+
+def set_file_loaded_hook(fn: Optional[Any]) -> None:
+    """Set a callback invoked when a data file is loaded.
+
+    The hook signature is ``(file_path: str) -> None``.  The agent uses
+    this to auto-resolve a working directory near the analysed file and
+    to record the load in the session log.
+    """
+    global _on_file_loaded
+    _on_file_loaded = fn
+
+
+def notify_file_loaded(file_path: str) -> None:
+    """Notify the system that a data file was loaded.
+
+    Triggers the file-loaded hook (working-dir resolution) and records
+    the load in the session log.
+    """
+    # Record in session log
+    log = get_session_log()
+    if log is not None:
+        log.record_file_load(file_path)
+
+    # Trigger hook (e.g. working-dir update)
+    if _on_file_loaded is not None:
+        try:
+            _on_file_loaded(file_path)
+        except Exception as exc:
+            logger.warning("File-loaded hook error: %s", exc)
 
 
 # ── scanner access ──────────────────────────────────────────────────────
@@ -331,6 +365,15 @@ def execute_code(
         result["error"] = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
         result["output"] = stdout_capture.getvalue()
 
+    # Record in session log
+    _log = get_session_log()
+    if _log is not None:
+        _log.record(
+            code=code,
+            success=result["success"],
+            error=result.get("error", "") or "",
+        )
+
     return result
 
 
@@ -425,3 +468,94 @@ def run_custom_analysis(
         context.update(data)
 
     return execute_code(code, context=context)
+
+
+# ── Reproducible script tools ──────────────────────────────────────────
+
+def retrieve_session_log() -> Dict[str, Any]:
+    """Retrieve the session log of all code executed during this session.
+
+    Returns a dict with:
+    - ``summary``: counts of total / successful / failed steps and loaded files
+    - ``entries``: list of all execution records (code, success, error, timestamp)
+
+    Use this to review what was run before composing a reproducible script
+    via ``save_reproducible_script``.
+    """
+    log = get_session_log()
+    if log is None or not log.has_entries:
+        return {
+            "summary": {"total_steps": 0, "successful_steps": 0, "failed_steps": 0, "loaded_files": []},
+            "entries": [],
+            "message": "No code has been executed in this session yet.",
+        }
+    return {
+        "summary": log.summary(),
+        "entries": log.get_log(),
+    }
+
+
+def save_reproducible_script(
+    code: str,
+    filename: str = "reproducible_analysis.py",
+    output_dir: Optional["str | Path"] = None,
+) -> Dict[str, Any]:
+    """Save a curated, standalone reproducible Python script.
+
+    The agent should compose this script by reviewing the session log
+    (via ``retrieve_session_log``), selecting the working parts, and
+    writing a clean, well-commented script with:
+
+    - All necessary imports
+    - ``argparse`` with ``--input-file`` (defaulting to the analysed file)
+      and ``--output-dir`` (defaulting to ``"./output"``)
+    - The analysis logic in execution order
+    - Proper error handling and comments
+
+    Args:
+        code: The complete Python script content.
+        filename: Output filename (saved in OUTPUT_DIR).
+        output_dir: Override output directory.
+
+    Returns:
+        Dict with ``success``, ``path``, ``message``.
+    """
+    # Validate syntax
+    try:
+        ast.parse(code)
+    except SyntaxError as e:
+        return {
+            "success": False,
+            "path": None,
+            "message": f"Script has a syntax error at line {e.lineno}: {e.msg}",
+        }
+
+    # Resolve output directory
+    target_dir: Optional[Path] = None
+    if output_dir is not None:
+        target_dir = Path(output_dir).resolve()
+    elif _output_dir is not None:
+        target_dir = _output_dir
+
+    if target_dir is None:
+        return {
+            "success": False,
+            "path": None,
+            "message": "No output directory configured.",
+        }
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    dest = target_dir / filename
+    dest.write_text(code, encoding="utf-8")
+
+    # Mark in session log
+    log = get_session_log()
+    if log is not None:
+        log.script_exported = True
+
+    logger.info("Reproducible script saved to %s", dest)
+    return {
+        "success": True,
+        "path": str(dest),
+        "message": f"Reproducible script saved to {dest}",
+    }

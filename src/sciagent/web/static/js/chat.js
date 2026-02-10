@@ -383,3 +383,40 @@ async function uploadFile(file) {
         uploadStatus.textContent = `✓ ${file.name} uploaded`;
     } catch { uploadStatus.textContent = "Upload failed"; }
 }
+
+// ── Export script ──────────────────────────────────────────────────────
+const exportScriptBtn = document.getElementById("exportScriptBtn");
+const exportHint = document.getElementById("exportHint");
+
+exportScriptBtn.addEventListener("click", async () => {
+    if (!sessionId) {
+        exportHint.textContent = "No active session.";
+        return;
+    }
+    // First ask the agent to produce the script via chat
+    const exportPrompt = "Please review the session log with get_session_log and produce a clean, standalone reproducible Python script for the analysis we just performed. Include argparse with --input-file and --output-dir, all necessary imports, and only the working analysis steps. Save it using save_reproducible_script.";
+    addUserMessage("Export reproducible script");
+    sendMessage(exportPrompt);
+    exportHint.textContent = "Asking agent to compose script…";
+
+    // After a short delay, try downloading
+    setTimeout(async () => {
+        try {
+            const resp = await fetch(`/api/export-script?session_id=${sessionId}`);
+            if (resp.ok) {
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "reproducible_analysis.py";
+                a.click();
+                URL.revokeObjectURL(url);
+                exportHint.textContent = "✓ Script downloaded!";
+            } else {
+                exportHint.textContent = "Script will be ready when the agent finishes.";
+            }
+        } catch {
+            exportHint.textContent = "Download will be available after the agent finishes.";
+        }
+    }, 15000);  // Wait 15s for agent to compose and save
+});

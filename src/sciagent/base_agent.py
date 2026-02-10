@@ -21,6 +21,7 @@ Example::
 from __future__ import annotations
 
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -95,6 +96,9 @@ class BaseScientificAgent:
         self.config = config or AgentConfig()
         self.model = model or self.config.model
 
+        # Track whether the user explicitly set --output-dir
+        self._user_specified_output_dir = output_dir is not None
+
         # Resolve output directory
         _out = output_dir or self.config.output_dir
         if _out is not None:
@@ -102,6 +106,11 @@ class BaseScientificAgent:
         else:
             self._output_dir = Path(tempfile.mkdtemp(prefix="sciagent_"))
         self._output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Session log for reproducible script generation
+        from .tools.session_log import SessionLog, set_session_log
+        self._session_log = SessionLog()
+        set_session_log(self._session_log)
 
         self._client = CopilotClient({"log_level": log_level})
         self._tools: List[Tool] = []
@@ -158,6 +167,89 @@ class BaseScientificAgent:
         """
         return {}
 
+    def _get_script_imports(self) -> List[str]:
+        """Return extra library names the reproducible script should import.
+
+        Override in domain agents to add domain-specific imports
+        (e.g. ``["pyabf", "ipfx"]`` for patchAgent).
+        """
+        return list(self.config.extra_libraries) if self.config.extra_libraries else []
+
+    # -- base tools (inherited by all domain agents) ---------------------------
+
+    def _base_tools(self) -> List[Tool]:
+        """Return framework-level tools shared by all domain agents.
+
+        These are merged into the session automatically.  Domain agents
+        do **not** need to register these in ``_load_tools()``.
+        """
+        from .tools.code_tools import retrieve_session_log, save_reproducible_script
+
+        return [
+            _create_tool(
+                "get_session_log",
+                (
+                    "Retrieve the session log of all code executed during this session "
+                    "(successes and failures). Use this to review what was run before "
+                    "composing a reproducible script via save_reproducible_script. "
+                    "Returns a summary and the full list of execution records."
+                ),
+                retrieve_session_log,
+                {"type": "object", "properties": {}},
+            ),
+            _create_tool(
+                "save_reproducible_script",
+                (
+                    "Save a curated, standalone reproducible Python script combining "
+                    "the successful analysis steps from this session. You (the agent) "
+                    "write the script — review the session log, select working parts, "
+                    "and compose a clean script with proper imports, argparse for "
+                    "--input-file and --output-dir, error handling, and comments. "
+                    "The script must be syntactically valid Python."
+                ),
+                save_reproducible_script,
+                {
+                    "type": "object",
+                    "properties": {
+                        "code": {
+                            "type": "string",
+                            "description": (
+                                "The complete Python script content. Must be valid Python. "
+                                "Should include argparse with --input-file and --output-dir."
+                            ),
+                        },
+                        "filename": {
+                            "type": "string",
+                            "description": "Output filename (default: reproducible_analysis.py)",
+                        },
+                    },
+                    "required": ["code"],
+                },
+            ),
+        ]
+
+    # -- working directory resolution -----------------------------------------
+
+    def update_working_dir_from_file(self, file_path: str) -> None:
+        """Auto-resolve a working directory adjacent to the analysed file.
+
+        Only acts when no explicit ``--output-dir`` was provided by the user.
+        Creates a directory named ``<agent_name>_output`` next to the file.
+        Falls back to a temp directory if the parent is not writable.
+        """
+        if self._user_specified_output_dir:
+            return  # user explicitly chose a dir; respect it
+
+        from .data.resolver import resolve_working_dir
+        new_dir = resolve_working_dir(file_path, self.config.name)
+
+        if new_dir != self._output_dir:
+            self.output_dir = new_dir
+            # Sync module-level singleton in code_tools
+            from .tools.code_tools import set_output_dir
+            set_output_dir(new_dir)
+            logger.info("Working directory set to %s (near %s)", new_dir, file_path)
+
     # -- session lifecycle -----------------------------------------------------
 
     async def start(self):
@@ -192,6 +284,13 @@ class BaseScientificAgent:
         Returns:
             The created ``CopilotSession`` object.
         """
+        # Reset session log for the new session
+        self._session_log.clear()
+
+        # Wire up the file-loaded hook
+        from .tools.code_tools import set_file_loaded_hook
+        set_file_loaded_hook(self.update_working_dir_from_file)
+
         base_system = self._get_system_message()
         if custom_system_message:
             system_message = {"mode": "append", "content": custom_system_message}
@@ -199,6 +298,7 @@ class BaseScientificAgent:
             system_message = {"mode": "append", "content": base_system}
 
         all_tools = self._tools.copy()
+        all_tools.extend(self._base_tools())
         if additional_tools:
             all_tools.extend(additional_tools)
 

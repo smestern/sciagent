@@ -8,12 +8,52 @@ Subclass and register domain-specific file formats via
 from __future__ import annotations
 
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+# ── Working-directory resolution ────────────────────────────────────────
+
+def resolve_working_dir(file_path: str, agent_name: str) -> Path:
+    """Resolve a working directory adjacent to the analysed file.
+
+    Strategy:
+    1. Try ``<file_parent>/<agent_name>_output/``
+    2. If the parent directory is not writable, fall back to a temp dir.
+
+    Args:
+        file_path: Path to the data file being analysed.
+        agent_name: Short agent name used as directory prefix.
+
+    Returns:
+        An existing, writable directory ``Path``.
+    """
+    parent = Path(file_path).resolve().parent
+    preferred = parent / f"{agent_name}_output"
+
+    if os.access(str(parent), os.W_OK):
+        try:
+            preferred.mkdir(parents=True, exist_ok=True)
+            logger.info(
+                "Working directory resolved near file: %s", preferred,
+            )
+            return preferred
+        except OSError as exc:
+            logger.warning(
+                "Cannot create %s (%s), falling back to temp dir", preferred, exc,
+            )
+
+    fallback = Path(tempfile.mkdtemp(prefix=f"{agent_name}_"))
+    logger.info(
+        "Working directory fallback (parent not writable): %s", fallback,
+    )
+    return fallback
 
 
 class BaseDataResolver:

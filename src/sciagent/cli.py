@@ -100,6 +100,22 @@ class ScientificCLI:
             console.print("[yellow]Session cleared.[/yellow]")
             self._figure_counter = 0
 
+    async def _cmd_export(self):
+        """Ask the agent to produce a reproducible script from the session."""
+        from sciagent.tools.session_log import get_session_log
+        log = get_session_log()
+        if log is None or not log.has_successful_steps:
+            console.print("[yellow]No analysis steps recorded yet — nothing to export.[/yellow]")
+            return
+        console.print("[dim]Asking agent to compose a reproducible script…[/dim]")
+        await self._stream_and_print(
+            "Please review the session log with get_session_log and produce a clean, "
+            "standalone reproducible Python script for the analysis we just performed. "
+            "The script should include argparse with --input-file and --output-dir, "
+            "all necessary imports, and only the working analysis steps. "
+            "Save it using the save_reproducible_script tool."
+        )
+
     async def _cmd_quit(self):
         raise KeyboardInterrupt
 
@@ -107,6 +123,7 @@ class ScientificCLI:
         base = [
             ("help", "Show this help", self._cmd_help),
             ("save", "Show output directory", self._cmd_save),
+            ("export", "Generate a reproducible script from this session", self._cmd_export),
             ("clear", "Reset chat session", self._cmd_clear),
             ("quit", "Exit the CLI", self._cmd_quit),
         ]
@@ -259,6 +276,7 @@ class ScientificCLI:
 
         self._agent = self.agent_factory(output_dir=self.output_dir)
         console.print("[dim]Starting agent…[/dim]")
+        console.print(f"[dim]Working directory: {self.output_dir}[/dim]")
         await self._agent.start()
         self._session = await self._agent.create_session()
         console.print("[green]Ready![/green]\n")
@@ -302,11 +320,35 @@ class ScientificCLI:
         except KeyboardInterrupt:
             console.print("\n[yellow]Goodbye![/yellow]")
         finally:
+            # Auto-export reproducible script if analysis was performed
+            await self._auto_export_script()
             if self._agent:
                 try:
                     await self._agent.stop()
                 except Exception:
                     pass
+
+    async def _auto_export_script(self):
+        """Prompt the agent to export a reproducible script at session end."""
+        try:
+            from sciagent.tools.session_log import get_session_log
+            log = get_session_log()
+            if (
+                log is not None
+                and log.has_successful_steps
+                and not log.script_exported
+                and self._session is not None
+            ):
+                console.print("\n[dim]Generating reproducible script…[/dim]")
+                await self._stream_and_print(
+                    "Before we end, please review the session log with get_session_log "
+                    "and produce a clean, standalone reproducible Python script for "
+                    "the analysis performed in this session. Include argparse with "
+                    "--input-file and --output-dir, all necessary imports, and only "
+                    "the working analysis steps. Save it using save_reproducible_script."
+                )
+        except Exception as e:
+            logger.debug("Auto-export failed: %s", e)
 
 
 # ── Entry point helper ──────────────────────────────────────────────────

@@ -55,6 +55,8 @@ def create_app(
     )
     app = cors(app, allow_origin="*")
     app.ws_sessions: dict = {}  # type: ignore[attr-defined]
+    _session_agents: dict = {}  # ws_id -> agent instance
+    _session_output_dirs: dict = {}  # ws_id -> output_dir Path
 
     # ── Config endpoint (used by chat.js) ─────────────────────────
     @app.route("/api/config")
@@ -128,6 +130,29 @@ def create_app(
         await uploaded.save(str(dest))
         return jsonify({"file_id": fname, "path": str(dest), "session_id": session_id})
 
+    # ── Export reproducible script ────────────────────────────────
+    @app.route("/api/export-script")
+    async def export_script():
+        """Download the most recent reproducible script for a session."""
+        session_id = request.args.get("session_id", "")
+        if not session_id or session_id not in _session_output_dirs:
+            return jsonify({"error": "Unknown session"}), 404
+        out_dir = _session_output_dirs[session_id]
+        # Look for the reproducible script
+        script = out_dir / "reproducible_analysis.py"
+        if not script.exists():
+            # Try any .py file in the top-level output dir
+            py_files = list(out_dir.glob("*.py"))
+            if py_files:
+                script = py_files[0]
+            else:
+                return jsonify({"error": "No script has been exported yet. Use /export or ask the agent to produce one."}), 404
+        return await send_from_directory(
+            str(script.parent), script.name,
+            as_attachment=True,
+            attachment_filename=script.name,
+        )
+
     # ── WebSocket chat ────────────────────────────────────────────
     @app.websocket("/ws/chat")
     async def ws_chat():
@@ -136,6 +161,7 @@ def create_app(
         session = None
         output_dir = _session_dir(ws_id)
         register_session(ws_id)
+        _session_output_dirs[ws_id] = output_dir
 
         send_queue: asyncio.Queue = asyncio.Queue()
 
@@ -171,6 +197,7 @@ def create_app(
             from sciagent.tools.code_tools import set_output_dir
 
             agent = agent_factory(output_dir=output_dir)
+            _session_agents[ws_id] = agent
             set_output_dir(output_dir)
 
             send_queue.put_nowait({"type": "status", "text": "Starting agent…"})
@@ -215,6 +242,8 @@ def create_app(
         finally:
             set_current_session(None)
             unregister_session(ws_id)
+            _session_agents.pop(ws_id, None)
+            _session_output_dirs.pop(ws_id, None)
             send_queue.put_nowait(None)
             drain_task.cancel()
             figure_drain_task.cancel()
