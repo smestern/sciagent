@@ -58,13 +58,18 @@ web = [
     "quart>=0.19",
     "quart-cors>=0.7",
 ]
-all = [
+wizard = [
     "sciagent[cli,web]",
+    "httpx>=0.25",
+]
+all = [
+    "sciagent[cli,web,wizard]",
 ]
 
 [project.scripts]
 sciagent = "sciagent.cli:app"
 sciagent-web = "sciagent.web.app:main"
+sciagent-wizard = "sciagent.wizard:create_wizard"
 
 [project.urls]
 Homepage = "https://github.com/smestern/sciagent"

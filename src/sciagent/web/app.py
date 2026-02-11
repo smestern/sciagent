@@ -58,6 +58,13 @@ def create_app(
     _session_agents: dict = {}  # ws_id -> agent instance
     _session_output_dirs: dict = {}  # ws_id -> output_dir Path
 
+    # ── Register wizard blueprint ─────────────────────────────────
+    try:
+        from sciagent.wizard.web import wizard_bp
+        app.register_blueprint(wizard_bp)
+    except ImportError:
+        pass  # wizard dependencies not installed
+
     # ── Config endpoint (used by chat.js) ─────────────────────────
     @app.route("/api/config")
     async def api_config():

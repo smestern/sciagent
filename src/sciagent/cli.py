@@ -381,3 +381,34 @@ def run_cli(
     """Convenience wrapper: create a ``ScientificCLI`` and start the REPL."""
     cli = ScientificCLI(agent_factory, config, output_dir)
     asyncio.run(cli.run())
+
+
+# ── Typer CLI application ──────────────────────────────────────────────
+
+app = typer.Typer(
+    name="sciagent",
+    help="A framework for building rigorous scientific coding agents.",
+    no_args_is_help=True,
+)
+
+
+@app.command()
+def wizard(
+    web: bool = typer.Option(True, "--web/--cli", help="Launch in web or CLI mode."),
+    port: int = typer.Option(5000, "--port", "-p", help="Web server port."),
+    output_dir: Optional[Path] = typer.Option(None, "--output-dir", "-o", help="Output directory for generated agents."),
+):
+    """🧙 Launch the self-assembly wizard to build a domain-specific agent."""
+    from sciagent.wizard import create_wizard, WIZARD_CONFIG
+
+    if web:
+        from sciagent.web.app import create_app
+        console.print(Panel(
+            "[bold]🧙 SciAgent Self-Assembly Wizard[/bold]\n"
+            f"[dim]Open http://localhost:{port}/wizard in your browser[/dim]",
+            expand=False,
+        ))
+        app_instance = create_app(create_wizard, WIZARD_CONFIG)
+        app_instance.run(host="0.0.0.0", port=port)
+    else:
+        run_cli(create_wizard, WIZARD_CONFIG, output_dir)
