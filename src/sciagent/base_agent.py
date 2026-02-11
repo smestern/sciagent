@@ -20,6 +20,8 @@ Example::
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import os
 import tempfile
@@ -27,11 +29,36 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from copilot import CopilotClient
-from copilot.types import Tool, SessionConfig, CustomAgentConfig
+from copilot.types import Tool, ToolInvocation, ToolResult, SessionConfig, CustomAgentConfig
 
 from .config import AgentConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_result(result: Any) -> ToolResult:
+    """Convert any return value to a ``ToolResult``.
+
+    * ``None`` → empty success
+    * ``str`` → success with that text
+    * dict already shaped as ``ToolResult`` → pass through
+    * anything else → JSON-serialise
+    """
+    if result is None:
+        return ToolResult(textResultForLlm="", resultType="success")
+
+    if isinstance(result, dict) and "resultType" in result and "textResultForLlm" in result:
+        return result  # type: ignore[return-value]
+
+    if isinstance(result, str):
+        return ToolResult(textResultForLlm=result, resultType="success")
+
+    try:
+        json_str = json.dumps(result, default=str)
+    except (TypeError, ValueError) as exc:
+        json_str = repr(result)
+
+    return ToolResult(textResultForLlm=json_str, resultType="success")
 
 
 def _create_tool(
@@ -42,19 +69,46 @@ def _create_tool(
 ) -> Tool:
     """Create a ``Tool`` object for the Copilot SDK.
 
+    Wraps *handler* so it receives unpacked ``arguments`` from the
+    ``ToolInvocation`` dict rather than the raw invocation envelope.
+    The return value is normalised into a ``ToolResult``.
+
     Args:
         name: Tool name (function name).
         description: What the tool does.
-        handler: The function to call.
+        handler: The function to call (receives keyword arguments).
         parameters: JSON Schema for the tool's parameters.
 
     Returns:
         A Copilot SDK ``Tool`` instance.
     """
+
+    def _wrapped_handler(invocation: ToolInvocation) -> ToolResult:
+        args = invocation.get("arguments") or {}
+        # If the SDK already parsed arguments into a dict, unpack them
+        # as keyword arguments into the real handler.
+        if isinstance(args, str):
+            try:
+                args = json.loads(args)
+            except (json.JSONDecodeError, TypeError):
+                args = {}
+        try:
+            result = handler(**args)
+            # Support async handlers
+            if asyncio.iscoroutine(result):
+                result = asyncio.get_event_loop().run_until_complete(result)
+        except Exception as exc:
+            logger.exception("Tool %s raised an error", name)
+            return ToolResult(
+                textResultForLlm=f"Error invoking tool {name}: {exc}",
+                resultType="failure",
+            )
+        return _normalize_result(result)
+
     return Tool(
         name=name,
         description=description,
-        handler=handler,
+        handler=_wrapped_handler,
         parameters=parameters or {"type": "object", "properties": {}},
     )
 
