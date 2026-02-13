@@ -91,6 +91,20 @@ def _build_expertise_text(state: WizardState) -> str:
             + "\n".join(range_items)
         )
 
+    # Package documentation reference
+    if state.package_docs:
+        doc_lines = [
+            "### Package Documentation",
+            "",
+            "Detailed reference documentation is available in the `docs/` "
+            "directory for each installed library. Use the `read_doc` tool "
+            "to access them by name:",
+            "",
+        ]
+        for name in sorted(state.package_docs.keys()):
+            doc_lines.append(f"- `{name}`")
+        sections.append("\n".join(doc_lines))
+
     # Use any pre-generated prompt content from the LLM refinement step
     if state.domain_prompt:
         sections.append(f"### Additional Domain Knowledge\n{state.domain_prompt}")

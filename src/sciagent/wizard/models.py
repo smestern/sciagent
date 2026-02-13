@@ -12,6 +12,37 @@ from typing import Any, Dict, List, Optional, Tuple
 # ── Discovery models ────────────────────────────────────────────────────
 
 
+class OutputMode(str, Enum):
+    """Which output format the wizard should generate."""
+
+    FULLSTACK = "fullstack"          # Full Python submodule (current mode)
+    COPILOT_AGENT = "copilot_agent"  # VS Code .agent.md + Claude .md configs
+    MARKDOWN = "markdown"            # Platform-agnostic markdown specification
+
+
+class WizardPhase(str, Enum):
+    """Tracks progress through the guided wizard flow."""
+
+    INTAKE = "intake"              # Collecting initial form data
+    DISCOVERY = "discovery"        # Searching for packages
+    REFINEMENT = "refinement"      # Presenting & confirming packages
+    CONFIGURATION = "configuration"  # Naming the agent, setting guardrails
+    GENERATION = "generation"      # Generating output
+    COMPLETE = "complete"          # Done
+
+
+@dataclass
+class PendingQuestion:
+    """A structured question awaiting the user's response."""
+
+    question: str
+    options: List[str] = field(default_factory=list)
+    allow_freetext: bool = False
+    max_length: int = 100
+    allow_multiple: bool = False
+    field_name: str = ""  # optional: which WizardState field this populates
+
+
 class DiscoverySource(str, Enum):
     """Where a package candidate was found."""
 
@@ -117,13 +148,31 @@ class WizardState:
     domain_prompt: str = ""
     suggestion_chips: List[Tuple[str, str]] = field(default_factory=list)  # (label, prompt)
 
+    # ─ Package documentation (fetched after confirmation) ───────────
+    package_docs: Dict[str, str] = field(default_factory=dict)  # pkg name → markdown doc
+
     # ─ Output ───────────────────────────────────────────────────────
+    output_mode: "OutputMode" = None  # type: ignore[assignment]  # set post-init
     output_dir: str = ""
     project_dir: str = ""
 
+    # ─ Guided / public mode ─────────────────────────────────────────
+    guided_mode: bool = False
+    phase: "WizardPhase" = None  # type: ignore[assignment]  # set post-init
+    data_types: List[str] = field(default_factory=list)
+    analysis_goals: List[str] = field(default_factory=list)
+    experience_level: str = ""  # beginner / intermediate / advanced
+    pending_question: Optional["PendingQuestion"] = None
+
+    def __post_init__(self):
+        if self.output_mode is None:
+            self.output_mode = OutputMode.FULLSTACK
+        if self.phase is None:
+            self.phase = WizardPhase.INTAKE
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialise for LLM tool results / JSON storage."""
-        return {
+        d = {
             "domain_description": self.domain_description,
             "research_goals": self.research_goals,
             "keywords": self.keywords,
@@ -140,6 +189,14 @@ class WizardState:
                 for f in self.example_files
             ],
             "bounds": self.bounds,
+            "output_mode": self.output_mode.value,
+            "package_docs_count": len(self.package_docs),
             "output_dir": self.output_dir,
             "project_dir": self.project_dir,
+            "phase": self.phase.value,
+            "guided_mode": self.guided_mode,
+            "data_types": self.data_types,
+            "analysis_goals": self.analysis_goals,
+            "experience_level": self.experience_level,
         }
+        return d

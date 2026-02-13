@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧙 SciAgent — Build Your Scientific Agent</title>
+    <!-- Reuse the base sciagent styles -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* ── Public wizard styles ───────────────────────────────── */
+        .wizard-container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .wizard-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .wizard-header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .wizard-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        .wizard-header .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #22c55e;
+            color: white;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        /* Steps indicator */
+        .wizard-steps {
+            display: flex;
+            justify-content: center;
+            gap: 0.4rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .wizard-step {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 2rem;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+        .wizard-step.active {
+            background: #a855f7;
+            color: white;
+        }
+        .wizard-step.completed {
+            background: #22c55e;
+            color: white;
+        }
+        .wizard-step-number {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.75rem;
+        }
+
+        /* Form panel */
+        .wizard-panel {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        .wizard-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .wizard-panel h2 {
+            margin-bottom: 0.75rem;
+            font-size: 1.3rem;
+        }
+        .wizard-panel p.help-text {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Form fields */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .form-group textarea,
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: inherit;
+            resize: vertical;
+        }
+        .form-group textarea:focus,
+        .form-group input[type="text"]:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+        }
+        .form-group textarea {
+            min-height: 120px;
+        }
+
+        /* ── Selectable card grid ───────────────────────────────── */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .card-grid.wide {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        }
+        .selectable-card {
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            user-select: none;
+        }
+        .selectable-card:hover {
+            border-color: #a855f7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+        }
+        .selectable-card.selected {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        .selectable-card .card-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.4rem;
+        }
+        .selectable-card .card-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .selectable-card .card-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* ── Radio group ────────────────────────────────────────── */
+        .radio-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .radio-card {
+            flex: 1;
+            min-width: 140px;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .radio-card:hover {
+            border-color: #a855f7;
+        }
+        .radio-card.selected {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        .radio-card .card-icon { font-size: 1.5rem; }
+        .radio-card .card-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 0.3rem;
+        }
+        .radio-card .card-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Tag input */
+        .tag-input-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            min-height: 42px;
+            cursor: text;
+        }
+        .tag-input-container:focus-within {
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+        }
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.6rem;
+            background: #a855f7;
+            color: white;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+        }
+        .tag button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            line-height: 1;
+        }
+        .tag-input {
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* File drop zone */
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.05);
+        }
+        .drop-zone .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .drop-zone p { color: var(--text-secondary); }
+        .file-list {
+            margin-top: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .file-item button {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+        }
+
+        /* Navigation buttons */
+        .wizard-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #a855f7;
+            color: white;
+        }
+        .btn-primary:hover { background: #9333ea; }
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover { background: var(--bg-primary); }
+        .btn-success {
+            background: #22c55e;
+            color: white;
+        }
+        .btn-success:hover { background: #16a34a; }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Quick-start cards */
+        .quickstart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .quickstart-card {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quickstart-card:hover {
+            border-color: #a855f7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+        }
+        .quickstart-card h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+        .quickstart-card p { font-size: 0.85rem; color: var(--text-secondary); }
+
+        /* ── Guided chat area (no free input) ───────────────────── */
+        #guided-chat {
+            height: 65vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        /* Question card in chat */
+        .question-card {
+            background: var(--bg-secondary);
+            border: 1px solid #a855f7;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            animation: fadeIn 0.3s ease;
+        }
+        .question-card h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+        .question-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .question-option {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 2rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .question-option:hover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        .question-option.selected {
+            border-color: #a855f7;
+            background: #a855f7;
+            color: white;
+        }
+        .question-freetext {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: inherit;
+            margin-bottom: 0.75rem;
+        }
+        .question-freetext:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+        }
+        .question-submit {
+            padding: 0.5rem 1.25rem;
+            background: #a855f7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .question-submit:hover { background: #9333ea; }
+        .question-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── Output mode selector ───────────────────────────────── */
+        .output-mode-group {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .output-mode-card {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .output-mode-card:hover { border-color: #a855f7; }
+        .output-mode-card.selected {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        .output-mode-card .card-icon { font-size: 1.5rem; }
+        .output-mode-card .card-label {
+            font-weight: 600;
+            margin-top: 0.3rem;
+        }
+        .output-mode-card .card-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="wizard-container">
+        <!-- Header -->
+        <div class="wizard-header">
+            <h1>🧙 SciAgent Builder</h1>
+            <p>Build your own domain-specific scientific agent in minutes</p>
+            <span class="badge">Free — No account required</span>
+        </div>
+
+        <!-- Step indicators -->
+        <div class="wizard-steps">
+            <div class="wizard-step active" data-step="1">
+                <span class="wizard-step-number">1</span> Domain
+            </div>
+            <div class="wizard-step" data-step="2">
+                <span class="wizard-step-number">2</span> Data
+            </div>
+            <div class="wizard-step" data-step="3">
+                <span class="wizard-step-number">3</span> Goals
+            </div>
+            <div class="wizard-step" data-step="4">
+                <span class="wizard-step-number">4</span> Experience
+            </div>
+            <div class="wizard-step" data-step="5">
+                <span class="wizard-step-number">5</span> Packages
+            </div>
+            <div class="wizard-step" data-step="6">
+                <span class="wizard-step-number">6</span> Build
+            </div>
+        </div>
+
+        <!-- ─── Step 1: Research Domain ──────────────────────────── -->
+        <div class="wizard-panel active" id="step-1">
+            <h2>Tell me about your research</h2>
+            <p class="help-text">
+                Describe your scientific domain. You can start from scratch or
+                pick a quick-start below and customize it.
+            </p>
+
+            <div class="quickstart-grid" id="quickstart-cards">
+                <div class="quickstart-card" onclick="useQuickstart('electrophysiology')">
+                    <h3>⚡ Electrophysiology</h3>
+                    <p>Patch-clamp, ion channels, action potentials</p>
+                </div>
+                <div class="quickstart-card" onclick="useQuickstart('genomics')">
+                    <h3>🧬 Genomics</h3>
+                    <p>Sequencing, expression, variant analysis</p>
+                </div>
+                <div class="quickstart-card" onclick="useQuickstart('imaging')">
+                    <h3>🔬 Calcium Imaging</h3>
+                    <p>Fluorescence traces, event detection</p>
+                </div>
+                <div class="quickstart-card" onclick="useQuickstart('chemistry')">
+                    <h3>⚗️ Chemistry</h3>
+                    <p>Spectroscopy, peak fitting, concentrations</p>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label for="domain-desc">Domain Description</label>
+                <textarea id="domain-desc"
+                    placeholder="e.g. I study neuroscience, specifically patch-clamp electrophysiology of cortical neurons…"></textarea>
+            </div>
+
+            <div class="wizard-nav">
+                <div></div>
+                <button class="btn btn-primary" onclick="goToStep(2)">Next: Data Types →</button>
+            </div>
+        </div>
+
+        <!-- ─── Step 2: Data Types ───────────────────────────────── -->
+        <div class="wizard-panel" id="step-2">
+            <h2>What kind of data do you work with?</h2>
+            <p class="help-text">
+                Select all that apply. This helps us find the right tools for your data.
+            </p>
+
+            <div class="card-grid" id="data-type-cards">
+                <div class="selectable-card" data-value="Tabular / CSV" onclick="toggleCard(this, 'dataTypes')">
+                    <div class="card-icon">📊</div>
+                    <div class="card-label">Tabular / CSV</div>
+                    <div class="card-desc">Spreadsheets, tables, data frames</div>
+                </div>
+                <div class="selectable-card" data-value="Images / Microscopy" onclick="toggleCard(this, 'dataTypes')">
+                    <div class="card-icon">🖼️</div>
+                    <div class="card-label">Images / Microscopy</div>
+                    <div class="card-desc">TIFF stacks, confocal, EM</div>
+                </div>
+                <div class="selectable-card" data-value="Time Series" onclick="toggleCard(this, 'dataTypes')">
+                    <div class="card-icon">📈</div>
+                    <div class="card-label">Time Series</div>
+                    <div class="card-desc">Signals, recordings, traces</div>
+                </div>
+                <div class="selectable-card" data-value="Genomic Sequences" onclick="toggleCard(this, 'dataTypes')">
+                    <div class="card-icon">🧬</div>
+                    <div class="card-label">Genomic Sequences</div>
+                    <div class="card-desc">FASTA, FASTQ, BAM, VCF</div>
+                </div>
+                <div class="selectable-card" data-value="Spectral Data" onclick="toggleCard(this, 'dataTypes')">
+                    <div class="card-icon">🌈</div>
+                    <div class="card-label">Spectral Data</div>
+                    <div class="card-desc">UV-Vis, NMR, IR, mass spec</div>
+                </div>
+                <div class="selectable-card" data-value="Molecular Structures" onclick="toggleCard(this, 'dataTypes')">
+                    <div class="card-icon">⚛️</div>
+                    <div class="card-label">Molecular Structures</div>
+                    <div class="card-desc">PDB, SDF, SMILES, CIF</div>
+                </div>
+                <div class="selectable-card" data-value="Text / Documents" onclick="toggleCard(this, 'dataTypes')">
+                    <div class="card-icon">📄</div>
+                    <div class="card-label">Text / Documents</div>
+                    <div class="card-desc">Papers, notes, annotations</div>
+                </div>
+                <div class="selectable-card" data-value="Geospatial" onclick="toggleCard(this, 'dataTypes')">
+                    <div class="card-icon">🌍</div>
+                    <div class="card-label">Geospatial</div>
+                    <div class="card-desc">GIS, satellite, coordinates</div>
+                </div>
+            </div>
+
+            <div class="wizard-nav">
+                <button class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
+                <button class="btn btn-primary" onclick="goToStep(3)">Next: Analysis Goals →</button>
+            </div>
+        </div>
+
+        <!-- ─── Step 3: Analysis Goals ───────────────────────────── -->
+        <div class="wizard-panel" id="step-3">
+            <h2>What processes & analyses are you looking for?</h2>
+            <p class="help-text">
+                Select the types of analysis you need. We'll find packages that specialize in these.
+            </p>
+
+            <div class="card-grid wide" id="analysis-goal-cards">
+                <div class="selectable-card" data-value="Statistical Testing" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">📐</div>
+                    <div class="card-label">Statistical Testing</div>
+                    <div class="card-desc">t-tests, ANOVA, regression</div>
+                </div>
+                <div class="selectable-card" data-value="Curve Fitting" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">📉</div>
+                    <div class="card-label">Curve Fitting</div>
+                    <div class="card-desc">Exponential, Gaussian, custom</div>
+                </div>
+                <div class="selectable-card" data-value="Visualization" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">📊</div>
+                    <div class="card-label">Visualization</div>
+                    <div class="card-desc">Plots, heatmaps, dashboards</div>
+                </div>
+                <div class="selectable-card" data-value="Machine Learning" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">🤖</div>
+                    <div class="card-label">Machine Learning</div>
+                    <div class="card-desc">Classification, prediction</div>
+                </div>
+                <div class="selectable-card" data-value="Data Cleaning" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">🧹</div>
+                    <div class="card-label">Data Cleaning</div>
+                    <div class="card-desc">Missing values, outliers, QC</div>
+                </div>
+                <div class="selectable-card" data-value="Simulation" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">🔮</div>
+                    <div class="card-label">Simulation</div>
+                    <div class="card-desc">Monte Carlo, ODEs, modeling</div>
+                </div>
+                <div class="selectable-card" data-value="Image Analysis" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">🔍</div>
+                    <div class="card-label">Image Analysis</div>
+                    <div class="card-desc">Segmentation, ROIs, tracking</div>
+                </div>
+                <div class="selectable-card" data-value="Peak Detection" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">⛰️</div>
+                    <div class="card-label">Peak Detection</div>
+                    <div class="card-desc">Peaks, events, thresholds</div>
+                </div>
+                <div class="selectable-card" data-value="Clustering" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">🎯</div>
+                    <div class="card-label">Clustering</div>
+                    <div class="card-desc">k-means, DBSCAN, hierarchical</div>
+                </div>
+                <div class="selectable-card" data-value="Dimensionality Reduction" onclick="toggleCard(this, 'analysisGoals')">
+                    <div class="card-icon">📦</div>
+                    <div class="card-label">Dim. Reduction</div>
+                    <div class="card-desc">PCA, UMAP, t-SNE</div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label>Additional goals <span style="color: var(--text-secondary); font-weight: normal;">(press Enter to add)</span></label>
+                <div class="tag-input-container" id="goals-container">
+                    <input type="text" class="tag-input" id="goals-input"
+                        placeholder="e.g. Fit exponential decay curves">
+                </div>
+            </div>
+
+            <div class="wizard-nav">
+                <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+                <button class="btn btn-primary" onclick="goToStep(4)">Next: Experience →</button>
+            </div>
+        </div>
+
+        <!-- ─── Step 4: Experience & Files ───────────────────────── -->
+        <div class="wizard-panel" id="step-4">
+            <h2>Your experience & file formats</h2>
+            <p class="help-text">
+                This helps us tailor the output to your skill level and the
+                formats you use.
+            </p>
+
+            <div class="form-group">
+                <label>Python experience level</label>
+                <div class="radio-group" id="experience-group">
+                    <div class="radio-card" data-value="beginner" onclick="selectRadio(this, 'experience')">
+                        <div class="card-icon">🌱</div>
+                        <div class="card-label">Beginner</div>
+                        <div class="card-desc">New to Python or programming</div>
+                    </div>
+                    <div class="radio-card" data-value="intermediate" onclick="selectRadio(this, 'experience')">
+                        <div class="card-icon">🌿</div>
+                        <div class="card-label">Intermediate</div>
+                        <div class="card-desc">Comfortable with scripts & notebooks</div>
+                    </div>
+                    <div class="radio-card" data-value="advanced" onclick="selectRadio(this, 'experience')">
+                        <div class="card-icon">🌳</div>
+                        <div class="card-label">Advanced</div>
+                        <div class="card-desc">Experienced with packages & APIs</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>File formats you use <span style="color: var(--text-secondary); font-weight: normal;">(press Enter to add)</span></label>
+                <div class="tag-input-container" id="filetypes-container">
+                    <input type="text" class="tag-input" id="filetypes-input"
+                        placeholder="e.g. .csv, .abf, .tif">
+                </div>
+            </div>
+
+            <div class="drop-zone" id="drop-zone">
+                <div class="icon">📁</div>
+                <p><strong>Drop example files here</strong> or click to browse (optional)</p>
+                <p style="font-size: 0.8rem; margin-top: 0.5rem;">
+                    Helps the wizard understand your data
+                </p>
+                <input type="file" id="file-input" multiple hidden>
+            </div>
+            <div class="file-list" id="file-list"></div>
+
+            <div class="wizard-nav">
+                <button class="btn btn-secondary" onclick="goToStep(3)">← Back</button>
+                <button class="btn btn-primary" onclick="goToStep(5)">Next: Packages →</button>
+            </div>
+        </div>
+
+        <!-- ─── Step 5: Known Packages ───────────────────────────── -->
+        <div class="wizard-panel" id="step-5">
+            <h2>Packages you already use (optional)</h2>
+            <p class="help-text">
+                If you already know Python packages in your field, list them
+                here. We'll include these and search for others.
+            </p>
+
+            <div class="form-group">
+                <label>Known packages <span style="color: var(--text-secondary); font-weight: normal;">(press Enter to add)</span></label>
+                <div class="tag-input-container" id="packages-container">
+                    <input type="text" class="tag-input" id="packages-input"
+                        placeholder="e.g. scipy, pandas, scikit-learn">
+                </div>
+            </div>
+
+            <div class="wizard-nav">
+                <button class="btn btn-secondary" onclick="goToStep(4)">← Back</button>
+                <button class="btn btn-success" onclick="startGuidedWizard()">🧙 Build My Agent →</button>
+            </div>
+        </div>
+
+        <!-- ─── Step 6: Guided Build ─────────────────────────────── -->
+        <div class="wizard-panel" id="step-6">
+            <h2>Building your agent…</h2>
+            <p class="help-text">
+                I'm searching databases and assembling your agent configuration.
+                I'll present choices along the way — just click to respond.
+            </p>
+            <div id="guided-chat">
+                <div id="chat-messages"></div>
+            </div>
+            <!-- No freeform input box — all interaction via question cards -->
+        </div>
+    </div>
+
+    <script src="/public/static/js/public_wizard.js"></script>
+</body>
+</html>

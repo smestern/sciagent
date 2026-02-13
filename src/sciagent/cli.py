@@ -416,23 +416,51 @@ app = typer.Typer(
 )
 
 
+@app.callback(invoke_without_command=True)
+def _app_main(ctx: typer.Context):
+    """A framework for building rigorous scientific coding agents."""
+    if ctx.invoked_subcommand is None:
+        ctx.get_help()
+
+
 @app.command()
 def wizard(
     web: bool = typer.Option(True, "--web/--cli", help="Launch in web or CLI mode."),
     port: int = typer.Option(5000, "--port", "-p", help="Web server port."),
     output_dir: Optional[Path] = typer.Option(None, "--output-dir", "-o", help="Output directory for generated agents."),
+    output_mode: str = typer.Option(
+        "fullstack",
+        "--output-mode",
+        "-m",
+        help="Output mode: fullstack, copilot_agent, or markdown.",
+    ),
 ):
     """🧙 Launch the self-assembly wizard to build a domain-specific agent."""
     from sciagent.wizard import create_wizard, WIZARD_CONFIG
+    from sciagent.wizard.models import OutputMode
+
+    # Pre-set the output mode on the wizard's state
+    try:
+        mode = OutputMode(output_mode)
+    except ValueError:
+        console.print(f"[red]Invalid output mode: {output_mode}[/red]")
+        console.print("[dim]Valid modes: fullstack, copilot_agent, markdown[/dim]")
+        raise typer.Exit(1)
+
+    def _factory(**kwargs):
+        w = create_wizard(**kwargs)
+        w.wizard_state.output_mode = mode
+        return w
 
     if web:
         from sciagent.web.app import create_app
         console.print(Panel(
             "[bold]🧙 SciAgent Self-Assembly Wizard[/bold]\n"
-            f"[dim]Open http://localhost:{port}/wizard in your browser[/dim]",
+            f"[dim]Open http://localhost:{port}/wizard in your browser[/dim]\n"
+            f"[dim]Output mode: {mode.value}[/dim]",
             expand=False,
         ))
-        app_instance = create_app(create_wizard, WIZARD_CONFIG)
+        app_instance = create_app(_factory, WIZARD_CONFIG)
         app_instance.run(host="0.0.0.0", port=port)
     else:
-        run_cli(create_wizard, WIZARD_CONFIG, output_dir)
+        run_cli(_factory, WIZARD_CONFIG, output_dir)

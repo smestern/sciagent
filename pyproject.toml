@@ -39,7 +39,7 @@ dependencies = [
     "scipy>=1.7",
     "matplotlib>=3.4",
     "Pillow>=9.0",
-    "copilot",  # GitHub Copilot SDK
+    "github-copilot-sdk",  # GitHub Copilot SDK
 ]
 
 [project.optional-dependencies]
@@ -61,6 +61,7 @@ web = [
 wizard = [
     "sciagent[cli,web]",
     "httpx>=0.25",
+    "aiohttp>=3.9",
 ]
 all = [
     "sciagent[cli,web,wizard]",
@@ -69,7 +70,8 @@ all = [
 [project.scripts]
 sciagent = "sciagent.cli:app"
 sciagent-web = "sciagent.web.app:main"
-sciagent-wizard = "sciagent.wizard:create_wizard"
+sciagent-wizard = "sciagent.wizard:main"
+sciagent-public = "sciagent.wizard:main_public"
 
 [project.urls]
 Homepage = "https://github.com/smestern/sciagent"
@@ -77,6 +79,12 @@ Repository = "https://github.com/smestern/sciagent"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+markers = [
+    "live: tests that hit real external APIs (deselect with: -m 'not live')",
+]
 
 [tool.black]
 line-length = 100

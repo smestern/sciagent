@@ -22,8 +22,9 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from ..models import WizardState
+from ..models import OutputMode, WizardState
 from .config_gen import generate_config_source
+from .docs_gen import write_docs
 from .prompt_gen import generate_prompt_source
 from .tools_gen import generate_tools_source
 from .agent_gen import generate_agent_source

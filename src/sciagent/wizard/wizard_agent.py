@@ -20,7 +20,7 @@ from sciagent.base_agent import BaseScientificAgent, _create_tool
 from sciagent.config import AgentConfig, SuggestionChip
 from sciagent.prompts.base_messages import build_system_message
 
-from .models import DiscoverySource, PackageCandidate, WizardState
+from .models import DiscoverySource, OutputMode, PackageCandidate, PendingQuestion, WizardPhase, WizardState
 
 logger = logging.getLogger(__name__)
 
@@ -108,14 +108,31 @@ analysis agent.
 5. **Confirm** — Use `confirm_packages` to lock in the package selection.
    The researcher must explicitly agree before proceeding.
 
-6. **Configure** — Use `set_agent_identity` to name the agent and give
+6. **Fetch Documentation** — Use `fetch_package_docs` to retrieve and
+   generate local reference documentation for all confirmed packages.
+   This reads READMEs from PyPI, GitHub, ReadTheDocs, and package
+   homepages, then produces concise Markdown docs. Tell the researcher
+   what docs were fetched.
+
+7. **Configure** — Use `set_agent_identity` to name the agent and give
    it a personality (emoji, description).
 
-7. **Generate** — Use `generate_agent` to create the agent project.
+8. **Choose Output Mode** — Ask the researcher which output format they
+   want (or they may have already specified via CLI flag). Use
+   `set_output_mode` to choose:
+   - **fullstack** — Full Python submodule with CLI, web UI, code
+     execution, guardrails (default)
+   - **copilot_agent** — Config files for VS Code Copilot custom agent
+     and Claude Code sub-agent
+   - **markdown** — Platform-agnostic Markdown specification that works
+     with any LLM
+
+9. **Generate** — Use `generate_agent` to create the agent project.
    Show the researcher what was created and how to use it.
 
-8. **Install & Launch** — Offer to install packages with
-   `install_packages` and launch the agent with `launch_agent`.
+10. **Install & Launch** — For fullstack mode, offer to install packages
+    with `install_packages` and launch the agent with `launch_agent`.
+    For copilot_agent or markdown mode, explain how to use the output.
 
 ### Important
 
@@ -125,15 +142,92 @@ analysis agent.
 - Never skip the confirmation step
 - If the researcher mentions specific packages they want, add those too
 - Suggest sensible defaults but let the researcher decide
+- Always fetch documentation after confirming packages — the docs make
+  the generated agent much more useful
+"""
+
+
+# ── Public / guided-mode system prompt ─────────────────────────────────
+
+PUBLIC_WIZARD_EXPERTISE = """\
+## Self-Assembly Wizard — Guided Agent Builder (Public Mode)
+
+You are the SciAgent Self-Assembly Wizard running in **guided public
+mode**. Your job is to help researchers build a domain-specific
+scientific agent configuration — but you operate under strict
+constraints to prevent misuse.
+
+### CRITICAL RULES
+
+1. **ALWAYS use the `present_question` tool** to ask the user anything.
+   NEVER ask open-ended questions in plain text. Every time you need
+   user input, call `present_question` with clear options.
+2. **NEVER respond to off-topic requests.** You only help build
+   scientific agents. If the user somehow sends unrelated text,
+   ignore it and continue with the next step.
+3. **Output is restricted** to `markdown` or `copilot_agent` mode only.
+   NEVER set output mode to `fullstack`.
+4. **Do not install packages or launch agents.** Those tools are not
+   available in public mode.
+
+### Pre-Filled Information
+
+The user has already provided the following via the intake form:
+- Domain description
+- Data types they work with
+- Analysis goals
+- Python experience level
+- File formats
+- Known packages (if any)
+
+**Do NOT re-ask for information already provided.** Reference it
+directly and build upon it.
+
+### Your Workflow (Guided Mode)
+
+1. **Acknowledge** — Briefly summarize what the user told you in the
+   form. Show you understood their domain.
+
+2. **Discover** — Use `search_packages` to find relevant scientific
+   packages based on their domain, data types, and goals.
+
+3. **Recommend** — Use `present_question` to show discovered packages
+   and let the user select which ones to include. Present as a
+   multi-select question with package names and brief descriptions.
+
+4. **Confirm** — Use `confirm_packages` to lock in the selection.
+
+5. **Fetch Documentation** — Use `fetch_package_docs` to retrieve docs
+   for confirmed packages.
+
+6. **Configure Identity** — Use `present_question` with
+   `allow_freetext=true` to ask the user to name their agent. Suggest
+   a sensible default based on their domain. Then use
+   `set_agent_identity` to set the name.
+
+7. **Choose Output Mode** — Use `present_question` to let the user
+   pick between `markdown` and `copilot_agent` output formats.
+   Briefly explain each option. Then use `set_output_mode`.
+
+8. **Generate** — Use `generate_agent` to create the output. Show
+   the user what was created and how to use it.
+
+### Tone
+
+- Friendly and encouraging — the user may not be a programmer
+- Concise — don't write essays, keep messages short and actionable
+- Always explain what you're doing and why
+- Celebrate the result at the end!
 """
 
 
 class WizardAgent(BaseScientificAgent):
     """The wizard agent that builds other agents."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, guided_mode: bool = False, **kwargs):
         # The wizard manages its own state across the conversation
-        self._wizard_state = WizardState()
+        self._wizard_state = WizardState(guided_mode=guided_mode)
+        self._guided_mode = guided_mode
         super().__init__(WIZARD_CONFIG, **kwargs)
 
     @property
@@ -145,7 +239,7 @@ class WizardAgent(BaseScientificAgent):
     def _load_tools(self) -> List:
         state = self._wizard_state
 
-        return [
+        tools = [
             # ─ Discovery ────────────────────────────────────────────
             _create_tool(
                 "search_packages",
@@ -361,13 +455,115 @@ class WizardAgent(BaseScientificAgent):
                 self._tool_get_state,
                 {"type": "object", "properties": {}},
             ),
+
+            # ─ Documentation fetching ───────────────────────────────
+            _create_tool(
+                "fetch_package_docs",
+                (
+                    "Fetch and generate local reference documentation for "
+                    "all confirmed packages. Reads READMEs from PyPI, GitHub, "
+                    "ReadTheDocs, and package homepages. Call this AFTER "
+                    "confirm_packages to build docs the agent can reference."
+                ),
+                self._tool_fetch_docs,
+                {"type": "object", "properties": {}},
+            ),
+
+            # ─ Output mode ──────────────────────────────────────────
+            _create_tool(
+                "set_output_mode",
+                (
+                    "Set the output format for the generated agent. Options: "
+                    "'fullstack' (full Python submodule with web UI and CLI), "
+                    "'copilot_agent' (VS Code custom agent + Claude Code sub-agent "
+                    "config files), or 'markdown' (platform-agnostic Markdown "
+                    "specification for any LLM). Default is fullstack."
+                ),
+                self._tool_set_output_mode,
+                {
+                    "type": "object",
+                    "properties": {
+                        "mode": {
+                            "type": "string",
+                            "enum": ["fullstack", "copilot_agent", "markdown"],
+                            "description": (
+                                "The output mode: fullstack, copilot_agent, or markdown."
+                            ),
+                        },
+                    },
+                    "required": ["mode"],
+                },
+            ),
         ]
+
+        # ─ Guided-mode only tools ──────────────────────────────────
+        if self._guided_mode:
+            tools.append(_create_tool(
+                "present_question",
+                (
+                    "Present a structured question to the user. In guided "
+                    "mode, this is the ONLY way to interact with the user. "
+                    "Provide clear options for them to choose from. Use "
+                    "allow_freetext=true only when you need a short text "
+                    "answer (e.g. naming the agent)."
+                ),
+                self._tool_present_question,
+                {
+                    "type": "object",
+                    "properties": {
+                        "question": {
+                            "type": "string",
+                            "description": "The question to ask the user.",
+                        },
+                        "options": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": (
+                                "Options for the user to choose from. Each "
+                                "option is a short label string."
+                            ),
+                        },
+                        "allow_freetext": {
+                            "type": "boolean",
+                            "description": (
+                                "If true, allows the user to type a short "
+                                "text answer instead of (or in addition to) "
+                                "selecting options. Default: false."
+                            ),
+                        },
+                        "max_length": {
+                            "type": "integer",
+                            "description": (
+                                "Maximum character length for freetext input. "
+                                "Default: 100."
+                            ),
+                        },
+                        "allow_multiple": {
+                            "type": "boolean",
+                            "description": (
+                                "If true, the user can select multiple "
+                                "options. Default: false."
+                            ),
+                        },
+                    },
+                    "required": ["question", "options"],
+                },
+            ))
+
+            # Remove install_packages and launch_agent in guided mode
+            tools = [
+                t for t in tools
+                if getattr(t, "name", "") not in ("install_packages", "launch_agent")
+            ]
+
+        return tools
 
     # ── System message ──────────────────────────────────────────────
 
     def _get_system_message(self) -> str:
+        expertise = PUBLIC_WIZARD_EXPERTISE if self._guided_mode else WIZARD_EXPERTISE
         return build_system_message(
-            WIZARD_EXPERTISE,
+            expertise,
             # Disable policies that don't apply to the wizard
             code_policy=False,
             output_dir_policy=False,
@@ -375,6 +571,39 @@ class WizardAgent(BaseScientificAgent):
         )
 
     # ── Tool implementations ────────────────────────────────────────
+
+    def _tool_present_question(
+        self,
+        question: str,
+        options: List[str],
+        allow_freetext: bool = False,
+        max_length: int = 100,
+        allow_multiple: bool = False,
+    ) -> str:
+        """Present a structured question to the user (guided mode only).
+
+        Returns a special JSON payload that the WebSocket handler
+        intercepts and renders as a clickable question card in the UI.
+        """
+        pending = PendingQuestion(
+            question=question,
+            options=options,
+            allow_freetext=allow_freetext,
+            max_length=max_length,
+            allow_multiple=allow_multiple,
+        )
+        self._wizard_state.pending_question = pending
+
+        # Return a payload the WS handler will detect and forward as
+        # a question_card event rather than plain text.
+        return json.dumps({
+            "__type__": "question_card",
+            "question": question,
+            "options": options,
+            "allow_freetext": allow_freetext,
+            "max_length": max_length,
+            "allow_multiple": allow_multiple,
+        })
 
     def _tool_search_packages(
         self,
@@ -384,8 +613,7 @@ class WizardAgent(BaseScientificAgent):
         """Search for domain-specific packages."""
         from .discovery.ranker import discover_packages
 
-        loop = _get_or_create_loop()
-        candidates = loop.run_until_complete(
+        candidates = _run_async(
             discover_packages(keywords, sources=sources)
         )
 
@@ -574,15 +802,41 @@ class WizardAgent(BaseScientificAgent):
         out = output_dir or str(Path.cwd())
         project_path = generate_project(state, output_dir=out)
 
-        return json.dumps({
-            "status": "generated",
-            "project_dir": str(project_path),
-            "files": [str(p.name) for p in project_path.iterdir() if p.is_file()],
-            "instructions": {
+        # Build mode-specific instructions
+        mode = state.output_mode
+        if mode == OutputMode.COPILOT_AGENT:
+            instructions = {
+                "vscode": (
+                    f"Copy the .github/agents/ folder into your workspace "
+                    f"and select '{state.agent_display_name}' from the Agents dropdown."
+                ),
+                "claude_code": (
+                    f"Copy the .claude/agents/ folder into your project. "
+                    f"Claude Code will auto-detect the '{state.agent_name}' sub-agent."
+                ),
+                "docs": "Package documentation is in docs/",
+            }
+        elif mode == OutputMode.MARKDOWN:
+            instructions = {
+                "usage": (
+                    "Copy the contents of system-prompt.md into your preferred "
+                    "LLM's system prompt. See agent-spec.md for full details."
+                ),
+                "docs": "Package documentation is in docs/",
+            }
+        else:
+            instructions = {
                 "cli": f"python -m {state.agent_name.replace('-', '_')}",
                 "web": f"python -m {state.agent_name.replace('-', '_')} --web",
                 "install": f"pip install -r {project_path / 'requirements.txt'}",
-            },
+            }
+
+        return json.dumps({
+            "status": "generated",
+            "output_mode": mode.value,
+            "project_dir": str(project_path),
+            "files": [str(p.name) for p in project_path.iterdir() if p.is_file()],
+            "instructions": instructions,
         }, indent=2)
 
     def _tool_install(self) -> str:
@@ -661,38 +915,124 @@ class WizardAgent(BaseScientificAgent):
         """Return the current wizard state."""
         return json.dumps(self._wizard_state.to_dict(), indent=2)
 
+    def _tool_fetch_docs(self) -> str:
+        """Fetch documentation for all confirmed packages."""
+        if not self._wizard_state.confirmed_packages:
+            return json.dumps({"error": "No packages confirmed yet. Call confirm_packages first."})
+
+        from .discovery.doc_fetcher import fetch_package_docs
+
+        docs = _run_async(
+            fetch_package_docs(self._wizard_state.confirmed_packages)
+        )
+
+        self._wizard_state.package_docs = docs
+
+        # Summary for the LLM
+        summary = []
+        for name, content in docs.items():
+            word_count = len(content.split())
+            summary.append({
+                "package": name,
+                "doc_words": word_count,
+                "has_content": word_count > 50,
+            })
+
+        return json.dumps({
+            "status": "docs_fetched",
+            "packages_documented": len(docs),
+            "details": summary,
+        }, indent=2)
+
+    def _tool_set_output_mode(self, mode: str) -> str:
+        """Set the output mode for agent generation."""
+        try:
+            output_mode = OutputMode(mode)
+        except ValueError:
+            return json.dumps({
+                "error": f"Invalid mode '{mode}'. Must be one of: fullstack, copilot_agent, markdown"
+            })
+
+        # Enforce restriction in guided/public mode
+        if self._guided_mode and output_mode == OutputMode.FULLSTACK:
+            return json.dumps({
+                "error": (
+                    "Fullstack mode is not available in public mode. "
+                    "Please choose 'copilot_agent' or 'markdown'."
+                )
+            })
+
+        self._wizard_state.output_mode = output_mode
+
+        descriptions = {
+            OutputMode.FULLSTACK: (
+                "Full Python submodule with CLI, web UI, code execution sandbox, "
+                "and guardrails. The generated agent runs as a standalone application."
+            ),
+            OutputMode.COPILOT_AGENT: (
+                "Configuration files for VS Code GitHub Copilot custom agent "
+                "(.agent.md) and Claude Code sub-agent (.md). Includes shared "
+                "instructions and package documentation."
+            ),
+            OutputMode.MARKDOWN: (
+                "Platform-agnostic Markdown files (system prompt, tools reference, "
+                "data guide, guardrails, workflow). Copy-paste into any LLM."
+            ),
+        }
+
+        return json.dumps({
+            "status": "output_mode_set",
+            "mode": output_mode.value,
+            "description": descriptions[output_mode],
+        })
+
 
 # ── Factory ─────────────────────────────────────────────────────────────
 
 
-def create_wizard(**kwargs) -> WizardAgent:
-    """Create a WizardAgent instance."""
-    return WizardAgent(**kwargs)
+def create_wizard(guided_mode: bool = False, **kwargs) -> WizardAgent:
+    """Create a WizardAgent instance.
+
+    Args:
+        guided_mode: If True, run in public/guided mode with no freeform
+            chat — users interact only via structured question cards.
+    """
+    return WizardAgent(guided_mode=guided_mode, **kwargs)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────
 
 
-def _get_or_create_loop() -> asyncio.AbstractEventLoop:
-    """Get the running event loop or create a new one."""
+def _run_async(coro):
+    """Run an async coroutine from a sync tool handler.
+
+    When called from within a running event loop (e.g. Quart web server),
+    ``loop.run_until_complete()`` raises ``RuntimeError``. This helper
+    detects that situation and runs the coroutine in a background thread
+    with its own event loop instead.
+    """
+    import concurrent.futures
+
     try:
-        loop = asyncio.get_running_loop()
-        # We're inside an async context — create a nested runner
-        import concurrent.futures
-        # Run in a thread pool to avoid blocking the event loop
-        # This is a pragmatic workaround for sync tool handlers
-        # calling async discovery functions
-        new_loop = asyncio.new_event_loop()
-        return new_loop
+        asyncio.get_running_loop()
     except RuntimeError:
-        # No running loop — normal sync context
+        # No running loop — safe to use run_until_complete directly
+        loop = asyncio.new_event_loop()
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_closed():
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-            return loop
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            return loop
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
+
+    # Already inside a running loop — offload to a thread
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(_thread_runner, coro)
+        return future.result(timeout=120)
+
+
+def _thread_runner(coro):
+    """Run a coroutine in a fresh event loop on this thread."""
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
