@@ -96,7 +96,9 @@ class ScientificCLI:
 
     async def _cmd_clear(self):
         if self._agent:
-            self._session = await self._agent.create_session()
+            self._session = await self._agent.create_session(
+                session_id=f"{self.config.name}-cli"
+            )
             console.print("[yellow]Session cleared.[/yellow]")
             self._figure_counter = 0
 
@@ -298,8 +300,16 @@ class ScientificCLI:
         console.print("[dim]Starting agent…[/dim]")
         console.print(f"[dim]Working directory: {self.output_dir}[/dim]")
         await self._agent.start()
-        self._session = await self._agent.create_session()
-        console.print("[green]Ready![/green]\n")
+
+        cli_session_id = f"{self.config.name}-cli"
+        try:
+            self._session = await self._agent.resume_session(cli_session_id)
+            console.print("[green]Resumed previous session![/green]\n")
+        except Exception:
+            self._session = await self._agent.create_session(
+                session_id=cli_session_id
+            )
+            console.print("[green]Ready![/green]\n")
 
         prompt_session: PromptSession = PromptSession(
             history=FileHistory(str(self._history_path)),
@@ -335,7 +345,21 @@ class ScientificCLI:
                 try:
                     await self._stream_and_print(text)
                 except Exception as e:
-                    console.print(f"[red]Error: {e}[/red]")
+                    if "Session not found" in str(e) and self._agent:
+                        console.print("[yellow]Session expired — attempting to resume…[/yellow]")
+                        try:
+                            self._session = await self._agent.resume_session(cli_session_id)
+                        except Exception:
+                            console.print("[yellow]Resume failed — creating new session…[/yellow]")
+                            self._session = await self._agent.create_session(
+                                session_id=cli_session_id
+                            )
+                        try:
+                            await self._stream_and_print(text)
+                        except Exception as e2:
+                            console.print(f"[red]Error: {e2}[/red]")
+                    else:
+                        console.print(f"[red]Error: {e}[/red]")
 
         except KeyboardInterrupt:
             console.print("\n[yellow]Goodbye![/yellow]")

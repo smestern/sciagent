@@ -8,6 +8,7 @@ customise via ``AgentConfig`` (title, file types, suggestion chips, etc.).
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import logging
 import os
@@ -15,7 +16,7 @@ import shutil
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Set
 
 from quart import Quart, websocket, request, jsonify, send_from_directory
 from quart_cors import cors
@@ -136,6 +137,23 @@ def create_app(
         dest = dest_dir / fname
         await uploaded.save(str(dest))
         return jsonify({"file_id": fname, "path": str(dest), "session_id": session_id})
+    # ── Serve files from session output directories ──────────────────
+    @app.route("/api/session-files/<session_id>/<path:filename>")
+    async def session_files(session_id: str, filename: str):
+        """Serve files (e.g. saved PNGs) from a session's output dir."""
+        out_dir = _session_output_dirs.get(session_id)
+        if not out_dir or not out_dir.exists():
+            return jsonify({"error": "Unknown session"}), 404
+        # Search output dir and immediate subdirs for the file
+        target = out_dir / filename
+        if not target.exists():
+            # Check subdirectories (e.g. scripts/)
+            for child in out_dir.rglob(filename):
+                target = child
+                break
+        if not target.exists() or not target.is_file():
+            return jsonify({"error": "File not found"}), 404
+        return await send_from_directory(str(target.parent), target.name)
 
     # ── Export reproducible script ────────────────────────────────
     @app.route("/api/export-script")
@@ -183,22 +201,45 @@ def create_app(
                     break
 
         async def _drain_figure_queue():
+            """Consume queued figures -- file watcher is primary display path."""
             while True:
-                await asyncio.sleep(0.1)
-                figures = get_figures(ws_id)
-                for fig in figures:
-                    if isinstance(fig, dict) and "image_base64" in fig:
+                await asyncio.sleep(0.3)
+                # Drain the queue so it doesn't grow unbounded, but
+                # don't send over WS — the PNG file watcher handles display.
+                _ = get_figures(ws_id)
+
+        async def _watch_png_files():
+            """Watch the output directory for new PNG files and push them."""
+            known_pngs: Set[Path] = set()
+            fig_counter = 1000  # offset to avoid collisions with queue figs
+            while True:
+                await asyncio.sleep(0.5)
+                try:
+                    if not output_dir.exists():
+                        continue
+                    current_pngs = set(output_dir.rglob("*.png"))
+                    new_pngs = current_pngs - known_pngs
+                    for png_path in sorted(new_pngs):
                         try:
+                            img_bytes = png_path.read_bytes()
+                            img_b64 = base64.b64encode(img_bytes).decode("utf-8")
                             await websocket.send(json.dumps({
                                 "type": "figure",
-                                "data": fig["image_base64"],
-                                "figure_number": fig.get("figure_number", 0),
+                                "data": img_b64,
+                                "figure_number": fig_counter,
+                                "filename": png_path.name,
                             }))
+                            fig_counter += 1
+                            logger.debug("Sent saved PNG %s for session %s", png_path.name, ws_id)
                         except Exception:
                             break
+                    known_pngs = current_pngs
+                except Exception as e:
+                    logger.debug("PNG watcher error: %s", e)
 
         drain_task = asyncio.ensure_future(_drain_queue())
         figure_drain_task = asyncio.ensure_future(_drain_figure_queue())
+        png_watch_task = asyncio.ensure_future(_watch_png_files())
 
         try:
             from sciagent.tools.code_tools import set_output_dir
@@ -210,7 +251,7 @@ def create_app(
             send_queue.put_nowait({"type": "status", "text": "Starting agent…"})
             await agent.start()
 
-            session = await agent.create_session()
+            session = await agent.create_session(session_id=ws_id)
             send_queue.put_nowait({
                 "type": "connected",
                 "session_id": ws_id,
@@ -235,7 +276,21 @@ def create_app(
                         user_text = f"Load the file at {full_path} and then: {user_text}"
 
                 set_current_session(ws_id)
-                await _stream_response(session, user_text, output_dir, send_queue)
+                try:
+                    await _stream_response(session, user_text, output_dir, send_queue)
+                except Exception as send_err:
+                    if "Session not found" in str(send_err):
+                        logger.warning("Session expired, attempting to resume…")
+                        send_queue.put_nowait({"type": "status", "text": "Session expired — reconnecting…"})
+                        try:
+                            session = await agent.resume_session(ws_id)
+                            logger.info("Resumed session %s successfully", ws_id)
+                        except Exception:
+                            logger.warning("Resume failed for %s, creating new session", ws_id)
+                            session = await agent.create_session(session_id=ws_id)
+                        await _stream_response(session, user_text, output_dir, send_queue)
+                    else:
+                        raise
                 set_current_session(None)
 
         except asyncio.CancelledError:
@@ -254,6 +309,13 @@ def create_app(
             send_queue.put_nowait(None)
             drain_task.cancel()
             figure_drain_task.cancel()
+            png_watch_task.cancel()
+            # Destroy the session to persist data on disk before stopping
+            if session:
+                try:
+                    await agent.destroy_session(ws_id)
+                except Exception:
+                    pass
             if agent:
                 try:
                     await agent.stop()
@@ -301,7 +363,7 @@ async def _stream_response(
                 _enqueue({"type": "text_delta", "text": delta})
 
         elif etype == SessionEventType.ASSISTANT_MESSAGE:
-            _enqueue_figures(event, output_dir, _enqueue)
+            # Figures are displayed via the PNG file watcher; skip inline push.
             if not response_text_parts:
                 content = _extract_content(event)
                 if content:
@@ -314,7 +376,7 @@ async def _stream_response(
         elif etype == SessionEventType.TOOL_EXECUTION_COMPLETE:
             name = getattr(event.data, "tool_name", "tool")
             _enqueue({"type": "tool_complete", "name": name})
-            _extract_figures_from_tool_event(event, _enqueue)
+            # Figures are displayed via the PNG file watcher; skip inline push.
 
         elif etype == SessionEventType.SESSION_ERROR:
             err = getattr(event.data, "message", str(event.data))

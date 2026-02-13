@@ -77,6 +77,9 @@ class AgentConfig:
     # Sandbox
     extra_libraries: Dict[str, str] = field(default_factory=dict)
 
+    # Documentation
+    docs_dir: Optional[str] = None
+
     # Runtime
-    model: str = "claude-sonnet-4.5"
+    model: str = "GPT-5.3-Codex"
     output_dir: Optional[str] = None

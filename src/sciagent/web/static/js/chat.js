@@ -156,7 +156,7 @@ function handleServerMessage(msg) {
             break;
         case "figure":
             ensureAssistantMessage();
-            appendFigure(msg.data, msg.figure_number);
+            appendFigure(msg.data, msg.figure_number, msg.filename);
             scrollToBottom();
             break;
         case "error":
@@ -242,17 +242,17 @@ function renderMarkdown() {
     mdContainer.querySelectorAll("pre code").forEach(el => hljs.highlightElement(el));
 }
 
-function appendFigure(base64, figNum) {
+function appendFigure(base64, figNum, filename) {
     const wrapper = document.createElement("div");
     wrapper.className = "figure-wrapper";
     const img = document.createElement("img");
     img.src = `data:image/png;base64,${base64}`;
-    img.alt = `Figure ${figNum}`;
+    img.alt = filename ? filename : `Figure ${figNum}`;
     img.className = "chat-figure";
     wrapper.appendChild(img);
     const label = document.createElement("span");
     label.className = "figure-label";
-    label.textContent = `Figure ${figNum}`;
+    label.textContent = filename ? filename : `Figure ${figNum}`;
     wrapper.appendChild(label);
     currentAssistantEl.appendChild(wrapper);
 }

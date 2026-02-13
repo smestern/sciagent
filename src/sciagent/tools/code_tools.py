@@ -326,7 +326,7 @@ def execute_code(
             else:
                 result["variables"][name] = str(type(value))
 
-        # Capture matplotlib figures
+        # Capture matplotlib figures — save to disk for web UI file watcher
         try:
             import matplotlib
 
@@ -341,15 +341,32 @@ def execute_code(
                     buf = io.BytesIO()
                     fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
                     buf.seek(0)
+                    img_bytes = buf.read()
                     fig_data = {
                         "figure_number": fig_num,
-                        "image_base64": base64.b64encode(buf.read()).decode("utf-8"),
+                        "image_base64": base64.b64encode(img_bytes).decode("utf-8"),
                         "format": "png",
                     }
                     figures_data.append(fig_data)
                     buf.close()
 
-                    # Push to web UI if callback provided
+                    # Save figure to output_dir so the web UI
+                    # file-watcher can pick it up reliably
+                    _save_dir = None
+                    if output_dir is not None:
+                        _save_dir = Path(output_dir).resolve()
+                    elif _output_dir is not None:
+                        _save_dir = _output_dir
+                    if _save_dir is not None:
+                        _save_dir.mkdir(parents=True, exist_ok=True)
+                        from datetime import datetime as _dt
+                        _ts = _dt.now().strftime("%Y%m%d_%H%M%S")
+                        _fig_path = _save_dir / f"figure_{fig_num}_{_ts}.png"
+                        if not _fig_path.exists():
+                            _fig_path.write_bytes(img_bytes)
+                            logger.debug("Saved figure to %s", _fig_path)
+
+                    # Push to web UI queue as fallback
                     if _figure_push_fn is not None:
                         try:
                             _figure_push_fn(fig_data)

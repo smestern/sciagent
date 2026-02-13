@@ -14,6 +14,7 @@ from .code_tools import (
 )
 from .session_log import SessionLog, get_session_log, set_session_log
 from .fitting_tools import fit_exponential, fit_double_exponential
+from .doc_tools import read_doc, set_docs_dir, get_docs_dir
 from .registry import tool
 
 __all__ = [
@@ -32,5 +33,8 @@ __all__ = [
     "set_session_log",
     "fit_exponential",
     "fit_double_exponential",
+    "read_doc",
+    "set_docs_dir",
+    "get_docs_dir",
     "tool",
 ]

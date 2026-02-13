@@ -68,7 +68,7 @@ from sciagent.config import AgentConfig, SuggestionChip
     }},
     forbidden_patterns=[{forbidden_str}],
     warning_patterns=[{warning_str}],
-    model="claude-sonnet-4.5",
+    model="GPT-5.3-Codex",
 )
 '''
     return source

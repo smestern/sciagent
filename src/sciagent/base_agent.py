@@ -166,6 +166,11 @@ class BaseScientificAgent:
         self._session_log = SessionLog()
         set_session_log(self._session_log)
 
+        # Documentation directory for read_doc tool
+        if self.config.docs_dir:
+            from .tools.doc_tools import set_docs_dir
+            set_docs_dir(self.config.docs_dir)
+
         self._client = CopilotClient({"log_level": log_level})
         self._tools: List[Tool] = []
         self._sessions: Dict[str, Any] = {}
@@ -238,8 +243,9 @@ class BaseScientificAgent:
         do **not** need to register these in ``_load_tools()``.
         """
         from .tools.code_tools import retrieve_session_log, save_reproducible_script
+        from .tools.doc_tools import read_doc
 
-        return [
+        tools = [
             _create_tool(
                 "get_session_log",
                 (
@@ -282,6 +288,36 @@ class BaseScientificAgent:
             ),
         ]
 
+        # Only add read_doc if a docs_dir is configured
+        if self.config.docs_dir:
+            tools.append(
+                _create_tool(
+                    "read_doc",
+                    (
+                        "Read a reference document by name. Returns the full content "
+                        "of the requested document. Call with name='list' or no name "
+                        "to see all available documents. Use this to access detailed "
+                        "API references, parameter tables, and workflow guides."
+                    ),
+                    read_doc,
+                    {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": (
+                                    "Document name (e.g. 'IPFX', 'Tools', 'Operations'). "
+                                    "Use 'list' to see all available documents."
+                                ),
+                            },
+                        },
+                        "required": ["name"],
+                    },
+                )
+            )
+
+        return tools
+
     # -- working directory resolution -----------------------------------------
 
     def update_working_dir_from_file(self, file_path: str) -> None:
@@ -312,10 +348,11 @@ class BaseScientificAgent:
         logger.info("%s started", self.config.display_name)
 
     async def stop(self):
-        """Stop the client and destroy all sessions."""
+        """Stop the client, destroying any remaining sessions to persist data."""
         for session_id in list(self._sessions.keys()):
             try:
                 await self._sessions[session_id].destroy()
+                logger.debug("Destroyed session %s on stop", session_id)
             except Exception as e:
                 logger.warning("Error destroying session %s: %s", session_id, e)
         self._sessions.clear()
@@ -324,6 +361,7 @@ class BaseScientificAgent:
 
     async def create_session(
         self,
+        session_id: Optional[str] = None,
         custom_system_message: Optional[str] = None,
         model: Optional[str] = None,
         additional_tools: Optional[List[Tool]] = None,
@@ -331,6 +369,7 @@ class BaseScientificAgent:
         """Create a new agent session.
 
         Args:
+            session_id: Optional custom session ID for persistence/resumption.
             custom_system_message: Optional extra text appended to the system message.
             model: Optional model override for this session.
             additional_tools: Extra tools merged into the session.
@@ -364,13 +403,15 @@ class BaseScientificAgent:
             "infer": True,
         }
 
-        config: SessionConfig = {
-            "model": model or self.model,
-            "tools": all_tools,
-            "system_message": system_message,
-            "custom_agents": [agent_config],
-            "streaming": True,
-        }
+        config = SessionConfig(
+            model=model or self.model,
+            tools=all_tools,
+            system_message=system_message,
+            custom_agents=[agent_config],
+            streaming=True,
+        )
+        if session_id:
+            config["session_id"] = session_id
 
         session = await self._client.create_session(config)
         self._sessions[session.session_id] = session
@@ -378,11 +419,32 @@ class BaseScientificAgent:
         return session
 
     async def resume_session(self, session_id: str):
-        """Resume an existing session by id."""
+        """Resume an existing session by id.
+
+        The session must have been previously created and destroyed
+        (but not deleted) so that its data persists on disk.
+        """
         session = await self._client.resume_session(session_id)
         self._sessions[session_id] = session
         logger.info("Resumed session: %s", session_id)
         return session
+
+    async def destroy_session(self, session_id: str):
+        """Destroy a session but keep its data on disk for later resumption."""
+        session = self._sessions.pop(session_id, None)
+        if session:
+            await session.destroy()
+            logger.info("Destroyed session (data persisted): %s", session_id)
+
+    async def list_sessions(self):
+        """List all persisted sessions available for resumption."""
+        return await self._client.list_sessions()
+
+    async def delete_session(self, session_id: str):
+        """Permanently delete a session and all its data from disk."""
+        self._sessions.pop(session_id, None)
+        await self._client.delete_session(session_id)
+        logger.info("Permanently deleted session: %s", session_id)
 
     # -- read-only properties --------------------------------------------------
 

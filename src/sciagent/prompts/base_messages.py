@@ -53,15 +53,6 @@ CODE_EXECUTION_POLICY = """\
 You have a set of built-in tools purpose-built for scientific analysis.
 **You MUST use these built-in tools instead of writing custom code whenever possible.**
 
-### Priority Order for Analysis
-1. **Built-in tools FIRST** — Use the dedicated analysis tools provided.
-   These already wrap validated, well-tested methods.
-2. **Established domain libraries** — When built-in tools don't cover a
-   specific analysis, use the standard libraries for this scientific domain.
-3. **Custom code LAST** — Only write custom analysis code when neither the
-   built-in tools nor domain libraries provide the needed functionality.
-   Even then, prefer composing existing tools over writing from scratch.
-
 ### When Using execute_code
 - Code is validated for scientific rigor before execution.
 - Forbidden patterns (synthetic data generation, result manipulation) will
@@ -169,6 +160,29 @@ COMMUNICATION_STYLE_POLICY = """\
 - Be honest about what the data does and doesn't show
 """
 
+# ── Incremental execution ──────────────────────────────────────────────
+
+INCREMENTAL_EXECUTION_POLICY = """\
+## INCREMENTAL EXECUTION PRINCIPLE (MANDATORY)
+
+When processing datasets, work incrementally — never run a full pipeline
+before validating on a small sample first.
+
+### Workflow
+1. **Examine structure** — Load one representative file/sample and inspect
+   its layout, metadata, and content before any analysis.
+2. **Validate on one unit** — Run the full analysis on a single unit (one
+   sweep, one row, one sample). Show intermediate values and sanity-check
+   every result. Get user confirmation.
+3. **Small batch test** — Process 2-3 additional units and check
+   consistency across them.
+4. **Scale** — Only after the user approves steps 1-3, process the full
+   dataset with the validated pipeline.
+
+**Always show the user what you found at each stage before proceeding.**
+If any value looks anomalous at step 2, STOP and investigate before scaling.
+"""
+
 
 def build_system_message(
     *sections: str,
@@ -176,6 +190,7 @@ def build_system_message(
     code_policy: bool = True,
     output_dir_policy: bool = True,
     reproducible_script_policy: bool = True,
+    incremental_policy: bool = True,
     thinking_policy: bool = True,
     communication_policy: bool = True,
 ) -> str:
@@ -198,6 +213,7 @@ def build_system_message(
         code_policy: Include code-execution policy.
         output_dir_policy: Include OUTPUT_DIR instructions.
         reproducible_script_policy: Include reproducible script instructions.
+        incremental_policy: Include incremental execution principle.
         thinking_policy: Include "think out loud" instructions.
         communication_policy: Include communication style guide.
 
@@ -214,6 +230,8 @@ def build_system_message(
         parts.append(OUTPUT_DIR_POLICY)
     if reproducible_script_policy:
         parts.append(REPRODUCIBLE_SCRIPT_POLICY)
+    if incremental_policy:
+        parts.append(INCREMENTAL_EXECUTION_POLICY)
     if thinking_policy:
         parts.append(THINKING_OUT_LOUD_POLICY)
     if communication_policy:
