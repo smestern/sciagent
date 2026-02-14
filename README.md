@@ -4,24 +4,30 @@
 
 SciAgent provides the infrastructure — chat UI, CLI, code sandbox, guardrails, curve fitting, MCP server — so you can focus on your domain-specific tools and knowledge.
 
-The Idea here is to build more human in the loop scientific coding tools. Landing somewhere in between the basic LLM chat interface, and the end-to-end AI for science tools. The goal of this project is not to do the science for you, but you help you write strong, rigorous, and reproducible research code. 
-Essentially an LLM wrapper but with a few extra tools to make sure the LLM doesn't go off the rails.
+The idea here is to build more human-in-the-loop scientific coding tools. Landing somewhere in between the basic LLM chat interface, and the end-to-end AI for science tools. The goal of this project is not to do the science for you, but to help you write strong, rigorous, and reproducible research code. Essentially an LLM wrapper but with a few extra tools to make sure the LLM doesn't go off the rails.
 
-This project is built to be customized. Essentially you want to load it with tools specific to your domain. Check out [patchagent](https://github.com/smestern/patchAgent) as an example.
+**The core goal of this repo is to generate a domain-specific scientific agent in one of three output formats:**
 
+1. **Fullstack** — a complete, runnable Python submodule with CLI and web UI
+2. **Copilot / Claude Code** — config files that plug directly into VS Code Copilot or Claude Code
+3. **Markdown** — platform-agnostic spec files you can paste into any LLM
 
-Built on the [GitHub Copilot SDK](https://github.com/features/copilot).
+Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format.
+
+Built on the [GitHub Copilot SDK](https://github.com/features/copilot). Check out [PatchAgent](https://github.com/smestern/patchAgent) for a real-world example in electrophysiology.
 
 ---
 
 ## Quick Start
 
 ```bash
-pip install sciagent            # core only
-pip install sciagent[cli]       # + terminal REPL (typer, rich, prompt-toolkit)
-pip install sciagent[web]       # + browser chat (quart)
-pip install sciagent[all]       # everything
+pip install sciagent[all]       # install everything
+sciagent wizard                 # launch the self-assembly wizard
 ```
+
+The wizard walks you through a conversation — describe your research domain, confirm discovered packages, and choose an output mode. A ready-to-use agent drops out the other end.
+
+---
 
 ## Architecture
 
@@ -50,7 +56,87 @@ pip install sciagent[all]       # everything
 └─────────────────────────────────────────┘
 ```
 
-## Build Your Own Agent in 4 Steps
+---
+
+## Build Your Own Agent
+
+The primary way to create an agent is the **self-assembly wizard**. It discovers domain-specific packages from PyPI, bio.tools, Papers With Code, SciCrunch, and PubMed — then generates a complete agent in one of three output modes.
+
+```bash
+sciagent wizard                       # web UI (default)
+sciagent wizard --cli                 # terminal REPL
+sciagent wizard -m fullstack          # choose output mode up front
+sciagent wizard -m copilot_agent
+sciagent wizard -m markdown
+```
+
+You can also pick the output mode during the wizard conversation itself.
+
+### Mode 1 — Fullstack (`fullstack`)
+
+Generates a complete, runnable Python submodule you can install and launch immediately:
+
+```
+my_agent/
+    __init__.py
+    __main__.py
+    agent.py           # BaseScientificAgent subclass
+    config.py           # AgentConfig with bounds, patterns, chips
+    tools.py            # Domain tool functions
+    domain_prompt.py    # System prompt expertise section
+    requirements.txt
+    docs/               # Auto-fetched package documentation
+    README.md
+```
+
+```bash
+cd my_agent && pip install -r requirements.txt
+python -m my_agent          # CLI
+python -m my_agent --web    # Web UI
+```
+
+### Mode 2 — Copilot / Claude Code (`copilot_agent`)
+
+Generates config files for **VS Code GitHub Copilot** custom agents and **Claude Code** sub-agents — no Python runtime needed:
+
+```
+my_agent/
+    .github/
+        agents/my-agent.agent.md              # VS Code custom agent
+        instructions/my-agent.instructions.md
+    .claude/
+        agents/my-agent.md                    # Claude Code sub-agent
+    docs/               # Auto-fetched package documentation
+    README.md
+```
+
+Copy the project into your workspace and the agents appear automatically in VS Code Copilot chat or Claude Code.
+
+### Mode 3 — Platform-Agnostic Markdown (`markdown`)
+
+Generates a self-contained set of Markdown files that define the agent's persona, tools, data handling, guardrails, and workflow. Paste them into **any** LLM — ChatGPT, Gemini, Claude, local models, etc.:
+
+```
+my_agent/
+    agent-spec.md       # Master spec linking everything
+    system-prompt.md    # Copy-paste into any LLM
+    tools-reference.md  # Available packages & APIs
+    data-guide.md       # Supported formats, structure, ranges
+    guardrails.md       # Bounds, forbidden patterns, safety
+    workflow.md         # Step-by-step analysis workflow
+    docs/               # Auto-fetched package documentation
+    README.md
+```
+
+### Automatic Package Documentation
+
+All three modes automatically fetch documentation for discovered domain packages from PyPI, GitHub, ReadTheDocs, and package homepages. The docs are written to a `docs/` directory and referenced in the agent's system prompt so it knows how to use each library.
+
+---
+
+## Programmatic Usage
+
+If you prefer to wire things up in code rather than using the wizard, you can build an agent manually in a few steps.
 
 ### 1. Define your configuration
 
@@ -78,7 +164,6 @@ from sciagent import BaseScientificAgent
 
 class MyAgent(BaseScientificAgent):
     def _load_tools(self):
-        # Return your domain-specific tools
         tools = self._base_tools()  # sandbox, fitting, etc.
         tools.append(self._create_tool(
             "load_csv",
@@ -94,92 +179,21 @@ class MyAgent(BaseScientificAgent):
         return f"Loaded {len(df)} rows, {len(df.columns)} columns.\n\n{df.head().to_markdown()}"
 ```
 
-### 3. Run the CLI
+### 3. Run it
 
 ```python
 from sciagent.cli import run_cli
-
-run_cli(lambda **kw: MyAgent(config, **kw), config)
-```
-
-### 4. Run the Web UI
-
-```python
 from sciagent.web.app import create_app
 
+# Terminal REPL
+run_cli(lambda **kw: MyAgent(config, **kw), config)
+
+# Or web UI
 app = create_app(lambda **kw: MyAgent(config, **kw), config)
 app.run(host="0.0.0.0", port=8080)
 ```
 
-## Self-Assembly Wizard
-
-The wizard walks you through building a domain-specific agent via conversation. It can output in three different modes, selected with the `--output-mode` / `-m` flag (or chosen during the wizard conversation itself):
-
-```bash
-sciagent wizard -m fullstack      # default
-sciagent wizard -m copilot_agent
-sciagent wizard -m markdown
-```
-
-### Mode 1 — Fullstack (`fullstack`)
-
-Generates a complete, runnable Python submodule you can install and launch immediately:
-
-```
-my_agent/
-    __init__.py
-    __main__.py
-    agent.py          # BaseScientificAgent subclass
-    config.py          # AgentConfig with bounds, patterns, chips
-    tools.py           # Domain tool functions
-    domain_prompt.py   # System prompt expertise section
-    requirements.txt
-    docs/              # Auto-fetched package documentation
-    README.md
-```
-
-```bash
-cd my_agent && pip install -r requirements.txt
-python -m my_agent          # CLI
-python -m my_agent --web    # Web UI
-```
-
-### Mode 2 — Copilot / Claude Code (`copilot_agent`)
-
-Generates config files for **VS Code GitHub Copilot** custom agents and **Claude Code** sub-agents — no Python runtime needed:
-
-```
-my_agent/
-    .github/
-        agents/my-agent.agent.md         # VS Code custom agent
-        instructions/my-agent.instructions.md
-    .claude/
-        agents/my-agent.md               # Claude Code sub-agent
-    docs/              # Auto-fetched package documentation
-    README.md
-```
-
-To use: copy the project into your workspace and the agents appear automatically in VS Code Copilot chat or Claude Code.
-
-### Mode 3 — Platform-Agnostic Markdown (`markdown`)
-
-Generates a self-contained set of Markdown files that define the agent's persona, tools, data handling, guardrails, and workflow. Paste them into **any** LLM — ChatGPT, Gemini, Claude, local models, etc.:
-
-```
-my_agent/
-    agent-spec.md          # Master spec linking everything
-    system-prompt.md       # Copy-paste into any LLM
-    tools-reference.md     # Available packages & APIs
-    data-guide.md          # Supported formats, structure, ranges
-    guardrails.md          # Bounds, forbidden patterns, safety
-    workflow.md            # Step-by-step analysis workflow
-    docs/                  # Auto-fetched package documentation
-    README.md
-```
-
-### Automatic Package Documentation
-
-All three modes automatically fetch documentation for discovered domain packages from PyPI, GitHub, ReadTheDocs, and package homepages. The docs are written to a `docs/` directory and referenced in the agent's system prompt so it knows how to use each library.
+---
 
 ## What's Included
 
@@ -206,6 +220,16 @@ SciAgent enforces scientific rigor through a 5-layer system:
 5. **Bounds checker** — domain-specific value range warnings
 
 All layers are configurable and extensible.
+
+## Installation
+
+```bash
+pip install sciagent            # core only
+pip install sciagent[cli]       # + terminal REPL (typer, rich, prompt-toolkit)
+pip install sciagent[web]       # + browser chat (quart)
+pip install sciagent[wizard]    # + self-assembly wizard
+pip install sciagent[all]       # everything
+```
 
 ## Example: PatchAgent
 
