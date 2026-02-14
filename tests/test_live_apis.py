@@ -196,3 +196,7 @@ class TestLiveDocFetcher:
         print()
 
         assert len(doc_text) > 50, "Doc is too short — fetch likely failed"
+
+if __name__ == "__main__":
+    # Run the tests in this file when executed directly
+    pytest.main([__file__, "-v", "-s"])

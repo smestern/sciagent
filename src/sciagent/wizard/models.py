@@ -51,6 +51,7 @@ class DiscoverySource(str, Enum):
     PAPERS_WITH_CODE = "papers_with_code"
     SCICRUNCH = "scicrunch"
     PUBMED = "pubmed"
+    GOOGLE_CSE = "google_cse"
     USER = "user"  # manually specified by the researcher
 
 

@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 
 from sciagent.wizard.models import DiscoverySource, PackageCandidate
 from sciagent.wizard.discovery.ranker import rank_and_deduplicate, discover_packages, _normalise_key
-from sciagent.wizard.discovery.pypi import _stub_candidate, _parse_json_api
+from sciagent.wizard.discovery.pypi import _parse_json_api
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────
@@ -113,17 +113,6 @@ class TestNormaliseKey:
         cand = _make_candidate(name="pkg-", python_package="pkg-")
         assert _normalise_key(cand) == "pkg"
 
-
-# ── PyPI _stub_candidate ───────────────────────────────────────────────
-
-
-class TestStubCandidate:
-    def test_creates_basic_candidate(self):
-        cand = _stub_candidate("numpy")
-        assert cand.name == "numpy"
-        assert cand.source == DiscoverySource.PYPI
-        assert cand.install_command == "pip install numpy"
-        assert cand.python_package == "numpy"
 
 
 # ── PyPI _parse_json_api ───────────────────────────────────────────────

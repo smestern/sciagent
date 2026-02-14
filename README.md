@@ -111,6 +111,76 @@ app = create_app(lambda **kw: MyAgent(config, **kw), config)
 app.run(host="0.0.0.0", port=8080)
 ```
 
+## Self-Assembly Wizard
+
+The wizard walks you through building a domain-specific agent via conversation. It can output in three different modes, selected with the `--output-mode` / `-m` flag (or chosen during the wizard conversation itself):
+
+```bash
+sciagent wizard -m fullstack      # default
+sciagent wizard -m copilot_agent
+sciagent wizard -m markdown
+```
+
+### Mode 1 — Fullstack (`fullstack`)
+
+Generates a complete, runnable Python submodule you can install and launch immediately:
+
+```
+my_agent/
+    __init__.py
+    __main__.py
+    agent.py          # BaseScientificAgent subclass
+    config.py          # AgentConfig with bounds, patterns, chips
+    tools.py           # Domain tool functions
+    domain_prompt.py   # System prompt expertise section
+    requirements.txt
+    docs/              # Auto-fetched package documentation
+    README.md
+```
+
+```bash
+cd my_agent && pip install -r requirements.txt
+python -m my_agent          # CLI
+python -m my_agent --web    # Web UI
+```
+
+### Mode 2 — Copilot / Claude Code (`copilot_agent`)
+
+Generates config files for **VS Code GitHub Copilot** custom agents and **Claude Code** sub-agents — no Python runtime needed:
+
+```
+my_agent/
+    .github/
+        agents/my-agent.agent.md         # VS Code custom agent
+        instructions/my-agent.instructions.md
+    .claude/
+        agents/my-agent.md               # Claude Code sub-agent
+    docs/              # Auto-fetched package documentation
+    README.md
+```
+
+To use: copy the project into your workspace and the agents appear automatically in VS Code Copilot chat or Claude Code.
+
+### Mode 3 — Platform-Agnostic Markdown (`markdown`)
+
+Generates a self-contained set of Markdown files that define the agent's persona, tools, data handling, guardrails, and workflow. Paste them into **any** LLM — ChatGPT, Gemini, Claude, local models, etc.:
+
+```
+my_agent/
+    agent-spec.md          # Master spec linking everything
+    system-prompt.md       # Copy-paste into any LLM
+    tools-reference.md     # Available packages & APIs
+    data-guide.md          # Supported formats, structure, ranges
+    guardrails.md          # Bounds, forbidden patterns, safety
+    workflow.md            # Step-by-step analysis workflow
+    docs/                  # Auto-fetched package documentation
+    README.md
+```
+
+### Automatic Package Documentation
+
+All three modes automatically fetch documentation for discovered domain packages from PyPI, GitHub, ReadTheDocs, and package homepages. The docs are written to a `docs/` directory and referenced in the agent's system prompt so it knows how to use each library.
+
 ## What's Included
 
 | Module | Description |

@@ -302,6 +302,8 @@ function initChat(kickoffPrompt) {
 
 let currentAssistantEl = null;
 let assistantBuffer = '';
+let toolStatusEl = null;  // transient tool-status indicator
+let toolStatusWrapper = null;  // outer wrapper for removal
 
 function handleWsMessage(msg) {
     switch (msg.type) {
@@ -321,10 +323,29 @@ function handleWsMessage(msg) {
             // Show thinking indicator
             break;
         case 'tool_start':
-            appendMessage('system', `⚙️ Running ${msg.name}…`);
+            // Show a single transient status line (replaces previous)
+            if (!toolStatusEl) {
+                toolStatusEl = appendMessage('system', `⚙️ Running ${msg.name}…`);
+                // Track the outer wrapper div for clean removal
+                toolStatusWrapper = toolStatusEl.parentElement || toolStatusEl;
+            } else {
+                toolStatusEl.innerHTML = `⚙️ Running ${msg.name}…`;
+            }
+            scrollChat();
             break;
         case 'tool_complete':
-            appendMessage('system', `✅ ${msg.name} done`);
+            // Auto-clear the transient tool status
+            if (toolStatusWrapper) {
+                toolStatusWrapper.remove();
+                toolStatusWrapper = null;
+                toolStatusEl = null;
+            }
+            break;
+        case 'question_card':
+            // Render a structured question card for guided interaction
+            currentAssistantEl = null;
+            assistantBuffer = '';
+            renderQuestionCard(msg);
             break;
         case 'done':
             currentAssistantEl = null;
@@ -389,6 +410,101 @@ function escHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+// ── Question card rendering ────────────────────────────────────────────
+
+function renderQuestionCard(msg) {
+    const messages = document.getElementById('chat-messages');
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'question-card';
+
+    const isMultiple = msg.allow_multiple || false;
+    const hasFreetext = msg.allow_freetext || false;
+    const maxLen = msg.max_length || 100;
+    const cardId = 'qcard-' + Date.now();
+
+    let html = `<h3>${escHtml(msg.question)}</h3>`;
+
+    if (msg.options && msg.options.length > 0) {
+        html += `<div class="question-options" id="${cardId}-options">`;
+        msg.options.forEach((opt) => {
+            html += `<button class="question-option" data-value="${escHtml(opt)}"
+                onclick="toggleQuestionOption(this, ${isMultiple})">${escHtml(opt)}</button>`;
+        });
+        html += `</div>`;
+    }
+
+    if (hasFreetext) {
+        html += `<input type="text" class="question-freetext" id="${cardId}-freetext"
+            maxlength="${maxLen}" placeholder="Type your answer…"
+            style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 6px; background: var(--bg-primary); color: var(--text-primary);">`;
+    }
+
+    html += `<button class="question-submit btn btn-primary" id="${cardId}-submit"
+        style="margin-top: 0.75rem;"
+        onclick="submitQuestionResponse('${cardId}', ${isMultiple}, ${hasFreetext})">
+        Submit →</button>`;
+
+    cardDiv.innerHTML = html;
+    messages.appendChild(cardDiv);
+    scrollChat();
+}
+
+function toggleQuestionOption(el, isMultiple) {
+    if (isMultiple) {
+        el.classList.toggle('selected');
+    } else {
+        el.parentElement.querySelectorAll('.question-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+}
+
+function submitQuestionResponse(cardId, isMultiple, hasFreetext) {
+    const optionsContainer = document.getElementById(`${cardId}-options`);
+    const freetextInput = document.getElementById(`${cardId}-freetext`);
+    const submitBtn = document.getElementById(`${cardId}-submit`);
+
+    let answer = '';
+
+    if (optionsContainer) {
+        const selected = optionsContainer.querySelectorAll('.question-option.selected');
+        const selectedValues = Array.from(selected).map(el => el.dataset.value);
+
+        if (selectedValues.length > 0) {
+            answer = isMultiple ? selectedValues : selectedValues[0];
+        }
+    }
+
+    if (hasFreetext && freetextInput && freetextInput.value.trim()) {
+        answer = freetextInput.value.trim();
+    }
+
+    if (!answer || (Array.isArray(answer) && answer.length === 0)) {
+        return;
+    }
+
+    // Disable the card
+    submitBtn.disabled = true;
+    if (optionsContainer) {
+        optionsContainer.querySelectorAll('.question-option').forEach(o => {
+            o.style.pointerEvents = 'none';
+        });
+    }
+    if (freetextInput) freetextInput.disabled = true;
+
+    // Show user response
+    const displayAnswer = Array.isArray(answer) ? answer.join(', ') : answer;
+    appendMessage('user', displayAnswer);
+
+    // Send via WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'question_response',
+            answer: answer,
+        }));
+    }
 }
 
 // ── Init ───────────────────────────────────────────────────────────────
