@@ -5,7 +5,7 @@ The wizard lets non-programmer researchers describe their domain, provide
 example data, and automatically:
 
 1. Discover relevant scientific packages from peer-reviewed databases
-   (PyPI, bio.tools, Papers With Code, SciCrunch, PubMed)
+   (PyPI, bio.tools, Papers With Code, PubMed)
 2. Rank and de-duplicate candidates across sources
 3. Generate a fully functional agent project (config, tools, prompts)
 4. Launch the agent immediately — and persist it for reuse

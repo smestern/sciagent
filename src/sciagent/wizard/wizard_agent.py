@@ -245,7 +245,7 @@ class WizardAgent(BaseScientificAgent):
                 "search_packages",
                 (
                     "Search peer-reviewed databases (PyPI, bio.tools, Papers "
-                    "With Code, SciCrunch, PubMed) for scientific software "
+                    "With Code, PubMed) for scientific software "
                     "relevant to the researcher's domain. Returns ranked "
                     "results with descriptions and relevance scores. "
                     "Call this after learning about the researcher's domain."
@@ -268,7 +268,7 @@ class WizardAgent(BaseScientificAgent):
                             "items": {"type": "string"},
                             "description": (
                                 "Which databases to search. Options: pypi, "
-                                "biotools, papers_with_code, scicrunch, pubmed. "
+                                "biotools, papers_with_code, pubmed. "
                                 "Default: all."
                             ),
                         },

@@ -97,20 +97,6 @@ class TestLivePapersWithCode:
             assert c.source.value == "papers_with_code"
 
 
-class TestLiveSciCrunch:
-    @pytest.mark.asyncio
-    async def test_search_scicrunch(self):
-        from sciagent.wizard.discovery.scicrunch import search_scicrunch
-
-        results = await search_scicrunch(KEYWORDS, max_results=10)
-        _print_results("SciCrunch", results)
-
-        assert isinstance(results, list)
-        for c in results:
-            assert isinstance(c, PackageCandidate)
-            assert c.source.value == "scicrunch"
-
-
 class TestLivePubMed:
     @pytest.mark.asyncio
     async def test_search_pubmed(self):
@@ -150,7 +136,7 @@ class TestLiveDiscoverPackages:
         """Run discover_packages one source at a time to isolate failures."""
         from sciagent.wizard.discovery.ranker import discover_packages
 
-        sources = ["pypi", "biotools", "papers_with_code", "scicrunch", "pubmed"]
+        sources = ["pypi", "biotools", "papers_with_code", "pubmed"]
         for source in sources:
             print(f"\n--- Testing source: {source} ---")
             try:

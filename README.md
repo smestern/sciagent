@@ -63,7 +63,7 @@ The wizard walks you through a conversation — describe your research domain, c
 
 ## Build Your Own Agent
 
-The primary way to create an agent is the **self-assembly wizard**. It discovers domain-specific packages from PyPI, bio.tools, Papers With Code, SciCrunch, and PubMed — then generates a complete agent in one of three output modes.
+The primary way to create an agent is the **self-assembly wizard**. It discovers domain-specific packages from PyPI, bio.tools, Papers With Code, and PubMed — then generates a complete agent in one of three output modes.
 
 ```bash
 sciagent wizard                       # web UI (default)

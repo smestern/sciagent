@@ -1,7 +1,7 @@
 """
 Ranking and deduplication for multi-source package discovery.
 
-Combines results from PyPI, bio.tools, Papers With Code, SciCrunch,
+Combines results from PyPI, bio.tools, Papers With Code,
 PubMed, and Google CSE into a single ranked list, boosting packages that
 appear across multiple sources.
 """
@@ -90,7 +90,7 @@ async def discover_packages(
         max_per_source: Per-source result cap.
         sources: Subset of source names to query (default: all).
             Valid names: ``"pypi"``, ``"biotools"``, ``"papers_with_code"``,
-            ``"scicrunch"``, ``"pubmed"``, ``"google_cse"``.
+            ``"pubmed"``, ``"google_cse"``.
 
     Returns:
         Ranked, deduplicated list of ``PackageCandidate``.
@@ -98,7 +98,6 @@ async def discover_packages(
     from .pypi import search_pypi
     from .biotools import search_biotools
     from .papers_with_code import search_papers_with_code
-    from .scicrunch import search_scicrunch
     from .pubmed import search_pubmed
     from .google_cse import search_google_cse
 
@@ -106,7 +105,6 @@ async def discover_packages(
         "pypi": search_pypi,
         "biotools": search_biotools,
         "papers_with_code": search_papers_with_code,
-        "scicrunch": search_scicrunch,
         "pubmed": search_pubmed,
         "google_cse": search_google_cse,
     }
