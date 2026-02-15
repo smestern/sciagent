@@ -29,6 +29,7 @@ let currentAssistantEl = null;
 let currentTextBuffer = "";
 let thinkingEl = null;
 let toolContainer = null;
+let afterTool = false;
 let isConnected = false;
 let appConfig = {};
 
@@ -145,11 +146,16 @@ function handleServerMessage(msg) {
             break;
         case "tool_complete":
             updateToolPill(msg.name, "done");
+            afterTool = true;
             setStatus("hide");
             break;
         case "text_delta":
             ensureAssistantMessage();
             closeThinking();
+            if (afterTool && currentTextBuffer.length > 0) {
+                currentTextBuffer += "\n\n";
+            }
+            afterTool = false;
             currentTextBuffer += msg.text;
             renderMarkdown();
             scrollToBottom();
@@ -269,6 +275,7 @@ function finalizeAssistant() {
     currentTextBuffer = "";
     thinkingEl = null;
     toolContainer = null;
+    afterTool = false;
     setStatus("hide");
 }
 

@@ -28,6 +28,7 @@ from .docs_gen import write_docs
 from .prompt_gen import generate_prompt_source
 from .tools_gen import generate_tools_source
 from .agent_gen import generate_agent_source
+from .template_renderer import render_docs as render_doc_templates
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,14 @@ def generate_project(
                     shutil.copy2(src, sample_dir / src.name)
                 except Exception as exc:
                     logger.warning("Could not copy sample %s: %s", src, exc)
+
+    # ── Documentation templates ──────────────────────────────────────
+    docs_dir = project_dir / "docs"
+    render_doc_templates(state, docs_dir)
+
+    # ── Package docs (auto-fetched) ────────────────────────────────
+    if state.package_docs:
+        write_docs(state, docs_dir)
 
     state.project_dir = str(project_dir)
     logger.info("Agent project generated: %s", project_dir)

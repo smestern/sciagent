@@ -2,7 +2,7 @@
 
 **A generic framework for building AI-powered scientific data analysis agents.**
 
-SciAgent provides the infrastructure — chat UI, CLI, code sandbox, guardrails, curve fitting, MCP server — so you can focus on your domain-specific tools and knowledge.
+SciAgent provides the infrastructure — chat UI, CLI, code sandbox, guardrails, docs, MCP server — so you can focus on your domain-specific tools and knowledge.
 
 The idea here is to build more human-in-the-loop scientific coding tools. Landing somewhere in between the basic LLM chat interface, and the end-to-end AI for science tools. The goal of this project is not to do the science for you, but to help you write strong, rigorous, and reproducible research code. Essentially an LLM wrapper but with a few extra tools to make sure the LLM doesn't go off the rails.
 
@@ -14,7 +14,10 @@ The idea here is to build more human-in-the-loop scientific coding tools. Landin
 
 Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format.
 
-Built on the [GitHub Copilot SDK](https://github.com/features/copilot). Check out [PatchAgent](https://github.com/smestern/patchAgent) for a real-world example in electrophysiology.
+
+Check out [PatchAgent](https://github.com/smestern/patchAgent) for a real-world example in electrophysiology.
+
+Built on the [GitHub Copilot SDK](https://github.com/features/copilot).
 
 ---
 
@@ -131,6 +134,21 @@ my_agent/
 ### Automatic Package Documentation
 
 All three modes automatically fetch documentation for discovered domain packages from PyPI, GitHub, ReadTheDocs, and package homepages. The docs are written to a `docs/` directory and referenced in the agent's system prompt so it knows how to use each library.
+
+### Documentation Templates
+
+All three modes also generate a suite of **documentation templates** in `docs/`, generalized from [PatchAgent](https://github.com/smestern/patchAgent)'s hand-crafted documentation. These templates define the structure for comprehensive agent documentation:
+
+| Template | Purpose |
+|----------|---------|
+| `agents.md` | Sub-agent roster — roles, capabilities, trigger phrases |
+| `operations.md` | Standard operating procedures — rigor policy, workflows, parameters, reporting |
+| `skills.md` | Skill overview — purpose, capabilities, trigger keywords |
+| `tools.md` | Tool API reference — signatures, parameters, return schemas |
+| `library_api.md` | Primary domain library reference — classes, pitfalls, recipes |
+| `workflows.md` | Standard analysis workflows — step-by-step procedures |
+
+The wizard auto-fills these templates from your conversation. You can also **use them manually** — find the blank templates at `src/sciagent/wizard/generator/templates/`, copy them into your project, and fill in the `<!-- REPLACE: ... -->` placeholder comments by hand. Each placeholder includes a description and example.
 
 ---
 

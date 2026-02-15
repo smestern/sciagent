@@ -28,6 +28,7 @@ from typing import Optional
 from ..models import WizardState
 from .docs_gen import write_docs
 from .prompt_gen import _build_expertise_text
+from .template_renderer import render_docs as render_doc_templates
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +66,10 @@ def generate_markdown_project(
     _write("README.md", _readme(state))
 
     # Package docs
+    docs_dir = project_dir / "docs"
+    render_doc_templates(state, docs_dir)
     if state.package_docs:
-        write_docs(state, project_dir / "docs")
+        write_docs(state, docs_dir)
 
     state.project_dir = str(project_dir)
     logger.info("Markdown agent spec generated: %s", project_dir)
@@ -352,6 +355,15 @@ For best results, provide the LLM with all of these files:
 ### Package Documentation
 Detailed documentation for each domain package is in `docs/`:
 {"".join(chr(10) + f"- [docs/{n.lower().replace(' ', '_')}.md](docs/{n.lower().replace(' ', '_')}.md)" for n in sorted(state.package_docs.keys())) if state.package_docs else chr(10) + "*No package docs generated.*"}
+
+### Extended Reference Documentation
+The `docs/` directory also contains detailed reference templates:
+- [docs/agents.md](docs/agents.md) — Sub-agent roster and roles
+- [docs/operations.md](docs/operations.md) — Standard operating procedures
+- [docs/skills.md](docs/skills.md) — Skill overview and trigger keywords
+- [docs/tools.md](docs/tools.md) — Tool API reference
+- [docs/library_api.md](docs/library_api.md) — Primary library reference
+- [docs/workflows.md](docs/workflows.md) — Standard analysis workflows
 
 ## Agent Identity
 

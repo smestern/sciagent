@@ -19,6 +19,7 @@ from typing import Optional
 from ..models import WizardState
 from .docs_gen import write_docs
 from .prompt_gen import _build_expertise_text
+from .template_renderer import render_docs as render_doc_templates
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +74,10 @@ def generate_copilot_project(
     )
 
     # ── Package docs ────────────────────────────────────────────────
+    docs_dir = project_dir / "docs"
+    render_doc_templates(state, docs_dir)
     if state.package_docs:
-        write_docs(state, project_dir / "docs")
+        write_docs(state, docs_dir)
 
     # ── README ──────────────────────────────────────────────────────
     readme_path = project_dir / "README.md"
