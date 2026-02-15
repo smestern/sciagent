@@ -44,31 +44,37 @@ class CSVAnalyst(BaseScientificAgent):
     def _load_tools(self) -> List[Dict[str, Any]]:
         return [
             self._create_tool(
-                name="execute_code",
-                description=(
+                "execute_code",
+                (
                     "Run Python code for CSV analysis. pandas, numpy, "
                     "matplotlib, and seaborn are available."
                 ),
-                parameters={
-                    "code": {
-                        "type": "string",
-                        "description": "Python code to execute",
-                    }
+                execute_code,
+                {
+                    "type": "object",
+                    "properties": {
+                        "code": {
+                            "type": "string",
+                            "description": "Python code to execute",
+                        },
+                    },
+                    "required": ["code"],
                 },
-                required=["code"],
-                func=execute_code,
             ),
             self._create_tool(
-                name="validate_code",
-                description="Check Python code for syntax errors before running.",
-                parameters={
-                    "code": {
-                        "type": "string",
-                        "description": "Python code to validate",
-                    }
+                "validate_code",
+                "Check Python code for syntax errors before running.",
+                validate_code,
+                {
+                    "type": "object",
+                    "properties": {
+                        "code": {
+                            "type": "string",
+                            "description": "Python code to validate",
+                        },
+                    },
+                    "required": ["code"],
                 },
-                required=["code"],
-                func=validate_code,
             ),
         ]
 

@@ -15,7 +15,7 @@ import re
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
-import aiohttp
+import httpx
 
 from ..models import PackageCandidate
 
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 _PYPI_JSON = "https://pypi.org/pypi/{name}/json"
 _GITHUB_README = "https://api.github.com/repos/{owner}/{repo}/readme"
-_TIMEOUT = aiohttp.ClientTimeout(total=30)
+_TIMEOUT = 30.0  # seconds
 _MAX_DOC_CHARS = 12_000  # truncate raw docs before summarisation
 
 
@@ -48,8 +48,8 @@ async def fetch_package_docs(
     The raw content is trimmed and formatted into a clean Markdown
     reference document per package.
     """
-    async with aiohttp.ClientSession(timeout=_TIMEOUT) as session:
-        tasks = [_fetch_one(session, pkg) for pkg in packages]
+    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+        tasks = [_fetch_one(client, pkg) for pkg in packages]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
     docs: Dict[str, str] = {}
@@ -69,7 +69,7 @@ async def fetch_package_docs(
 
 
 async def _fetch_one(
-    session: aiohttp.ClientSession,
+    client: httpx.AsyncClient,
     pkg: PackageCandidate,
 ) -> str:
     """Try multiple sources for *pkg* and return the best doc found."""
@@ -81,26 +81,26 @@ async def _fetch_one(
     # 1 — GitHub README
     if github_owner_repo:
         owner, repo = github_owner_repo
-        content = await _fetch_github_readme(session, owner, repo)
+        content = await _fetch_github_readme(client, owner, repo)
         if content:
             raw_parts.append(("GitHub README", content))
 
     # 2 — PyPI description (often duplicates GH README but serves as fallback)
-    pypi_content = await _fetch_pypi_description(session, pkg.pip_name)
+    pypi_content = await _fetch_pypi_description(client, pkg.pip_name)
     if pypi_content and not _is_duplicate(pypi_content, raw_parts):
         raw_parts.append(("PyPI description", pypi_content))
 
     # 3 — ReadTheDocs
     rtd_url = _readthedocs_url(pkg)
     if rtd_url:
-        rtd_content = await _fetch_webpage_text(session, rtd_url)
+        rtd_content = await _fetch_webpage_text(client, rtd_url)
         if rtd_content and not _is_duplicate(rtd_content, raw_parts):
             raw_parts.append(("ReadTheDocs", rtd_content))
 
     # 4 — Homepage (if distinct from above)
     homepage = _distinct_homepage(pkg, github_owner_repo, rtd_url)
     if homepage:
-        hp_content = await _fetch_webpage_text(session, homepage)
+        hp_content = await _fetch_webpage_text(client, homepage)
         if hp_content and not _is_duplicate(hp_content, raw_parts):
             raw_parts.append(("Homepage", hp_content))
 
@@ -117,28 +117,27 @@ async def _fetch_one(
 
 
 async def _fetch_pypi_description(
-    session: aiohttp.ClientSession,
+    client: httpx.AsyncClient,
     pip_name: str,
 ) -> Optional[str]:
     """Fetch the long_description (rendered README) from PyPI JSON API."""
     url = _PYPI_JSON.format(name=pip_name)
     try:
-        async with session.get(url) as resp:
-            if resp.status != 200:
-                return None
-            data = await resp.json(content_type=None)
-            desc = data.get("info", {}).get("description", "")
-            if len(desc) < 80:
-                # Too short to be useful — probably just the summary
-                return None
-            return desc[:_MAX_DOC_CHARS]
+        resp = await client.get(url)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        desc = data.get("info", {}).get("description", "")
+        if len(desc) < 80:
+            return None
+        return desc[:_MAX_DOC_CHARS]
     except Exception as exc:
         logger.debug("PyPI fetch for %s: %s", pip_name, exc)
         return None
 
 
 async def _fetch_github_readme(
-    session: aiohttp.ClientSession,
+    client: httpx.AsyncClient,
     owner: str,
     repo: str,
 ) -> Optional[str]:
@@ -146,27 +145,26 @@ async def _fetch_github_readme(
     url = _GITHUB_README.format(owner=owner, repo=repo)
     headers = {"Accept": "application/vnd.github.raw+json"}
     try:
-        async with session.get(url, headers=headers) as resp:
-            if resp.status != 200:
-                return None
-            text = await resp.text()
-            return text[:_MAX_DOC_CHARS] if text else None
+        resp = await client.get(url, headers=headers)
+        if resp.status_code != 200:
+            return None
+        text = resp.text
+        return text[:_MAX_DOC_CHARS] if text else None
     except Exception as exc:
         logger.debug("GitHub README for %s/%s: %s", owner, repo, exc)
         return None
 
 
 async def _fetch_webpage_text(
-    session: aiohttp.ClientSession,
+    client: httpx.AsyncClient,
     url: str,
 ) -> Optional[str]:
     """Fetch a web page and extract its text content (basic HTML stripping)."""
     try:
-        async with session.get(url) as resp:
-            if resp.status != 200:
-                return None
-            html = await resp.text()
-            return _strip_html(html)[:_MAX_DOC_CHARS]
+        resp = await client.get(url)
+        if resp.status_code != 200:
+            return None
+        return _strip_html(resp.text)[:_MAX_DOC_CHARS]
     except Exception as exc:
         logger.debug("Webpage fetch %s: %s", url, exc)
         return None

@@ -320,7 +320,7 @@ class ScientificCLI:
         try:
             while True:
                 try:
-                    user_input = await asyncio.get_event_loop().run_in_executor(
+                    user_input = await asyncio.get_running_loop().run_in_executor(
                         None,
                         lambda: prompt_session.prompt(f"{self.config.logo_emoji} > "),
                     )

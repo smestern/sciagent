@@ -15,7 +15,12 @@ Quick start::
     agent = MyAgent(AgentConfig(name="my-agent", ...))
 """
 
-__version__ = "0.1.0"
+try:
+    from importlib.metadata import version as _meta_version
+
+    __version__ = _meta_version("sciagent")
+except Exception:
+    __version__ = "0.0.0"  # fallback when not installed
 
 from .config import AgentConfig
 

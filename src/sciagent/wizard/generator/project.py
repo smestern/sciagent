@@ -24,7 +24,9 @@ from typing import Optional
 
 from ..models import OutputMode, WizardState
 from .config_gen import generate_config_source
+from .copilot_gen import generate_copilot_project
 from .docs_gen import write_docs
+from .markdown_gen import generate_markdown_project
 from .prompt_gen import generate_prompt_source
 from .tools_gen import generate_tools_source
 from .agent_gen import generate_agent_source
@@ -51,7 +53,15 @@ def generate_project(
     project_dir = base / slug
     project_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Generating agent project in %s", project_dir)
+    logger.info("Generating agent project in %s (mode=%s)", project_dir, state.output_mode)
+
+    # ── Dispatch by output mode ─────────────────────────────────────
+    if state.output_mode == OutputMode.COPILOT_AGENT:
+        return generate_copilot_project(state, project_dir)
+    if state.output_mode == OutputMode.MARKDOWN:
+        return generate_markdown_project(state, project_dir)
+
+    # ── FULLSTACK (default) ─────────────────────────────────────────
 
     # ── Core modules ────────────────────────────────────────────────
     _write(project_dir / "__init__.py", _init_source(state))

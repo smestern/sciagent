@@ -224,13 +224,13 @@ class TestFetchPackageDocs:
     @pytest.mark.asyncio
     async def test_returns_fallback_on_network_error(self, sample_pkg):
         """When all HTTP requests fail, we still get a fallback doc."""
-        with patch("sciagent.wizard.discovery.doc_fetcher.aiohttp.ClientSession") as mock_cls:
-            mock_session = AsyncMock()
+        with patch("sciagent.wizard.discovery.doc_fetcher.httpx.AsyncClient") as mock_cls:
+            mock_client = AsyncMock()
             # Make all requests raise
-            mock_session.get.side_effect = Exception("Network error")
-            mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_session.__aexit__ = AsyncMock(return_value=False)
-            mock_cls.return_value = mock_session
+            mock_client.get.side_effect = Exception("Network error")
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_cls.return_value = mock_client
 
             docs = await fetch_package_docs([sample_pkg])
 
@@ -240,12 +240,12 @@ class TestFetchPackageDocs:
     @pytest.mark.asyncio
     async def test_returns_dict_keyed_by_name(self, sample_pkg):
         """Result dict keys match package names."""
-        with patch("sciagent.wizard.discovery.doc_fetcher.aiohttp.ClientSession") as mock_cls:
-            mock_session = AsyncMock()
-            mock_session.get.side_effect = Exception("offline")
-            mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_session.__aexit__ = AsyncMock(return_value=False)
-            mock_cls.return_value = mock_session
+        with patch("sciagent.wizard.discovery.doc_fetcher.httpx.AsyncClient") as mock_cls:
+            mock_client = AsyncMock()
+            mock_client.get.side_effect = Exception("offline")
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_cls.return_value = mock_client
 
             docs = await fetch_package_docs([sample_pkg])
 
@@ -258,12 +258,12 @@ class TestFetchPackageDocs:
             _make_pkg(name="alpha", python_package="alpha"),
             _make_pkg(name="beta", python_package="beta"),
         ]
-        with patch("sciagent.wizard.discovery.doc_fetcher.aiohttp.ClientSession") as mock_cls:
-            mock_session = AsyncMock()
-            mock_session.get.side_effect = Exception("offline")
-            mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_session.__aexit__ = AsyncMock(return_value=False)
-            mock_cls.return_value = mock_session
+        with patch("sciagent.wizard.discovery.doc_fetcher.httpx.AsyncClient") as mock_cls:
+            mock_client = AsyncMock()
+            mock_client.get.side_effect = Exception("offline")
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock(return_value=False)
+            mock_cls.return_value = mock_client
 
             docs = await fetch_package_docs(pkgs)
 

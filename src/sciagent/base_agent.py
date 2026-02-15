@@ -83,6 +83,10 @@ def _create_tool(
         A Copilot SDK ``Tool`` instance.
     """
 
+    # If the handler is async, wrap it to run in a thread-based event loop
+    # so it works even when called from inside a running loop.
+    _is_async = asyncio.iscoroutinefunction(handler)
+
     def _wrapped_handler(invocation: ToolInvocation) -> ToolResult:
         args = invocation.get("arguments") or {}
         # If the SDK already parsed arguments into a dict, unpack them
@@ -93,10 +97,12 @@ def _create_tool(
             except (json.JSONDecodeError, TypeError):
                 args = {}
         try:
-            result = handler(**args)
-            # Support async handlers
-            if asyncio.iscoroutine(result):
-                result = asyncio.get_event_loop().run_until_complete(result)
+            if _is_async:
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                    result = pool.submit(asyncio.run, handler(**args)).result()
+            else:
+                result = handler(**args)
         except Exception as exc:
             logger.exception("Tool %s raised an error", name)
             return ToolResult(
@@ -165,6 +171,14 @@ class BaseScientificAgent:
         from .tools.session_log import SessionLog, set_session_log
         self._session_log = SessionLog()
         set_session_log(self._session_log)
+
+        # Execution context — replaces scattered module-level singletons
+        from .tools.context import ExecutionContext, set_active_context
+        self._exec_ctx = ExecutionContext(
+            output_dir=self._output_dir,
+            session_log=self._session_log,
+        )
+        set_active_context(self._exec_ctx)
 
         # Documentation directory for read_doc tool
         if self.config.docs_dir:
@@ -335,9 +349,8 @@ class BaseScientificAgent:
 
         if new_dir != self._output_dir:
             self.output_dir = new_dir
-            # Sync module-level singleton in code_tools
-            from .tools.code_tools import set_output_dir
-            set_output_dir(new_dir)
+            # Sync via ExecutionContext (also keeps legacy accessors up-to-date)
+            self._exec_ctx.output_dir = new_dir
             logger.info("Working directory set to %s (near %s)", new_dir, file_path)
 
     # -- session lifecycle -----------------------------------------------------
@@ -380,9 +393,8 @@ class BaseScientificAgent:
         # Reset session log for the new session
         self._session_log.clear()
 
-        # Wire up the file-loaded hook
-        from .tools.code_tools import set_file_loaded_hook
-        set_file_loaded_hook(self.update_working_dir_from_file)
+        # Wire up the file-loaded hook via ExecutionContext
+        self._exec_ctx.on_file_loaded = self.update_working_dir_from_file
 
         base_system = self._get_system_message()
         if custom_system_message:

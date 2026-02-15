@@ -18,8 +18,8 @@ CSV_CONFIG = AgentConfig(
     logo_emoji="📊",
     accent_color="#2196F3",
     bounds={
-        "row_count": {"min": 1, "max": 10_000_000, "unit": "rows"},
+        "row_count": (1, 10_000_000),
     },
-    extra_libraries=["pandas", "seaborn"],
+    extra_libraries={"pandas": "pd", "seaborn": "sns"},
     output_dir="csv_output",
 )
