@@ -29,7 +29,7 @@ from .session_log import SessionLog, get_session_log, set_session_log
 
 # ── Other tool modules ───────────────────────────────────────────
 from .fitting_tools import fit_exponential, fit_double_exponential
-from .doc_tools import read_doc, set_docs_dir, get_docs_dir
+from .doc_tools import read_doc, set_docs_dir, get_docs_dir, summarize_available_docs
 from .registry import tool
 from .registry import collect_tools, verify_tool_schemas
 
@@ -64,6 +64,7 @@ __all__ = [
     "read_doc",
     "set_docs_dir",
     "get_docs_dir",
+    "summarize_available_docs",
     # Registry
     "tool",
     "collect_tools",

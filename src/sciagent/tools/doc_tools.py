@@ -121,3 +121,68 @@ def read_doc(name: str = "") -> Dict[str, Any]:
         "path": str(target),
         "name": target.stem,
     }
+
+
+# ── Auto-generated docs summary for system prompt ───────────────
+
+
+def _extract_description(path: Path, max_chars: int = 120) -> str:
+    """Extract a short description from the first few lines of a doc.
+
+    Looks for the first non-empty, non-heading line and returns it
+    (truncated to *max_chars*).  Block-quote prefixes (``>``) are
+    stripped so that front-matter like ``> **Purpose**: …`` is usable.
+    """
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return ""
+    for line in lines[1:]:          # skip the ``# Title`` line
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or stripped == "---":
+            continue
+        # Strip block-quote prefix
+        if stripped.startswith(">"):
+            stripped = stripped.lstrip(">").strip()
+            if not stripped:
+                continue
+        # Skip lines that are just markdown links / TOC entries
+        if stripped.startswith("1.") or stripped.startswith("- ["):
+            continue
+        # Skip front-matter metadata lines (e.g. **Source**: ..., **Docs**: ...)
+        if stripped.startswith("**") and "**:" in stripped:
+            tag = stripped.split("**:")[0].strip("* ").lower()
+            if tag in ("source", "docs", "version", "date", "author", "license"):
+                continue
+        if len(stripped) > max_chars:
+            return stripped[:max_chars].rsplit(" ", 1)[0] + " …"
+        return stripped
+    return ""
+
+
+def summarize_available_docs() -> str:
+    """Return a markdown snippet listing every doc with a one-line summary.
+
+    Intended to be injected into the system prompt so the LLM knows
+    which documents are available via ``read_doc(name)``.
+
+    Returns an empty string when no docs directory is configured or
+    the directory is empty.
+    """
+    if _docs_dir is None or not _docs_dir.is_dir():
+        return ""
+
+    entries: list[str] = []
+    for p in sorted(_docs_dir.iterdir()):
+        if not p.is_file() or p.suffix.lower() != ".md":
+            continue
+        desc = _extract_description(p)
+        entry = f'- **"{p.stem}"**'
+        if desc:
+            entry += f" — {desc}"
+        entries.append(entry)
+
+    if not entries:
+        return ""
+
+    return "\n".join(entries)
