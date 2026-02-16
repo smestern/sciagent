@@ -4,7 +4,7 @@ Generate the domain expertise prompt section for a new agent.
 
 from __future__ import annotations
 
-from ..models import WizardState
+from sciagent_wizard.models import WizardState
 
 
 def generate_prompt_source(state: WizardState) -> str:

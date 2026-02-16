@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 from typing import Dict, List
 
-from ..models import WizardState
+from sciagent_wizard.models import WizardState
 
 logger = logging.getLogger(__name__)
 

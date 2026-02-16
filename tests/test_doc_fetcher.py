@@ -1,5 +1,5 @@
 """
-Tests for sciagent.wizard.discovery.doc_fetcher
+Tests for sciagent_wizard.sources.doc_fetcher
 """
 
 from __future__ import annotations
@@ -8,8 +8,8 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from sciagent.wizard.models import DiscoverySource, PackageCandidate
-from sciagent.wizard.discovery.doc_fetcher import (
+from sciagent_wizard.models import DiscoverySource, PackageCandidate
+from sciagent_wizard.sources.doc_fetcher import (
     fetch_package_docs,
     _extract_github,
     _readthedocs_url,
@@ -224,7 +224,7 @@ class TestFetchPackageDocs:
     @pytest.mark.asyncio
     async def test_returns_fallback_on_network_error(self, sample_pkg):
         """When all HTTP requests fail, we still get a fallback doc."""
-        with patch("sciagent.wizard.discovery.doc_fetcher.httpx.AsyncClient") as mock_cls:
+        with patch("sciagent_wizard.sources.doc_fetcher.httpx.AsyncClient") as mock_cls:
             mock_client = AsyncMock()
             # Make all requests raise
             mock_client.get.side_effect = Exception("Network error")
@@ -240,7 +240,7 @@ class TestFetchPackageDocs:
     @pytest.mark.asyncio
     async def test_returns_dict_keyed_by_name(self, sample_pkg):
         """Result dict keys match package names."""
-        with patch("sciagent.wizard.discovery.doc_fetcher.httpx.AsyncClient") as mock_cls:
+        with patch("sciagent_wizard.sources.doc_fetcher.httpx.AsyncClient") as mock_cls:
             mock_client = AsyncMock()
             mock_client.get.side_effect = Exception("offline")
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -258,7 +258,7 @@ class TestFetchPackageDocs:
             _make_pkg(name="alpha", python_package="alpha"),
             _make_pkg(name="beta", python_package="beta"),
         ]
-        with patch("sciagent.wizard.discovery.doc_fetcher.httpx.AsyncClient") as mock_cls:
+        with patch("sciagent_wizard.sources.doc_fetcher.httpx.AsyncClient") as mock_cls:
             mock_client = AsyncMock()
             mock_client.get.side_effect = Exception("offline")
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)

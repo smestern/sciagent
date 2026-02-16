@@ -15,7 +15,7 @@ import asyncio
 import logging
 import pytest
 
-from sciagent.wizard.models import PackageCandidate
+from sciagent_wizard.models import PackageCandidate
 
 # Show full logging output so we can see warnings/errors
 logging.basicConfig(level=logging.DEBUG)
@@ -57,7 +57,7 @@ def _print_results(source: str, results: list[PackageCandidate]):
 class TestLivePyPI:
     @pytest.mark.asyncio
     async def test_search_pypi(self):
-        from sciagent.wizard.discovery.pypi import search_pypi
+        from sciagent_wizard.sources.pypi import search_pypi
 
         results = await search_pypi(KEYWORDS, max_results=10)
         _print_results("PyPI", results)
@@ -72,7 +72,7 @@ class TestLivePyPI:
 class TestLiveBiotools:
     @pytest.mark.asyncio
     async def test_search_biotools(self):
-        from sciagent.wizard.discovery.biotools import search_biotools
+        from sciagent_wizard.sources.biotools import search_biotools
 
         results = await search_biotools(KEYWORDS, max_results=10)
         _print_results("bio.tools", results)
@@ -86,7 +86,7 @@ class TestLiveBiotools:
 class TestLivePapersWithCode:
     @pytest.mark.asyncio
     async def test_search_papers_with_code(self):
-        from sciagent.wizard.discovery.papers_with_code import search_papers_with_code
+        from sciagent_wizard.sources.papers_with_code import search_papers_with_code
 
         results = await search_papers_with_code(KEYWORDS, max_results=10)
         _print_results("Papers With Code", results)
@@ -100,7 +100,7 @@ class TestLivePapersWithCode:
 class TestLivePubMed:
     @pytest.mark.asyncio
     async def test_search_pubmed(self):
-        from sciagent.wizard.discovery.pubmed import search_pubmed
+        from sciagent_wizard.sources.pubmed import search_pubmed
 
         results = await search_pubmed(KEYWORDS, max_results=10)
         _print_results("PubMed", results)
@@ -118,7 +118,7 @@ class TestLiveDiscoverPackages:
     @pytest.mark.asyncio
     async def test_discover_all_sources(self):
         """Run the full discover_packages pipeline against all live APIs."""
-        from sciagent.wizard.discovery.ranker import discover_packages
+        from sciagent_wizard.sources.ranker import discover_packages
 
         results = await discover_packages(KEYWORDS, max_per_source=10)
         _print_results("discover_packages (all sources)", results)
@@ -134,7 +134,7 @@ class TestLiveDiscoverPackages:
     @pytest.mark.asyncio
     async def test_discover_individual_sources(self):
         """Run discover_packages one source at a time to isolate failures."""
-        from sciagent.wizard.discovery.ranker import discover_packages
+        from sciagent_wizard.sources.ranker import discover_packages
 
         sources = ["pypi", "biotools", "papers_with_code", "pubmed"]
         for source in sources:
@@ -156,12 +156,12 @@ class TestLiveDocFetcher:
     @pytest.mark.asyncio
     async def test_fetch_docs_for_known_package(self):
         """Fetch docs for a well-known package to check each source."""
-        from sciagent.wizard.discovery.doc_fetcher import fetch_package_docs
+        from sciagent_wizard.sources.doc_fetcher import fetch_package_docs
 
         pkg = PackageCandidate(
             name="neo",
             source=__import__(
-                "sciagent.wizard.models", fromlist=["DiscoverySource"]
+                "sciagent_wizard.models", fromlist=["DiscoverySource"]
             ).DiscoverySource.PYPI,
             description="Neo is a Python package for electrophysiology",
             install_command="pip install neo",

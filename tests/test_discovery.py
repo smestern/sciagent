@@ -1,5 +1,5 @@
 """
-Tests for sciagent.wizard.discovery — search sources and ranking.
+Tests for sciagent_wizard.sources — search sources and ranking.
 """
 
 from __future__ import annotations
@@ -8,9 +8,9 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from sciagent.wizard.models import DiscoverySource, PackageCandidate
-from sciagent.wizard.discovery.ranker import rank_and_deduplicate, discover_packages, _normalise_key
-from sciagent.wizard.discovery.pypi import _parse_json_api
+from sciagent_wizard.models import DiscoverySource, PackageCandidate
+from sciagent_wizard.sources.ranker import rank_and_deduplicate, discover_packages, _normalise_key
+from sciagent_wizard.sources.pypi import _parse_json_api
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ class TestDiscoverPackages:
             _make_candidate(name="beta", relevance_score=0.3),
         ]
         with patch(
-            "sciagent.wizard.discovery.pypi.search_pypi",
+            "sciagent_wizard.sources.pypi.search_pypi",
             new_callable=AsyncMock,
             return_value=fake_results,
         ):
@@ -231,7 +231,7 @@ class TestDiscoverPackages:
     async def test_handles_source_failure(self):
         """If a source raises, it's logged and skipped."""
         with patch(
-            "sciagent.wizard.discovery.pypi.search_pypi",
+            "sciagent_wizard.sources.pypi.search_pypi",
             new_callable=AsyncMock,
             side_effect=Exception("API down"),
         ):
@@ -258,11 +258,11 @@ class TestDiscoverPackages:
             _make_candidate(name="shared-pkg", source=DiscoverySource.BIOTOOLS, relevance_score=0.4),
         ]
         with patch(
-            "sciagent.wizard.discovery.pypi.search_pypi",
+            "sciagent_wizard.sources.pypi.search_pypi",
             new_callable=AsyncMock,
             return_value=pypi_results,
         ), patch(
-            "sciagent.wizard.discovery.biotools.search_biotools",
+            "sciagent_wizard.sources.biotools.search_biotools",
             new_callable=AsyncMock,
             return_value=biotools_results,
         ):

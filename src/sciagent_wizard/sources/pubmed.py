@@ -11,7 +11,7 @@ import logging
 import re
 from typing import List
 
-from ..models import DiscoverySource, PackageCandidate
+from sciagent_wizard.models import DiscoverySource, PackageCandidate
 
 logger = logging.getLogger(__name__)
 

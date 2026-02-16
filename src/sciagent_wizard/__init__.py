@@ -1,5 +1,5 @@
 """
-sciagent.wizard — Self-assembly wizard for building domain-specific agents.
+sciagent_wizard — Self-assembly wizard for building domain-specific agents.
 
 The wizard lets non-programmer researchers describe their domain, provide
 example data, and automatically:
@@ -12,7 +12,7 @@ example data, and automatically:
 
 Usage::
 
-    from sciagent.wizard import create_wizard, WIZARD_CONFIG
+    from sciagent_wizard import create_wizard, WIZARD_CONFIG
 
     # Conversational (wizard is itself an agent)
     wizard = create_wizard()
@@ -21,11 +21,11 @@ Usage::
     wizard = create_wizard(guided_mode=True)
 
     # Or via CLI
-    # sciagent wizard
-    # sciagent wizard --public
+    # sciagent-wizard
+    # sciagent-wizard --public
 """
 
-from .wizard_agent import create_wizard, WIZARD_CONFIG
+from sciagent_wizard.agent import create_wizard, WIZARD_CONFIG
 
 __all__ = ["create_wizard", "WIZARD_CONFIG", "main", "main_public"]
 
@@ -34,7 +34,7 @@ def main():
     """Entry point for ``sciagent-wizard`` console script."""
     import os
     import sys
-    from .models import OutputMode
+    from sciagent_wizard.models import OutputMode
 
     web = "--cli" not in sys.argv
     public_mode = (

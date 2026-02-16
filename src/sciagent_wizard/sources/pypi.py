@@ -26,7 +26,7 @@ import re
 from typing import List
 from urllib.parse import quote_plus
 
-from ..models import DiscoverySource, PackageCandidate
+from sciagent_wizard.models import DiscoverySource, PackageCandidate
 
 logger = logging.getLogger(__name__)
 

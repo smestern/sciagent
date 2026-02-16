@@ -19,11 +19,13 @@ from quart import Blueprint, request, jsonify, send_from_directory
 
 logger = logging.getLogger(__name__)
 
+_PKG_DIR = Path(__file__).resolve().parent
+
 public_bp = Blueprint(
     "public_wizard",
     __name__,
-    static_folder=str(Path(__file__).parent / "static"),
-    template_folder=str(Path(__file__).parent / "templates"),
+    static_folder=str(_PKG_DIR / "static"),
+    template_folder=str(_PKG_DIR / "templates_html"),
     url_prefix="/public",
 )
 

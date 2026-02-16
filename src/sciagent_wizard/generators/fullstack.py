@@ -22,15 +22,15 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from ..models import OutputMode, WizardState
+from sciagent_wizard.models import OutputMode, WizardState
 from .config_gen import generate_config_source
-from .copilot_gen import generate_copilot_project
+from .copilot import generate_copilot_project
 from .docs_gen import write_docs
-from .markdown_gen import generate_markdown_project
+from .markdown import generate_markdown_project
 from .prompt_gen import generate_prompt_source
 from .tools_gen import generate_tools_source
 from .agent_gen import generate_agent_source
-from .template_renderer import render_docs as render_doc_templates
+from sciagent_wizard.rendering import render_docs as render_doc_templates
 
 logger = logging.getLogger(__name__)
 

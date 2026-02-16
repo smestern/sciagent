@@ -8,7 +8,7 @@ alongside this module.  They use HTML-comment placeholders::
     <!-- REPEAT: name -->  ... section ...  <!-- END_REPEAT -->
 
 The renderer performs simple string substitution from a context dict built
-from :class:`~sciagent.wizard.models.WizardState`.  Unfilled placeholders
+from :class:`~sciagent_wizard.models.WizardState`.  Unfilled placeholders
 are **left intact** so the output is always valid Markdown and can be
 completed manually.
 """
@@ -20,7 +20,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from ..models import WizardState
+from sciagent_wizard.models import WizardState
 
 logger = logging.getLogger(__name__)
 

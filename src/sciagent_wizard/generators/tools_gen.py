@@ -7,7 +7,7 @@ that expose the library's key functionality to the agent.
 
 from __future__ import annotations
 
-from ..models import PackageCandidate, WizardState
+from sciagent_wizard.models import PackageCandidate, WizardState
 
 
 def generate_tools_source(state: WizardState) -> str:

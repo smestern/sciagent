@@ -12,7 +12,7 @@ import asyncio
 import logging
 from typing import List, Optional
 
-from ..models import DiscoverySource, PackageCandidate
+from sciagent_wizard.models import DiscoverySource, PackageCandidate
 
 logger = logging.getLogger(__name__)
 

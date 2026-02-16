@@ -69,7 +69,7 @@ def create_app(
 
     # ── Register wizard blueprint ─────────────────────────────────
     try:
-        from sciagent.wizard.web import wizard_bp
+        from sciagent_wizard.web import wizard_bp
         app.register_blueprint(wizard_bp)
     except ImportError:
         pass  # wizard dependencies not installed
@@ -77,7 +77,7 @@ def create_app(
     # ── Register public wizard blueprint ──────────────────────────
     if public_agent_factory is not None:
         try:
-            from sciagent.wizard.public import public_bp
+            from sciagent_wizard.public import public_bp
             app.register_blueprint(public_bp)
         except ImportError:
             pass

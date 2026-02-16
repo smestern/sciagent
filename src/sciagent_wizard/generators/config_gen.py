@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Tuple
 
-from ..models import WizardState
+from sciagent_wizard.models import WizardState
 
 
 def generate_config_source(state: WizardState) -> str:

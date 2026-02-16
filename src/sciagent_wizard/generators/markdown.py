@@ -25,10 +25,10 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from ..models import WizardState
+from sciagent_wizard.models import WizardState
 from .docs_gen import write_docs
 from .prompt_gen import _build_expertise_text
-from .template_renderer import render_docs as render_doc_templates
+from sciagent_wizard.rendering import render_docs as render_doc_templates
 
 logger = logging.getLogger(__name__)
 

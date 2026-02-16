@@ -23,7 +23,7 @@ import os
 import re
 from typing import Any, List, Optional
 
-from ..models import DiscoverySource, PackageCandidate
+from sciagent_wizard.models import DiscoverySource, PackageCandidate
 
 logger = logging.getLogger(__name__)
 

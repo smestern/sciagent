@@ -436,8 +436,8 @@ def wizard(
     ),
 ):
     """🧙 Launch the self-assembly wizard to build a domain-specific agent."""
-    from sciagent.wizard import create_wizard, WIZARD_CONFIG
-    from sciagent.wizard.models import OutputMode
+    from sciagent_wizard import create_wizard, WIZARD_CONFIG
+    from sciagent_wizard.models import OutputMode
 
     # Pre-set the output mode on the wizard's state
     try:

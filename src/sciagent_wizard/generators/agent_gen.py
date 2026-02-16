@@ -4,7 +4,7 @@ Generate ``agent.py`` — the BaseScientificAgent subclass for the new domain.
 
 from __future__ import annotations
 
-from ..models import WizardState
+from sciagent_wizard.models import WizardState
 
 
 def generate_agent_source(state: WizardState) -> str:

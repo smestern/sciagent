@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 import httpx
 
-from ..models import PackageCandidate
+from sciagent_wizard.models import PackageCandidate
 
 logger = logging.getLogger(__name__)
 

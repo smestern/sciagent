@@ -1,5 +1,5 @@
 """
-sciagent.wizard.discovery — Multi-source scientific software discovery.
+sciagent_wizard.sources — Multi-source scientific software discovery.
 
 Search peer-reviewed databases for domain-relevant software and rank
 results into a unified list of ``PackageCandidate`` objects.

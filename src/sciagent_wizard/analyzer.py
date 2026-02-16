@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from .models import DataFileInfo
+from sciagent_wizard.models import DataFileInfo
 
 logger = logging.getLogger(__name__)
 
