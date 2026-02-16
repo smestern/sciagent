@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from .context import ExecutionContext, get_active_context
+from .registry import tool
 from .session_log import get_session_log
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,16 @@ def save_script(
     return dest
 
 
+@tool(
+    name="get_session_log",
+    description=(
+        "Retrieve the session log of all code executed during this session "
+        "(successes and failures). Use this to review what was run before "
+        "composing a reproducible script via save_reproducible_script. "
+        "Returns a summary and the full list of execution records."
+    ),
+    parameters={"type": "object", "properties": {}},
+)
 def retrieve_session_log(
     ctx: Optional[ExecutionContext] = None,
 ) -> Dict[str, Any]:
@@ -87,6 +98,34 @@ def retrieve_session_log(
     }
 
 
+@tool(
+    name="save_reproducible_script",
+    description=(
+        "Save a curated, standalone reproducible Python script combining "
+        "the successful analysis steps from this session. You (the agent) "
+        "write the script \u2014 review the session log, select working parts, "
+        "and compose a clean script with proper imports, argparse for "
+        "--input-file and --output-dir, error handling, and comments. "
+        "The script must be syntactically valid Python."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "code": {
+                "type": "string",
+                "description": (
+                    "The complete Python script content. Must be valid Python. "
+                    "Should include argparse with --input-file and --output-dir."
+                ),
+            },
+            "filename": {
+                "type": "string",
+                "description": "Output filename (default: reproducible_analysis.py)",
+            },
+        },
+        "required": ["code"],
+    },
+)
 def save_reproducible_script(
     code: str,
     filename: str = "reproducible_analysis.py",

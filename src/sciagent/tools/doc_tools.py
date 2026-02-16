@@ -12,6 +12,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from .registry import tool
+
 logger = logging.getLogger(__name__)
 
 # Module-level docs directory — set by the agent at startup.
@@ -33,6 +35,28 @@ def get_docs_dir() -> Optional[Path]:
     return _docs_dir
 
 
+@tool(
+    name="read_doc",
+    description=(
+        "Read a reference document by name. Returns the full content "
+        "of the requested document. Call with name='list' or no name "
+        "to see all available documents. Use this to access detailed "
+        "API references, parameter tables, and workflow guides."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": (
+                    "Document name (e.g. 'IPFX', 'Tools', 'Operations'). "
+                    "Use 'list' to see all available documents."
+                ),
+            },
+        },
+        "required": ["name"],
+    },
+)
 def read_doc(name: str = "") -> Dict[str, Any]:
     """Read a reference document by name.
 

@@ -13,7 +13,21 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from scipy.optimize import curve_fit
 
+from .registry import tool
 
+
+@tool(
+    name="fit_exponential",
+    description="Fit single exponential decay or growth to data",
+    parameters={
+        "type": "object",
+        "properties": {
+            "y": {"type": "array", "items": {"type": "number"}, "description": "Y values to fit"},
+            "x": {"type": "array", "items": {"type": "number"}, "description": "X values"},
+        },
+        "required": ["y", "x"],
+    },
+)
 def fit_exponential(
     y: np.ndarray,
     x: np.ndarray,
@@ -78,6 +92,18 @@ def fit_exponential(
         }
 
 
+@tool(
+    name="fit_double_exponential",
+    description="Fit double exponential decay to data (fast + slow components)",
+    parameters={
+        "type": "object",
+        "properties": {
+            "y": {"type": "array", "items": {"type": "number"}, "description": "Y values to fit"},
+            "x": {"type": "array", "items": {"type": "number"}, "description": "X values"},
+        },
+        "required": ["y", "x"],
+    },
+)
 def fit_double_exponential(
     y: np.ndarray,
     x: np.ndarray,

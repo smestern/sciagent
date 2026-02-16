@@ -10,9 +10,23 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict
 
+from ..tools.registry import tool
+
 logger = logging.getLogger(__name__)
 
 
+@tool(
+    name="validate_data_integrity",
+    description="Validate data array for integrity issues (NaN, Inf, zero variance, all-zeros)",
+    parameters={
+        "type": "object",
+        "properties": {
+            "data": {"type": "array", "items": {"type": "number"}, "description": "Data array to validate"},
+            "name": {"type": "string", "description": "Name for error messages"},
+        },
+        "required": ["data"],
+    },
+)
 def validate_data_integrity(data: Any, name: str = "data") -> Dict[str, Any]:
     """Validate that input data is suitable for analysis.
 

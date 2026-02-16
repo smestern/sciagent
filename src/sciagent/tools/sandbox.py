@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional
 from ..guardrails.scanner import CodeScanner
 from ..guardrails.validator import SANITY_CHECK_HEADER, validate_data_integrity
 from .context import ExecutionContext, get_active_context
+from .registry import tool
 from .session_log import get_session_log
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,17 @@ def _try_import(env: dict, module_name: str, aliases: Optional[List[str]] = None
 # ── Code validation ─────────────────────────────────────────────────────
 
 
+@tool(
+    name="validate_code",
+    description="Validate Python code syntax and check for dangerous operations",
+    parameters={
+        "type": "object",
+        "properties": {
+            "code": {"type": "string", "description": "Python code to validate"},
+        },
+        "required": ["code"],
+    },
+)
 def validate_code(code: str) -> Dict[str, Any]:
     """Validate Python code without executing it.
 
@@ -146,6 +158,21 @@ def validate_code(code: str) -> Dict[str, Any]:
 # ── Core execution ──────────────────────────────────────────────────────
 
 
+@tool(
+    name="execute_code",
+    description=(
+        "Execute custom Python code for analysis. Code is validated for "
+        "scientific rigor. numpy, scipy, matplotlib, and pandas are available."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "code": {"type": "string", "description": "Python code to execute"},
+            "context": {"type": "object", "description": "Variables to make available"},
+        },
+        "required": ["code"],
+    },
+)
 def execute_code(
     code: str,
     context: Optional[Dict[str, Any]] = None,

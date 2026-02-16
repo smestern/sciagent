@@ -31,6 +31,7 @@ from .session_log import SessionLog, get_session_log, set_session_log
 from .fitting_tools import fit_exponential, fit_double_exponential
 from .doc_tools import read_doc, set_docs_dir, get_docs_dir
 from .registry import tool
+from .registry import collect_tools, verify_tool_schemas
 
 __all__ = [
     # Context
@@ -65,4 +66,6 @@ __all__ = [
     "get_docs_dir",
     # Registry
     "tool",
+    "collect_tools",
+    "verify_tool_schemas",
 ]

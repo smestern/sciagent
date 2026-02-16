@@ -4,14 +4,27 @@ BaseScientificAgent — Abstract base class for scientific coding agents.
 Subclass this and implement ``_load_tools()`` (required) and optionally
 override ``_get_system_message()`` to inject domain expertise.
 
+Prefer using ``@tool`` decorators with ``collect_tools()`` over manual
+``_create_tool()`` calls — this keeps JSON schemas next to the function
+definitions and prevents schema drift.
+
 Example::
 
     from sciagent import BaseScientificAgent, AgentConfig
+    from sciagent.tools.registry import tool, collect_tools
+
+    @tool("my_tool", "Does a thing", {
+        "type": "object",
+        "properties": {"x": {"type": "integer", "description": "Input"}},
+        "required": ["x"],
+    })
+    def my_tool(x: int) -> dict:
+        return {"result": x * 2}
 
     class MyAgent(BaseScientificAgent):
         def _load_tools(self):
-            from my_tools import my_tool_fn
-            return [self._create_tool("my_tool", "Does a thing", my_tool_fn, {...})]
+            import my_tools  # module with @tool-decorated functions
+            return [self._create_tool(*t) for t in collect_tools(my_tools)]
 
         def _get_system_message(self) -> str:
             from sciagent.prompts import BASE_SCIENTIFIC_PRINCIPLES
@@ -255,80 +268,27 @@ class BaseScientificAgent:
 
         These are merged into the session automatically.  Domain agents
         do **not** need to register these in ``_load_tools()``.
+
+        Uses ``collect_tools`` to auto-discover ``@tool``-decorated
+        functions in the ``scripts`` module, avoiding hand-maintained
+        JSON schemas.
         """
-        from .tools.code_tools import retrieve_session_log, save_reproducible_script
+        from .tools.registry import collect_tools
+        from .tools import scripts as scripts_mod
         from .tools.doc_tools import read_doc
 
         tools = [
-            _create_tool(
-                "get_session_log",
-                (
-                    "Retrieve the session log of all code executed during this session "
-                    "(successes and failures). Use this to review what was run before "
-                    "composing a reproducible script via save_reproducible_script. "
-                    "Returns a summary and the full list of execution records."
-                ),
-                retrieve_session_log,
-                {"type": "object", "properties": {}},
-            ),
-            _create_tool(
-                "save_reproducible_script",
-                (
-                    "Save a curated, standalone reproducible Python script combining "
-                    "the successful analysis steps from this session. You (the agent) "
-                    "write the script — review the session log, select working parts, "
-                    "and compose a clean script with proper imports, argparse for "
-                    "--input-file and --output-dir, error handling, and comments. "
-                    "The script must be syntactically valid Python."
-                ),
-                save_reproducible_script,
-                {
-                    "type": "object",
-                    "properties": {
-                        "code": {
-                            "type": "string",
-                            "description": (
-                                "The complete Python script content. Must be valid Python. "
-                                "Should include argparse with --input-file and --output-dir."
-                            ),
-                        },
-                        "filename": {
-                            "type": "string",
-                            "description": "Output filename (default: reproducible_analysis.py)",
-                        },
-                    },
-                    "required": ["code"],
-                },
-            ),
+            _create_tool(name, desc, handler, params)
+            for name, desc, handler, params in collect_tools(scripts_mod)
         ]
 
         # Only add read_doc if a docs_dir is configured
         if self.config.docs_dir:
-            tools.append(
-                _create_tool(
-                    "read_doc",
-                    (
-                        "Read a reference document by name. Returns the full content "
-                        "of the requested document. Call with name='list' or no name "
-                        "to see all available documents. Use this to access detailed "
-                        "API references, parameter tables, and workflow guides."
-                    ),
-                    read_doc,
-                    {
-                        "type": "object",
-                        "properties": {
-                            "name": {
-                                "type": "string",
-                                "description": (
-                                    "Document name (e.g. 'IPFX', 'Tools', 'Operations'). "
-                                    "Use 'list' to see all available documents."
-                                ),
-                            },
-                        },
-                        "required": ["name"],
-                    },
+            meta = getattr(read_doc, "_tool_meta", None)
+            if meta:
+                tools.append(
+                    _create_tool(meta["name"], meta["description"], read_doc, meta["parameters"])
                 )
-            )
 
         return tools
 

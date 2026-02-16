@@ -3,6 +3,10 @@ CSV Analyst agent — subclasses ``BaseScientificAgent``.
 
 This is the core of the example: a ~50-line agent definition that
 inherits the entire scientific coding framework for free.
+
+Demonstrates two tool registration patterns:
+- **collect_tools()**: auto-discover @tool-decorated functions (zero drift)
+- **manual _create_tool()**: override description for domain-specific context
 """
 
 from __future__ import annotations
@@ -12,7 +16,7 @@ from typing import Any, Dict, List
 
 from sciagent.base_agent import BaseScientificAgent
 from sciagent.prompts.base_messages import build_system_message
-from sciagent.tools.code_tools import execute_code, validate_code
+from sciagent.tools.sandbox import execute_code, validate_code
 
 from .config import CSV_CONFIG
 
@@ -42,7 +46,14 @@ class CSVAnalyst(BaseScientificAgent):
 
     # -- Required override ---------------------------------------------------
     def _load_tools(self) -> List[Dict[str, Any]]:
-        return [
+        # validate_code uses the default @tool schema — no custom desc needed
+        meta = validate_code._tool_meta
+        tools = [
+            self._create_tool(meta["name"], meta["description"], validate_code, meta["parameters"]),
+        ]
+
+        # execute_code gets a CSV-specific description override
+        tools.append(
             self._create_tool(
                 "execute_code",
                 (
@@ -50,33 +61,10 @@ class CSVAnalyst(BaseScientificAgent):
                     "matplotlib, and seaborn are available."
                 ),
                 execute_code,
-                {
-                    "type": "object",
-                    "properties": {
-                        "code": {
-                            "type": "string",
-                            "description": "Python code to execute",
-                        },
-                    },
-                    "required": ["code"],
-                },
+                execute_code._tool_meta["parameters"],
             ),
-            self._create_tool(
-                "validate_code",
-                "Check Python code for syntax errors before running.",
-                validate_code,
-                {
-                    "type": "object",
-                    "properties": {
-                        "code": {
-                            "type": "string",
-                            "description": "Python code to validate",
-                        },
-                    },
-                    "required": ["code"],
-                },
-            ),
-        ]
+        )
+        return tools
 
     # -- Optional overrides --------------------------------------------------
     def _get_system_message(self) -> str:
