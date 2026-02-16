@@ -21,8 +21,9 @@ The way I envision users utilizing this repo is in one of three ways.
    1. Direct tool use by the Agent so it can do things like, direct inspect data, get metadata and plan work
    2. A custom code execution environment with preloaded packages and tools.
    3. Producing reproducible scripts for reuse with other data.
-3. **A self-assembling wizard** - Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format.
+3. **A self-assembling wizard** - ***VERY WIP*** Built for novice coders. Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format.
 
+Ideally, I was hoping to host a public version of the wizard for open use - however, I can't afford the hosting / llm api fees as a grad student. If you are a company that would be willing to help out, please contact me.
 
 Check out [PatchAgent](https://github.com/smestern/patchAgent) for a real-world example in neurophysiology.
 
