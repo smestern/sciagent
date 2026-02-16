@@ -21,13 +21,10 @@ The way I envision users utilizing this repo is in one of three ways.
    1. Direct tool use by the Agent so it can do things like, direct inspect data, get metadata and plan work
    2. A custom code execution environment with preloaded packages and tools.
    3. Producing reproducible scripts for reuse with other data.
-3. **A self-assembling wizard** 
+3. **A self-assembling wizard** - Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format.
 
 
-Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format.
-
-
-Check out [PatchAgent](https://github.com/smestern/patchAgent) for a real-world example in electrophysiology.
+Check out [PatchAgent](https://github.com/smestern/patchAgent) for a real-world example in neurophysiology.
 
 Built on the [GitHub Copilot SDK](https://github.com/features/copilot).
 
