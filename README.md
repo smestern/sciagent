@@ -15,8 +15,13 @@ The idea here is to build more human-in-the-loop scientific coding tools. Landin
 **How to use this repo**
 
 The way I envision users utilizing this repo is in one of three ways. 
+
 1. **Markdown templates for specifying agents** - At its core, this repo contains Markdown templates to assist with building your agent. These templates are meant to be downloaded and customized for your domain specific use. The folder [/templates/](github.com/smestern/sciagent/templates/) contains templates for building and defining the agent, and prompts meant to constrain the agent to scientific rigor.
-2. **Fullstack custom agent cli/web app**
+2. **Fullstack custom agent cli/web app** - This is a fullstack agent framework built on the [copilot-sdk](https://github.com/github/copilot-sdk). Essentially this aims to use your custom domain tools in three ways: 
+   1. Direct tool use by the Agent so it can do things like, direct inspect data, get metadata and plan work
+   2. A custom code execution environment with preloaded packages and tools.
+   3. Producing reproducible scripts for reuse with other data.
+3. **A self-assembling wizard** 
 
 
 Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format.
