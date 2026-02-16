@@ -12,6 +12,13 @@ The idea here is to build more human-in-the-loop scientific coding tools. Landin
 2. **Copilot / Claude Code** — config files that plug directly into VS Code Copilot or Claude Code
 3. **Markdown** — platform-agnostic spec files you can paste into any LLM
 
+**How to use this repo**
+
+The way I envision users utilizing this repo is in one of three ways. 
+1. **Markdown templates for specifying agents** - At its core, this repo contains Markdown templates to assist with building your agent. These templates are meant to be downloaded and customized for your domain specific use. The folder [/templates/](github.com/smestern/sciagent/templates/) contains templates for building and defining the agent, and prompts meant to constrain the agent to scientific rigor.
+2. **Fullstack custom agent cli/web app**
+
+
 Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format.
 
 

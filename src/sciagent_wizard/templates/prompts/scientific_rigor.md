@@ -1,0 +1,1 @@
+../../src/sciagent/prompts/scientific_rigor.md

@@ -81,6 +81,8 @@ Repository = "https://github.com/smestern/sciagent"
 where = ["src"]
 
 [tool.setuptools.package-data]
+"sciagent.prompts" = ["*.md"]
+"sciagent_wizard.prompts" = ["*.md"]
 "sciagent_wizard.templates" = ["*.md"]
 "sciagent_wizard.templates_html" = ["*.html"]
 "sciagent_wizard.static.js" = ["*.js"]

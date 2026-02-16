@@ -1,0 +1,1 @@
+../../src/sciagent/prompts/output_dir.md
