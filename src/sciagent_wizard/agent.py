@@ -98,10 +98,28 @@ class WizardAgent(BaseScientificAgent):
                 "search_packages",
                 (
                     "Search peer-reviewed databases (PyPI, bio.tools, Papers "
-                    "With Code, PubMed) for scientific software "
-                    "relevant to the researcher's domain. Returns ranked "
-                    "results with descriptions and relevance scores. "
-                    "Call this after learning about the researcher's domain."
+                    "With Code, PubMed) and the web (Google CSE) for "
+                    "scientific software relevant to the researcher's domain. "
+                    "Returns ranked results with descriptions and relevance "
+                    "scores. Call this after learning about the researcher's "
+                    "domain.\n\n"
+                    "IMPORTANT — search strategy:\n"
+                    "• 'keywords' feeds database-style sources (PyPI, "
+                    "bio.tools) that work well with individual terms.\n"
+                    "• 'search_queries' feeds web search (Google CSE). "
+                    "Provide 2–3 short, targeted phrases a human would type "
+                    "into Google to find the right software. Each phrase "
+                    "should combine a domain term with an intent word like "
+                    "'python package', 'analysis software', or 'python "
+                    "library'.\n"
+                    "  Example — for an electrophysiology researcher:\n"
+                    "    keywords: ['electrophysiology', 'patch-clamp', "
+                    "'ABF', 'action potential', 'ion channel']\n"
+                    "    search_queries: [\n"
+                    "      'electrophysiology patch clamp python package',\n"
+                    "      'ABF file analysis software python',\n"
+                    "      'ion channel kinetics fitting python library'\n"
+                    "    ]"
                 ),
                 lambda **kw: wizard_tools.tool_search_packages(state, **kw),
                 {
@@ -113,7 +131,25 @@ class WizardAgent(BaseScientificAgent):
                             "description": (
                                 "Domain-specific search keywords. Include the "
                                 "field name, key techniques, data types, and "
-                                "any known software names."
+                                "any known software names. These feed "
+                                "database-style sources (PyPI, bio.tools, "
+                                "PubMed, Papers With Code)."
+                            ),
+                        },
+                        "search_queries": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": (
+                                "2–3 targeted search phrases for web search "
+                                "(Google CSE). Each should be a short, "
+                                "natural-language phrase (3–6 words) that a "
+                                "human would type into Google to find "
+                                "relevant software. Combine a "
+                                "domain/technique "
+                                "term with a software-intent word like "
+                                "'python package', 'analysis software', or "
+                                "'python library'. If omitted, phrases are "
+                                "auto-generated from keywords."
                             ),
                         },
                         "sources": {
@@ -121,8 +157,8 @@ class WizardAgent(BaseScientificAgent):
                             "items": {"type": "string"},
                             "description": (
                                 "Which databases to search. Options: pypi, "
-                                "biotools, papers_with_code, pubmed. "
-                                "Default: all."
+                                "biotools, papers_with_code, pubmed, "
+                                "google_cse. Default: all."
                             ),
                         },
                     },
@@ -320,6 +356,41 @@ class WizardAgent(BaseScientificAgent):
                 ),
                 lambda **kw: wizard_tools.tool_fetch_docs(state),
                 {"type": "object", "properties": {}},
+            ),
+
+            # ─ Deep library API ingestion ───────────────────────────
+            _create_tool(
+                "ingest_library_api",
+                (
+                    "Deep-crawl a package's ReadTheDocs and GitHub docs, "
+                    "then use an LLM to extract a structured API reference "
+                    "(classes, functions, pitfalls, recipes) into the "
+                    "library_api.md format. Use this after confirm_packages "
+                    "for the PRIMARY library to get detailed API docs. "
+                    "This is more thorough than fetch_package_docs — it "
+                    "crawls API reference pages and source code, not just "
+                    "the README."
+                ),
+                lambda **kw: wizard_tools.tool_ingest_library_api(state, **kw),
+                {
+                    "type": "object",
+                    "properties": {
+                        "package_name": {
+                            "type": "string",
+                            "description": (
+                                "The PyPI package name to ingest docs for."
+                            ),
+                        },
+                        "github_url": {
+                            "type": "string",
+                            "description": (
+                                "Optional GitHub repository URL for deeper "
+                                "source-code analysis."
+                            ),
+                        },
+                    },
+                    "required": ["package_name"],
+                },
             ),
 
             # ─ Output mode ──────────────────────────────────────────

@@ -33,6 +33,12 @@ from .doc_tools import read_doc, set_docs_dir, get_docs_dir, summarize_available
 from .registry import tool
 from .registry import collect_tools, verify_tool_schemas
 
+# Docs ingestion (requires sciagent[wizard] extra at runtime)
+try:
+    from .ingest_tools import ingest_library_docs
+except ImportError:
+    ingest_library_docs = None  # type: ignore[assignment,misc]
+
 __all__ = [
     # Context
     "ExecutionContext",
@@ -65,6 +71,8 @@ __all__ = [
     "set_docs_dir",
     "get_docs_dir",
     "summarize_available_docs",
+    # Docs ingestion
+    "ingest_library_docs",
     # Registry
     "tool",
     "collect_tools",

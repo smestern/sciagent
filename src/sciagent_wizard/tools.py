@@ -102,12 +102,15 @@ def tool_search_packages(
     state: WizardState,
     keywords: List[str],
     sources: Optional[List[str]] = None,
+    search_queries: Optional[List[str]] = None,
 ) -> str:
     """Search for domain-specific packages."""
     from .sources.ranker import discover_packages
 
     candidates = _run_async(
-        discover_packages(keywords, sources=sources)
+        discover_packages(
+            keywords, sources=sources, search_queries=search_queries,
+        )
     )
 
     # Store in wizard state
@@ -486,3 +489,49 @@ def tool_set_output_mode(state: WizardState, mode: str, guided_mode: bool = Fals
         "mode": output_mode.value,
         "description": descriptions[output_mode],
     })
+
+
+def tool_ingest_library_api(
+    state: WizardState,
+    package_name: str,
+    github_url: Optional[str] = None,
+) -> str:
+    """Deep-crawl a package's docs and generate a structured API reference.
+
+    Uses the docs ingestor agent to crawl ReadTheDocs, GitHub source,
+    and PyPI, then fills out the ``library_api.md`` template with
+    classes, functions, pitfalls, and recipes.
+
+    The result is stored in ``state.package_docs[name + "_api"]``.
+    """
+    try:
+        from .docs_ingestor import ingest_package_docs_sync
+    except ImportError:
+        return json.dumps({
+            "error": "docs_ingestor module not available. "
+                     "Is sciagent[wizard] installed?",
+        })
+
+    try:
+        markdown = ingest_package_docs_sync(package_name, github_url)
+    except Exception as exc:
+        logger.exception("Library API ingestion failed for %s", package_name)
+        return json.dumps({
+            "error": f"Ingestion failed: {exc}",
+        })
+
+    # Store the result
+    doc_key = f"{package_name}_api"
+    state.package_docs[doc_key] = markdown
+
+    word_count = len(markdown.split())
+    return json.dumps({
+        "status": "ingested",
+        "package": package_name,
+        "doc_key": doc_key,
+        "word_count": word_count,
+        "has_classes": "## 1. Core Classes" in markdown or "### `" in markdown,
+        "has_functions": "## 2. Key Functions" in markdown,
+        "has_pitfalls": "## 3. Common Pitfalls" in markdown,
+        "has_recipes": "## 4. Quick-Start Recipes" in markdown,
+    }, indent=2)

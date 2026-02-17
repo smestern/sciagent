@@ -290,6 +290,22 @@ class BaseScientificAgent:
                     _create_tool(meta["name"], meta["description"], read_doc, meta["parameters"])
                 )
 
+            # Add ingest_library_docs — lets agents expand their docs on-the-fly
+            try:
+                from .tools.ingest_tools import ingest_library_docs
+                meta_ingest = getattr(ingest_library_docs, "_tool_meta", None)
+                if meta_ingest:
+                    tools.append(
+                        _create_tool(
+                            meta_ingest["name"],
+                            meta_ingest["description"],
+                            ingest_library_docs,
+                            meta_ingest["parameters"],
+                        )
+                    )
+            except ImportError:
+                pass  # sciagent[wizard] extra not installed
+
         return tools
 
     # -- working directory resolution -----------------------------------------

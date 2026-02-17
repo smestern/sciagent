@@ -512,6 +512,7 @@ async def stream_response(
     send_queue: asyncio.Queue,
     *,
     session_id: str = "",
+    _retry: int = 0,
 ) -> None:
     """Send *user_text* to the agent session and stream events via *send_queue*.
 
@@ -520,7 +521,9 @@ async def stream_response(
     """
     from copilot.generated.session_events import SessionEventType
 
+    MAX_RETRIES = 2
     idle_event = asyncio.Event()
+    transient_error: list[str] = []  # use list to allow mutation in closure
 
     def _handler(event):
         etype = event.type
@@ -528,12 +531,12 @@ async def stream_response(
         if etype == SessionEventType.ASSISTANT_MESSAGE_DELTA:
             delta = getattr(event.data, "delta_content", None) or ""
             if delta:
-                send_queue.put_nowait({"type": "delta", "text": delta})
+                send_queue.put_nowait({"type": "text_delta", "text": delta})
 
         elif etype == SessionEventType.ASSISTANT_REASONING_DELTA:
             delta = getattr(event.data, "delta_content", None) or ""
             if delta:
-                send_queue.put_nowait({"type": "reasoning_delta", "text": delta})
+                send_queue.put_nowait({"type": "thinking", "text": delta})
 
         elif etype == SessionEventType.ASSISTANT_MESSAGE:
             content = None
@@ -546,25 +549,35 @@ async def stream_response(
                 try:
                     import json as _json
                     payload = _json.loads(content)
-                    if isinstance(payload, dict) and payload.get("__type__") == "question_card":
+                    if isinstance(payload, dict) and payload.get(
+                        "__type__"
+                    ) == "question_card":
                         send_queue.put_nowait({
                             "type": "question_card",
                             "question": payload.get("question", ""),
                             "options": payload.get("options", []),
-                            "allow_freetext": payload.get("allow_freetext", False),
+                            "allow_freetext": payload.get(
+                                "allow_freetext", False
+                            ),
                             "max_length": payload.get("max_length", 100),
-                            "allow_multiple": payload.get("allow_multiple", False),
+                            "allow_multiple": payload.get(
+                                "allow_multiple", False
+                            ),
                         })
                 except (json.JSONDecodeError, TypeError):
                     pass
 
         elif etype == SessionEventType.TOOL_EXECUTION_START:
-            name = getattr(event.data, "tool_name", "tool")
-            send_queue.put_nowait({"type": "tool_start", "tool": name})
+            name = getattr(event.data, "tool_name", None) or "tool"
+            send_queue.put_nowait({"type": "tool_start", "name": name})
 
         elif etype == SessionEventType.TOOL_EXECUTION_COMPLETE:
-            name = getattr(event.data, "tool_name", "tool")
-            send_queue.put_nowait({"type": "tool_done", "tool": name})
+            name = getattr(event.data, "tool_name", None) or "tool"
+            send_queue.put_nowait({"type": "tool_complete", "name": name})
+            # Forward question_card if this was present_question
+            _maybe_forward_question_card(
+                event, name, send_queue,
+            )
             # Forward download_ready if this was generate_agent
             _maybe_forward_download_ready(
                 event, name, send_queue,
@@ -572,11 +585,20 @@ async def stream_response(
             )
 
         elif etype == SessionEventType.SESSION_ERROR:
-            err = getattr(event.data, "message", str(event.data))
-            send_queue.put_nowait({"type": "error", "text": err})
+            err = getattr(event.data, "message", None) or str(event.data)
+            # Flag transient LLM API errors for retry
+            if "finish_reason" in err and _retry < MAX_RETRIES:
+                logger.warning(
+                    "Transient LLM error (will retry, attempt %d/%d): %s",
+                    _retry + 1, MAX_RETRIES, err,
+                )
+                transient_error.append(err)
+            else:
+                send_queue.put_nowait({"type": "error", "text": err})
             idle_event.set()
 
         elif etype == SessionEventType.SESSION_IDLE:
+            send_queue.put_nowait({"type": "done"})
             idle_event.set()
 
     unsub = session.on(_handler)
@@ -585,6 +607,52 @@ async def stream_response(
         await idle_event.wait()
     finally:
         unsub()
+
+    # Retry on transient errors
+    if transient_error and _retry < MAX_RETRIES:
+        send_queue.put_nowait({
+            "type": "status", "text": "Retrying\u2026",
+        })
+        await asyncio.sleep(1)
+        await stream_response(
+            session, user_text, send_queue,
+            session_id=session_id, _retry=_retry + 1,
+        )
+
+
+def _maybe_forward_question_card(
+    event, tool_name: str,
+    send_queue: asyncio.Queue,
+) -> None:
+    """When present_question completes, forward the question card to the client.
+
+    The tool returns a JSON payload with ``__type__: question_card``.
+    Extracting it here (from the tool result) is reliable, unlike trying
+    to JSON-parse the LLM's natural-language assistant message.
+    """
+    if tool_name != "present_question":
+        return
+    raw = None
+    if hasattr(event, "data"):
+        result_obj = getattr(event.data, "result", None)
+        if result_obj is not None:
+            raw = getattr(result_obj, "content", None)
+    if not raw:
+        return
+    try:
+        payload = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return
+    if not isinstance(payload, dict) or payload.get("__type__") != "question_card":
+        return
+    send_queue.put_nowait({
+        "type": "question_card",
+        "question": payload.get("question", ""),
+        "options": payload.get("options", []),
+        "allow_freetext": payload.get("allow_freetext", False),
+        "max_length": payload.get("max_length", 100),
+        "allow_multiple": payload.get("allow_multiple", False),
+    })
 
 
 def _maybe_forward_download_ready(

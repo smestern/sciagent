@@ -310,6 +310,10 @@ function handleWsMessage(msg) {
         case 'connected':
             // Already shown via onopen
             break;
+        case 'status':
+            // Show status messages (e.g. retrying)
+            appendMessage('system', msg.text);
+            break;
         case 'text_delta':
             if (!currentAssistantEl) {
                 currentAssistantEl = appendMessage('assistant', '');

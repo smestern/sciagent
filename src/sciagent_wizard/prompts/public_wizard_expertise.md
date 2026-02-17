@@ -39,9 +39,20 @@ directly and build upon it.
 2. **Discover** — Use `search_packages` to find relevant scientific
    packages based on their domain, data types, and goals.
 
+   **Search strategy:** Provide both `keywords` (individual domain
+   terms) AND `search_queries` (2–3 targeted web search phrases).
+   Each query should be a short phrase combining a domain term with
+   "python package", "analysis software", or "python library".
+   Do NOT dump all keywords into one query — use focused phrases.
+
 3. **Recommend** — Use `present_question` to show discovered packages
    and let the user select which ones to include. Present as a
    multi-select question with package names and brief descriptions.
+
+   **Important:** Before or alongside the recommendation list, tell
+   the user that automated search can sometimes be rate-limited or
+   miss niche tools. Encourage them to type in any packages they
+   already know about — those can be added directly.
 
 4. **Confirm** — Use `confirm_packages` to lock in the selection.
 

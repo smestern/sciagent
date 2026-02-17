@@ -186,9 +186,16 @@ def _render(
 
 
 def _replace_key(text: str, key: str, value: str) -> str:
-    """Replace all ``<!-- REPLACE: key ... -->`` occurrences with *value*."""
+    """Replace all ``<!-- REPLACE: key ... -->`` occurrences with *value*.
+
+    The description after the key may span multiple lines and may contain
+    ``>`` characters (e.g. Markdown block-quotes, return-type arrows),
+    so we match non-greedily up to the closing ``-->``.
+    """
     pattern = re.compile(
-        r"<!--\s*REPLACE:\s*" + re.escape(key) + r"\s*(?:—[^>]*)?\s*-->",
+        r"<!--\s*REPLACE:\s*"
+        + re.escape(key)
+        + r"\s*(?:—.*?)?\s*-->",
         re.DOTALL,
     )
     return pattern.sub(value, text)

@@ -72,6 +72,7 @@ sciagent = "sciagent.cli:app"
 sciagent-web = "sciagent.web.app:main"
 sciagent-wizard = "sciagent_wizard:main"
 sciagent-public = "sciagent_wizard:main_public"
+sciagent-docs = "sciagent_wizard.docs_ingestor:main"
 
 [project.urls]
 Homepage = "https://github.com/smestern/sciagent"
@@ -86,6 +87,9 @@ where = ["src"]
 "sciagent_wizard.templates" = ["*.md"]
 "sciagent_wizard.templates_html" = ["*.html"]
 "sciagent_wizard.static.js" = ["*.js"]
+"sciagent_wizard.docs_ingestor.prompts" = ["*.md"]
+"sciagent_wizard.docs_ingestor.templates_html" = ["*.html"]
+"sciagent_wizard.docs_ingestor.static" = ["*.js", "*.css"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

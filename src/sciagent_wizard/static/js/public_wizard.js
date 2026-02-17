@@ -354,6 +354,9 @@ function handleWsMessage(msg) {
     switch (msg.type) {
         case 'connected':
             break;
+        case 'status':
+            appendMessage('system', msg.text);
+            break;
         case 'text_delta':
             if (!currentAssistantEl) {
                 currentAssistantEl = appendMessage('assistant', '');

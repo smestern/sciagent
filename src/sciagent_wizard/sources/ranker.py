@@ -79,6 +79,7 @@ async def discover_packages(
     *,
     max_per_source: int = 20,
     sources: Optional[List[str]] = None,
+    search_queries: Optional[List[str]] = None,
 ) -> List[PackageCandidate]:
     """Run all discovery sources in parallel and return ranked results.
 
@@ -91,6 +92,10 @@ async def discover_packages(
         sources: Subset of source names to query (default: all).
             Valid names: ``"pypi"``, ``"biotools"``, ``"papers_with_code"``,
             ``"pubmed"``, ``"google_cse"``.
+        search_queries: Targeted search phrases for web-based sources
+            (Google CSE).  Each should be a short natural-language
+            phrase like ``"patch clamp ABF analysis python package"``.
+            If not provided, queries are auto-generated from *keywords*.
 
     Returns:
         Ranked, deduplicated list of ``PackageCandidate``.
@@ -119,7 +124,15 @@ async def discover_packages(
         if fn is None:
             logger.warning("Unknown source: %s", name)
             continue
-        tasks.append(fn(keywords, max_results=max_per_source))
+        # Google CSE benefits from targeted search phrases
+        if name == "google_cse":
+            tasks.append(fn(
+                keywords,
+                queries=search_queries,
+                max_results=max_per_source,
+            ))
+        else:
+            tasks.append(fn(keywords, max_results=max_per_source))
         task_names.append(name)
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
