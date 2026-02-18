@@ -29,15 +29,50 @@ async function startIngestion() {
     startBtn.innerHTML = '<span class="spinner"></span> Starting...';
 
     try {
+        // Check auth status before calling API
+        try {
+            const authCheck = await fetch('/auth/status');
+            if (authCheck.ok) {
+                const authData = await authCheck.json();
+                if (authData.authenticated === false) {
+                    window.location.href = '/auth/login?return_to=/ingestor/';
+                    return;
+                }
+            }
+        } catch (_) { /* auth endpoint not available — OAuth not configured */ }
+
         // Get session ID
         const resp = await fetch('/ingestor/api/start', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            redirect: 'manual',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
             body: JSON.stringify({
                 package_name: packageName,
                 github_url: githubUrl || null,
             }),
         });
+
+        // Handle auth redirect (opaque redirect or 401)
+        if (resp.type === 'opaqueredirect' || resp.status === 0) {
+            window.location.href = '/auth/login?return_to=/ingestor/';
+            return;
+        }
+
+        if (resp.status === 401) {
+            try {
+                const authData = await resp.json();
+                if (authData.auth_required && authData.login_url) {
+                    window.location.href = authData.login_url;
+                    return;
+                }
+            } catch (_) {}
+            window.location.href = '/auth/login?return_to=/ingestor/';
+            return;
+        }
+
         const data = await resp.json();
 
         if (data.error) {

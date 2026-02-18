@@ -268,6 +268,52 @@ pip install sciagent[all]       # everything
 - Physiological bounds checking
 - Specialized system prompt with neuroscience expertise
 
+---
+
+## Authentication (Optional)
+
+The public wizard (`/public`) and docs ingestor (`/ingestor`) support **opt-in GitHub OAuth** via the [Copilot SDK auth flow](https://github.com/github/copilot-sdk/blob/main/docs/auth/index.md#github-signed-in-user). When enabled, users sign in with GitHub and their OAuth token is passed through to the Copilot SDK, billing LLM usage to their own Copilot subscription.
+
+**When OAuth env vars are not set, the app behaves exactly as before — fully open, no auth.**
+
+### Setup
+
+1. [Create a GitHub OAuth App](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app):
+   - **Homepage URL:** `https://your-domain.com`
+   - **Authorization callback URL:** `https://your-domain.com/auth/callback`
+
+2. Set environment variables:
+
+   | Variable | Required | Description |
+   |----------|----------|-------------|
+   | `GITHUB_OAUTH_CLIENT_ID` | Yes | OAuth App client ID |
+   | `GITHUB_OAUTH_CLIENT_SECRET` | Yes | OAuth App client secret |
+   | `SCIAGENT_SESSION_SECRET` | Recommended | Session cookie signing key (random string). Falls back to a key derived from the client secret. |
+   | `SCIAGENT_SESSION_SECURE` | No | Set to `1` to require HTTPS for session cookies (recommended in production). |
+   | `SCIAGENT_ALLOWED_ORIGINS` | No | Restrict CORS origins (default: `*`). Set to your domain in production. |
+
+3. Run normally:
+
+   ```bash
+   sciagent-public          # public wizard with OAuth
+   sciagent-docs            # docs ingestor with OAuth
+   ```
+
+### How it works
+
+- `/auth/login` redirects to GitHub's OAuth authorize page with a CSRF `state` parameter.
+- `/auth/callback` exchanges the authorization code for a `gho_*` token, validates it against the GitHub API, and stores it in an HttpOnly session cookie.
+- Protected routes (`/public/`, `/ingestor/`) redirect unauthenticated users to `/auth/login`.
+- The token is threaded through the agent factory to `CopilotClient({"github_token": ...})` so LLM requests run under the user's identity.
+
+### Security notes
+
+- No secrets are committed to the repository.
+- Session cookies are `HttpOnly` and `SameSite=Lax`.
+- The OAuth `state` parameter uses `secrets.token_urlsafe(32)` to prevent CSRF.
+- Only `gho_*`, `ghu_*`, and `github_pat_*` tokens are accepted (classic `ghp_*` PATs are rejected).
+- When OAuth is disabled (no env vars), **zero authentication code runs** — no middleware, no redirects, no session cookies.
+
 ## License
 
 MIT

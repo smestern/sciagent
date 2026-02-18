@@ -163,6 +163,7 @@ class WizardState:
     analysis_goals: List[str] = field(default_factory=list)
     experience_level: str = ""  # beginner / intermediate / advanced
     pending_question: Optional["PendingQuestion"] = None
+    last_generate_result: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         if self.output_mode is None:

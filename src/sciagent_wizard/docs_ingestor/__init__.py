@@ -76,6 +76,13 @@ def main():
     """Entry point for ``sciagent-docs`` console script."""
     import sys
 
+    # Load .env file if present (never overrides existing env vars)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
     port = 5001
     if "--port" in sys.argv:
         idx = sys.argv.index("--port")

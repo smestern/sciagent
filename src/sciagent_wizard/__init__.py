@@ -36,6 +36,13 @@ def main():
     import sys
     from sciagent_wizard.models import OutputMode
 
+    # Load .env file if present (never overrides existing env vars)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
     web = "--cli" not in sys.argv
     public_mode = (
         "--public" in sys.argv

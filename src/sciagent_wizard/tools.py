@@ -79,6 +79,11 @@ def tool_present_question(
     Returns a special JSON payload that the WebSocket handler
     intercepts and renders as a clickable question card in the UI.
     """
+    logger.info(
+        "[present_question] Called: q=%r, options=%r, "
+        "freetext=%s, state id=%s",
+        question[:80], options, allow_freetext, id(state),
+    )
     pending = PendingQuestion(
         question=question,
         options=options,
@@ -87,6 +92,11 @@ def tool_present_question(
         allow_multiple=allow_multiple,
     )
     state.pending_question = pending
+    logger.info(
+        "[present_question] Set state.pending_question=%r "
+        "(state id=%s)",
+        pending, id(state),
+    )
 
     return json.dumps({
         "__type__": "question_card",
@@ -330,13 +340,16 @@ def tool_generate(
             "install": f"pip install -r {project_path / 'requirements.txt'}",
         }
 
-    return json.dumps({
+    result = {
         "status": "generated",
         "output_mode": mode.value,
         "project_dir": str(project_path),
         "files": [str(p.name) for p in project_path.iterdir() if p.is_file()],
         "instructions": instructions,
-    }, indent=2)
+    }
+    state.last_generate_result = result
+
+    return json.dumps(result, indent=2)
 
 
 def tool_install(state: WizardState) -> str:

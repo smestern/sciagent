@@ -81,6 +81,11 @@ class WizardAgent(BaseScientificAgent):
         # The wizard manages its own state across the conversation
         self._wizard_state = WizardState(guided_mode=guided_mode)
         self._guided_mode = guided_mode
+        logger.info(
+            "[WizardAgent] Created: guided_mode=%s, "
+            "wizard_state id=%s",
+            guided_mode, id(self._wizard_state),
+        )
         super().__init__(WIZARD_CONFIG, **kwargs)
 
     @property
@@ -506,5 +511,7 @@ def create_wizard(guided_mode: bool = False, **kwargs) -> WizardAgent:
     Args:
         guided_mode: If True, run in public/guided mode with no freeform
             chat — users interact only via structured question cards.
+        **kwargs: Forwarded to ``BaseScientificAgent.__init__``.
+            Includes ``output_dir`` and optionally ``github_token``.
     """
     return WizardAgent(guided_mode=guided_mode, **kwargs)

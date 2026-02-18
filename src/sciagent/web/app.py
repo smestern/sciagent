@@ -60,7 +60,25 @@ def create_app(
         static_folder=str(Path(__file__).parent / "static"),
         template_folder=str(Path(__file__).parent / "templates"),
     )
-    app = cors(app, allow_origin="*")
+
+    # ── CORS — restrict when OAuth is enabled ─────────────────────
+    _cors_origin = os.environ.get("SCIAGENT_ALLOWED_ORIGINS", "*")
+    app = cors(app, allow_origin=_cors_origin)
+
+    # ── OAuth session support (opt-in) ────────────────────────────
+    try:
+        from sciagent_wizard.auth import (
+            is_oauth_configured,
+            configure_app_sessions,
+            create_auth_blueprint,
+        )
+
+        configure_app_sessions(app)
+        if is_oauth_configured():
+            app.register_blueprint(create_auth_blueprint())
+    except ImportError:
+        pass  # wizard package not installed
+
     app.ws_sessions: dict = {}  # type: ignore[attr-defined]
     _session_agents: dict = {}  # ws_id -> agent instance
     _session_output_dirs: dict = {}  # ws_id -> output_dir Path
@@ -356,7 +374,15 @@ async def _run_ws_session(
     try:
         from sciagent.tools.code_tools import set_output_dir
 
-        agent = factory(output_dir=output_dir)
+        # ── Extract GitHub token from session (if OAuth enabled) ──
+        _github_token = None
+        try:
+            from sciagent_wizard.auth import get_github_token
+            _github_token = get_github_token()
+        except ImportError:
+            pass
+
+        agent = factory(output_dir=output_dir, github_token=_github_token)
         agents[ws_id] = agent
         set_output_dir(output_dir)
 
@@ -406,7 +432,8 @@ async def _run_ws_session(
             set_current_session(ws_id)
             try:
                 await stream_response(
-                    session, user_text, send_queue, session_id=ws_id,
+                    session, user_text, send_queue,
+                    session_id=ws_id, agent=agent,
                 )
             except Exception as send_err:
                 if "Session not found" in str(send_err):
@@ -419,7 +446,8 @@ async def _run_ws_session(
                     except Exception:
                         session = await agent.create_session(session_id=ws_id)
                     await stream_response(
-                        session, user_text, send_queue, session_id=ws_id,
+                        session, user_text, send_queue,
+                        session_id=ws_id, agent=agent,
                     )
                 else:
                     raise
@@ -512,6 +540,7 @@ async def stream_response(
     send_queue: asyncio.Queue,
     *,
     session_id: str = "",
+    agent: Any = None,
     _retry: int = 0,
 ) -> None:
     """Send *user_text* to the agent session and stream events via *send_queue*.
@@ -519,14 +548,26 @@ async def stream_response(
     Mirrors the CLI's ``_stream_and_print`` but pushes structured dicts
     into a queue that the WebSocket drain loop sends to the browser.
     """
+    # Access wizard state if available (for guided-mode question cards)
+    wizard_state = getattr(agent, "_wizard_state", None)
+    logger.info(
+        "[stream] wizard_state=%s, agent type=%s",
+        "present" if wizard_state else "NONE",
+        type(agent).__name__ if agent else "None",
+    )
     from copilot.generated.session_events import SessionEventType
 
     MAX_RETRIES = 2
     idle_event = asyncio.Event()
     transient_error: list[str] = []  # use list to allow mutation in closure
 
+    # Track tool names from START events — the SDK's
+    # TOOL_EXECUTION_COMPLETE event often has tool_name=None.
+    _active_tools: dict[str, str] = {}  # tool_call_id → tool_name
+
     def _handler(event):
         etype = event.type
+        logger.debug("[stream] event type=%s", etype)
 
         if etype == SessionEventType.ASSISTANT_MESSAGE_DELTA:
             delta = getattr(event.data, "delta_content", None) or ""
@@ -569,19 +610,46 @@ async def stream_response(
 
         elif etype == SessionEventType.TOOL_EXECUTION_START:
             name = getattr(event.data, "tool_name", None) or "tool"
+            call_id = getattr(event.data, "tool_call_id", None)
+            if call_id and name != "tool":
+                _active_tools[call_id] = name
+            logger.info(
+                "[stream] TOOL_START: %s (call_id=%s)", name, call_id,
+            )
             send_queue.put_nowait({"type": "tool_start", "name": name})
 
         elif etype == SessionEventType.TOOL_EXECUTION_COMPLETE:
-            name = getattr(event.data, "tool_name", None) or "tool"
+            raw_name = getattr(event.data, "tool_name", None)
+            call_id = getattr(event.data, "tool_call_id", None)
+            # Resolve tool name: prefer event data, fall back to
+            # tracked name from START event, then "tool".
+            name = (
+                raw_name
+                or _active_tools.pop(call_id, None)
+                if call_id else raw_name
+            ) or "tool"
+            logger.info(
+                "[stream] TOOL_COMPLETE: %s "
+                "(raw_name=%s, call_id=%s) | "
+                "wizard_state=%s | "
+                "pending_question=%s",
+                name, raw_name, call_id,
+                "present" if wizard_state else "NONE",
+                repr(getattr(
+                    wizard_state, "pending_question", "N/A"
+                ))[:200] if wizard_state else "N/A",
+            )
             send_queue.put_nowait({"type": "tool_complete", "name": name})
             # Forward question_card if this was present_question
             _maybe_forward_question_card(
                 event, name, send_queue,
+                wizard_state=wizard_state,
             )
             # Forward download_ready if this was generate_agent
             _maybe_forward_download_ready(
                 event, name, send_queue,
                 send_queue.put_nowait, session_id=session_id,
+                wizard_state=wizard_state,
             )
 
         elif etype == SessionEventType.SESSION_ERROR:
@@ -616,42 +684,180 @@ async def stream_response(
         await asyncio.sleep(1)
         await stream_response(
             session, user_text, send_queue,
-            session_id=session_id, _retry=_retry + 1,
+            session_id=session_id, agent=agent,
+            _retry=_retry + 1,
         )
+
+
+def _extract_tool_result_text(event) -> Optional[str]:
+    """Extract the raw text content from a TOOL_EXECUTION_COMPLETE event.
+
+    The Copilot SDK wraps tool results in different structures depending
+    on version.  This helper tries several extraction strategies:
+
+    1. ``event.data.result.content``  (``Result`` dataclass)
+    2. ``event.data.result["content"]`` (dict-style ``Result``)
+    3. ``event.data.result["textResultForLlm"]``  (raw ``ToolResult`` dict)
+    4. ``str(event.data.result)`` if it looks like JSON
+    """
+    data = getattr(event, "data", None)
+    if data is None:
+        return None
+
+    result_obj = getattr(data, "result", None)
+    if result_obj is None:
+        # Some SDK versions surface the result as a plain data attribute
+        result_obj = data.get("result") if isinstance(data, dict) else None
+    if result_obj is None:
+        return None
+
+    # Strategy 1: Result dataclass .content
+    raw = getattr(result_obj, "content", None)
+    if raw and isinstance(raw, str):
+        return raw
+
+    # Strategy 2: dict-style access
+    if isinstance(result_obj, dict):
+        raw = result_obj.get("content") or result_obj.get("textResultForLlm")
+        if raw and isinstance(raw, str):
+            return raw
+
+    # Strategy 3: result is a plain string
+    if isinstance(result_obj, str):
+        return result_obj
+
+    # Strategy 4: stringify and check it looks like JSON
+    try:
+        s = str(result_obj)
+        if s.startswith("{"):
+            return s
+    except Exception:
+        pass
+
+    logger.debug(
+        "Could not extract tool result text. result type=%s, repr=%.300s",
+        type(result_obj).__name__, repr(result_obj),
+    )
+    return None
 
 
 def _maybe_forward_question_card(
     event, tool_name: str,
     send_queue: asyncio.Queue,
+    *,
+    wizard_state: Any = None,
 ) -> None:
     """When present_question completes, forward the question card to the client.
 
-    The tool returns a JSON payload with ``__type__: question_card``.
-    Extracting it here (from the tool result) is reliable, unlike trying
-    to JSON-parse the LLM's natural-language assistant message.
+    Uses the wizard state's ``pending_question`` as the primary source,
+    since the Copilot SDK ``TOOL_EXECUTION_COMPLETE`` event often does
+    not include tool result data or even the correct tool name.
+
+    Checks both the tool name AND wizard_state.pending_question, so
+    even if the SDK gives tool_name=None we still forward the card.
     """
-    if tool_name != "present_question":
+    # Check if this looks like a present_question completion.
+    # The SDK sometimes drops the tool name, so also check wizard_state.
+    has_pending = (
+        wizard_state is not None
+        and getattr(wizard_state, "pending_question", None) is not None
+    )
+    is_present_question = (tool_name == "present_question")
+
+    if not is_present_question and not has_pending:
         return
-    raw = None
-    if hasattr(event, "data"):
-        result_obj = getattr(event.data, "result", None)
-        if result_obj is not None:
-            raw = getattr(result_obj, "content", None)
-    if not raw:
+
+    logger.info(
+        "[question_card] Triggered — tool_name=%r, "
+        "is_present_question=%s, has_pending=%s",
+        tool_name, is_present_question, has_pending,
+    )
+
+    payload = None
+
+    # Primary: use wizard_state.pending_question (always set by the tool)
+    if wizard_state is not None:
+        pending = getattr(wizard_state, "pending_question", None)
+        if pending is not None:
+            logger.info(
+                "[question_card] Using wizard_state.pending_question: "
+                "q=%r, options=%r, freetext=%s",
+                getattr(pending, "question", "")[:80],
+                getattr(pending, "options", []),
+                getattr(pending, "allow_freetext", False),
+            )
+            payload = {
+                "question": getattr(pending, "question", ""),
+                "options": getattr(pending, "options", []),
+                "allow_freetext": getattr(pending, "allow_freetext", False),
+                "max_length": getattr(pending, "max_length", 100),
+                "allow_multiple": getattr(pending, "allow_multiple", False),
+            }
+        else:
+            logger.warning(
+                "[question_card] wizard_state exists but "
+                "pending_question is None"
+            )
+    else:
+        logger.warning("[question_card] No wizard_state available")
+
+    # Fallback: try extracting from the event data
+    if payload is None:
+        raw = _extract_tool_result_text(event)
+        logger.info(
+            "[question_card] Fallback: event result text=%s",
+            repr(raw)[:200] if raw else "NONE",
+        )
+        if raw:
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict) and parsed.get("__type__") == "question_card":
+                    payload = {
+                        "question": parsed.get("question", ""),
+                        "options": parsed.get("options", []),
+                        "allow_freetext": parsed.get("allow_freetext", False),
+                        "max_length": parsed.get("max_length", 100),
+                        "allow_multiple": parsed.get("allow_multiple", False),
+                    }
+                    logger.info(
+                        "[question_card] Fallback succeeded from event"
+                    )
+                else:
+                    logger.warning(
+                        "[question_card] Fallback: parsed JSON but "
+                        "no __type__=question_card: keys=%s",
+                        list(parsed.keys()) if isinstance(parsed, dict) else type(parsed),
+                    )
+            except (json.JSONDecodeError, TypeError) as exc:
+                logger.warning(
+                    "[question_card] Fallback: JSON parse failed: %s",
+                    exc,
+                )
+
+    if payload is None:
+        logger.error(
+            "[question_card] FAILED — could not build question card. "
+            "wizard_state=%s, event.data attrs=%s, "
+            "event.data.result=%s",
+            "available" if wizard_state else "N/A",
+            [a for a in dir(getattr(event, "data", None))
+             if not a.startswith("_")][:20]
+            if getattr(event, "data", None) else "N/A",
+            repr(getattr(
+                getattr(event, "data", None), "result", "N/A"
+            ))[:200],
+        )
         return
-    try:
-        payload = json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
-        return
-    if not isinstance(payload, dict) or payload.get("__type__") != "question_card":
-        return
+
+    logger.info(
+        "[question_card] SUCCESS — Forwarding to client: q=%r, "
+        "options=%r",
+        payload.get("question", "")[:80],
+        payload.get("options", []),
+    )
     send_queue.put_nowait({
         "type": "question_card",
-        "question": payload.get("question", ""),
-        "options": payload.get("options", []),
-        "allow_freetext": payload.get("allow_freetext", False),
-        "max_length": payload.get("max_length", 100),
-        "allow_multiple": payload.get("allow_multiple", False),
+        **payload,
     })
 
 
@@ -659,21 +865,32 @@ def _maybe_forward_download_ready(
     event, tool_name: str,
     send_queue: asyncio.Queue, enqueue_fn,
     session_id: str = "",
+    *,
+    wizard_state: Any = None,
 ):
     """When generate_agent completes, send a download_ready event."""
-    if tool_name != "generate_agent":
+    has_gen_result = (
+        wizard_state is not None
+        and getattr(wizard_state, "last_generate_result", None) is not None
+    )
+    if tool_name != "generate_agent" and not has_gen_result:
         return
-    raw = None
-    if hasattr(event, "data"):
-        result_obj = getattr(event.data, "result", None)
-        if result_obj is not None:
-            raw = getattr(result_obj, "content", None)
-    if not raw:
-        return
-    try:
-        result = json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
-        return
+
+    result = None
+
+    # Primary: use wizard_state.last_generate_result
+    if wizard_state is not None:
+        result = getattr(wizard_state, "last_generate_result", None)
+
+    # Fallback: try extracting from event data
+    if result is None:
+        raw = _extract_tool_result_text(event)
+        if raw:
+            try:
+                result = json.loads(raw)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
     if not isinstance(result, dict):
         return
     if result.get("status") != "generated":

@@ -155,6 +155,7 @@ class BaseScientificAgent:
         model: Optional[str] = None,
         log_level: str = "info",
         output_dir: Optional[str | Path] = None,
+        github_token: Optional[str] = None,
     ):
         """Initialise the agent.
 
@@ -165,6 +166,9 @@ class BaseScientificAgent:
             log_level: Logging level forwarded to the Copilot SDK.
             output_dir: Override for the output directory (takes precedence
                         over ``config.output_dir``).
+            github_token: Optional GitHub OAuth token (``gho_*`` / ``ghu_*``).
+                          When provided, the Copilot SDK makes requests on
+                          behalf of the authenticated user.
         """
         self.config = config or AgentConfig()
         self.model = model or self.config.model
@@ -198,7 +202,11 @@ class BaseScientificAgent:
             from .tools.doc_tools import set_docs_dir
             set_docs_dir(self.config.docs_dir)
 
-        self._client = CopilotClient({"log_level": log_level})
+        _client_opts: Dict[str, Any] = {"log_level": log_level}
+        if github_token:
+            _client_opts["github_token"] = github_token
+            _client_opts["use_logged_in_user"] = False
+        self._client = CopilotClient(_client_opts)
         self._tools: List[Tool] = []
         self._sessions: Dict[str, Any] = {}
         self._tools = self._load_tools()

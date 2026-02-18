@@ -81,5 +81,5 @@ class AgentConfig:
     docs_dir: Optional[str] = None
 
     # Runtime
-    model: str = "GPT-5.3-Codex"
+    model: str = "claude-opus-4.5"
     output_dir: Optional[str] = None

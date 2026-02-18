@@ -267,9 +267,25 @@ async function startGuidedWizard() {
     }
 
     try {
+        // Check auth status before calling API — avoids redirect/CORS issues
+        try {
+            const authCheck = await fetch('/auth/status');
+            if (authCheck.ok) {
+                const authData = await authCheck.json();
+                if (authData.authenticated === false) {
+                    window.location.href = '/auth/login?return_to=/public/';
+                    return;
+                }
+            }
+        } catch (_) { /* auth endpoint not available — OAuth not configured */ }
+
         const resp = await fetch('/public/api/start', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            redirect: 'manual',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
             body: JSON.stringify({
                 domain_description: wizardState.domainDescription,
                 research_goals: wizardState.researchGoals,
@@ -280,6 +296,24 @@ async function startGuidedWizard() {
                 known_packages: wizardState.knownPackages,
             }),
         });
+
+        // Handle auth redirect (opaque redirect or 401)
+        if (resp.type === 'opaqueredirect' || resp.status === 0) {
+            window.location.href = '/auth/login?return_to=/public/';
+            return;
+        }
+
+        if (resp.status === 401) {
+            try {
+                const authData = await resp.json();
+                if (authData.auth_required && authData.login_url) {
+                    window.location.href = authData.login_url;
+                    return;
+                }
+            } catch (_) {}
+            window.location.href = '/auth/login?return_to=/public/';
+            return;
+        }
 
         if (resp.status === 429) {
             alert('Rate limit exceeded. Please try again in an hour.');
@@ -351,6 +385,7 @@ function initGuidedChat(kickoffPrompt) {
 }
 
 function handleWsMessage(msg) {
+    console.log('[WS] Received message:', msg.type, msg);
     switch (msg.type) {
         case 'connected':
             break;
@@ -369,18 +404,22 @@ function handleWsMessage(msg) {
         case 'thinking':
             break;
         case 'tool_start':
+            console.log('[WS] Tool started:', msg.name);
             appendMessage('system', `⚙️ Running ${msg.name}…`);
             break;
         case 'tool_complete':
+            console.log('[WS] Tool complete:', msg.name);
             appendMessage('system', `✅ ${msg.name} done`);
             break;
         case 'question_card':
+            console.log('[WS] QUESTION CARD received:', msg);
             // Render a structured question card
             currentAssistantEl = null;
             assistantBuffer = '';
             renderQuestionCard(msg);
             break;
         case 'download_ready':
+            console.log('[WS] DOWNLOAD READY received:', msg);
             // Render a download card for the generated project
             currentAssistantEl = null;
             assistantBuffer = '';

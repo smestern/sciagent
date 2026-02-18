@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import uuid
 from pathlib import Path
 from quart import (
@@ -25,6 +26,15 @@ from quart_cors import cors
 
 from .agent import create_ingestor
 from .crawler import crawl_package
+
+from sciagent_wizard.auth import (
+    require_auth,
+    require_auth_ws,
+    is_oauth_configured,
+    get_github_token,
+    configure_app_sessions,
+    create_auth_blueprint,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +56,14 @@ _results: dict = {}
 
 
 @ingestor_bp.route("/")
+@require_auth
 async def ingestor_index():
     """Serve the ingestor form page."""
     return await send_from_directory(ingestor_bp.template_folder, "ingestor.html")
 
 
 @ingestor_bp.route("/api/start", methods=["POST"])
+@require_auth
 async def ingestor_start():
     """Accept a package name and return a session ID.
 
@@ -101,6 +113,7 @@ async def ingestor_static(filename):
 
 
 @ingestor_bp.websocket("/ws/ingest")
+@require_auth_ws
 async def ws_ingest():
     """WebSocket endpoint for streaming the ingestion process.
 
@@ -183,7 +196,7 @@ async def ws_ingest():
             "text": "Analyzing documentation with LLM...",
         })
 
-        agent = create_ingestor(package_name)
+        agent = create_ingestor(package_name, github_token=get_github_token())
         state = agent.ingestor_state
         state.pip_name = metadata.get("pip_name", package_name)
         state.source_url = metadata.get(
@@ -347,7 +360,16 @@ def create_ingestor_app() -> Quart:
         static_folder=str(_PKG_DIR / "static"),
         template_folder=str(_PKG_DIR / "templates_html"),
     )
-    app = cors(app, allow_origin="*")
+
+    # CORS — restrict when OAuth is enabled
+    _cors_origin = os.environ.get("SCIAGENT_ALLOWED_ORIGINS", "*")
+    app = cors(app, allow_origin=_cors_origin)
+
+    # OAuth session support (opt-in)
+    configure_app_sessions(app)
+    if is_oauth_configured():
+        app.register_blueprint(create_auth_blueprint())
+
     app.register_blueprint(ingestor_bp)
 
     @app.route("/")

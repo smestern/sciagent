@@ -357,7 +357,13 @@ def create_ingestor(
     package_name: str = "",
     **kwargs,
 ) -> DocsIngestorAgent:
-    """Create a DocsIngestorAgent instance."""
+    """Create a DocsIngestorAgent instance.
+
+    Args:
+        package_name: Python package to ingest.
+        **kwargs: Forwarded to ``BaseScientificAgent.__init__``.
+            Includes ``output_dir`` and optionally ``github_token``.
+    """
     return DocsIngestorAgent(package_name=package_name, **kwargs)
 
 

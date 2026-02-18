@@ -214,6 +214,12 @@
     </style>
 </head>
 <body>
+    <!-- Auth status bar (visible only when OAuth is enabled) -->
+    <div id="authBar" style="display:none;position:fixed;top:0;right:0;padding:0.5rem 1.2rem;background:var(--bg-secondary);border-bottom-left-radius:8px;font-size:0.85rem;z-index:100;color:var(--text-secondary);">
+        Signed in as <strong id="authUser"></strong>
+        &nbsp;·&nbsp;
+        <a href="/auth/logout?return_to=/ingestor/" style="color:var(--accent);">Sign out</a>
+    </div>
     <div class="container">
         <!-- Header -->
         <div class="header">
@@ -272,5 +278,14 @@
     </div>
 
     <script src="/ingestor/static/ingestor.js"></script>
+    <script>
+    // Check auth status and show bar if user is signed in
+    fetch('/auth/status').then(r => r.ok ? r.json() : null).then(d => {
+        if (d && d.authenticated) {
+            document.getElementById('authUser').textContent = d.login;
+            document.getElementById('authBar').style.display = 'block';
+        }
+    }).catch(() => {});
+    </script>
 </body>
 </html>
