@@ -17,7 +17,7 @@ from sciagent.base_agent import BaseScientificAgent, _create_tool
 from sciagent.config import AgentConfig, SuggestionChip
 from sciagent.prompts.base_messages import build_system_message
 
-from .models import OutputMode, PendingQuestion, WizardPhase, WizardState
+from .models import OutputMode, PendingQuestion, SUPPORTED_MODELS, WizardPhase, WizardState
 from .prompts import WIZARD_EXPERTISE, PUBLIC_WIZARD_EXPERTISE
 from . import tools as wizard_tools
 
@@ -92,12 +92,48 @@ class WizardAgent(BaseScientificAgent):
     def wizard_state(self) -> WizardState:
         return self._wizard_state
 
+    @property
+    def model(self) -> str:
+        """Return the current model from wizard state (allows dynamic switching)."""
+        return self._wizard_state.model
+
+    @model.setter
+    def model(self, value: str) -> None:
+        """Update the model in wizard state."""
+        self._wizard_state.model = value
+
     # ── Tool registration ───────────────────────────────────────────
 
     def _load_tools(self) -> List:
         state = self._wizard_state
 
         tools = [
+            # ─ Model selection (for billing) ────────────────────────
+            _create_tool(
+                "set_model",
+                (
+                    "Set the LLM model for this wizard session. This controls "
+                    "which model handles the conversation (for billing). Does "
+                    "NOT affect the generated agent's model. Offer this choice "
+                    "at the start of the conversation if the user wants to "
+                    "change from the default (claude-opus-4.5)."
+                ),
+                lambda **kw: wizard_tools.tool_set_model(state, **kw),
+                {
+                    "type": "object",
+                    "properties": {
+                        "model": {
+                            "type": "string",
+                            "enum": list(SUPPORTED_MODELS),
+                            "description": (
+                                "The LLM model to use for this wizard session."
+                            ),
+                        },
+                    },
+                    "required": ["model"],
+                },
+            ),
+
             # ─ Discovery ────────────────────────────────────────────
             _create_tool(
                 "search_packages",

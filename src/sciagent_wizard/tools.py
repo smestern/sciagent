@@ -21,6 +21,7 @@ from .models import (
     OutputMode,
     PackageCandidate,
     PendingQuestion,
+    SUPPORTED_MODELS,
     WizardState,
 )
 
@@ -501,6 +502,35 @@ def tool_set_output_mode(state: WizardState, mode: str, guided_mode: bool = Fals
         "status": "output_mode_set",
         "mode": output_mode.value,
         "description": descriptions[output_mode],
+    })
+
+
+def tool_set_model(state: WizardState, model: str) -> str:
+    """Set the LLM model for this wizard session.
+
+    This controls which model handles the wizard conversation (for billing).
+    Does NOT affect the generated agent's model configuration.
+    """
+    if model not in SUPPORTED_MODELS:
+        return json.dumps({
+            "error": f"Invalid model '{model}'. Must be one of: {', '.join(SUPPORTED_MODELS)}"
+        })
+
+    state.model = model
+
+    # Model descriptions for user feedback
+    descriptions = {
+        "claude-opus-4.5": "Most capable Claude model — best for complex reasoning and nuanced tasks.",
+        "claude-sonnet-4": "Balanced Claude model — fast and capable for most tasks.",
+        "claude-haiku-3.5": "Fastest Claude model — best for simple tasks and lower cost.",
+        "gpt-4o": "OpenAI's flagship model — excellent general-purpose reasoning.",
+        "gpt-4o-mini": "Smaller OpenAI model — faster and more cost-effective.",
+    }
+
+    return json.dumps({
+        "status": "model_set",
+        "model": model,
+        "description": descriptions.get(model, ""),
     })
 
 

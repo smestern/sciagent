@@ -465,6 +465,40 @@
             color: var(--text-secondary);
             margin-top: 0.25rem;
         }
+
+        /* ── Model selector dropdown ────────────────────────────── */
+        .model-selector-group {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .model-selector-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .model-selector-group .help-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+        .model-selector-group select {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .model-selector-group select:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+        }
     </style>
 </head>
 <body>
@@ -511,6 +545,19 @@
                 Describe your scientific domain. You can start from scratch or
                 pick a quick-start below and customize it.
             </p>
+
+            <!-- Model selector -->
+            <div class="model-selector-group">
+                <label for="model-select">🤖 AI Model</label>
+                <p class="help-text">Choose which model powers the wizard (affects billing)</p>
+                <select id="model-select" onchange="wizardState.model = this.value">
+                    <option value="claude-opus-4.5">Claude Opus 4.5 — Most capable (default)</option>
+                    <option value="claude-sonnet-4">Claude Sonnet 4 — Fast &amp; capable</option>
+                    <option value="claude-haiku-3.5">Claude Haiku 3.5 — Fastest, lowest cost</option>
+                    <option value="gpt-4o">GPT-4o — OpenAI flagship</option>
+                    <option value="gpt-4o-mini">GPT-4o Mini — OpenAI, cost-effective</option>
+                </select>
+            </div>
 
             <div class="quickstart-grid" id="quickstart-cards">
                 <div class="quickstart-card" onclick="useQuickstart('electrophysiology')">

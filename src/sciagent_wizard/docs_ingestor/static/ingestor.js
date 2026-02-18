@@ -93,10 +93,12 @@ async function startIngestion() {
 
         ws.onopen = () => {
             // Send package info to start the process
+            const selectedModel = document.getElementById('modelSelect').value;
             ws.send(JSON.stringify({
                 package_name: packageName,
                 github_url: githubUrl || null,
                 session_id: sessionId,
+                model: selectedModel,
             }));
             addLog('Connected — starting ingestion...', 'status');
         };

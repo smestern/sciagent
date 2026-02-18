@@ -20,6 +20,19 @@ class OutputMode(str, Enum):
     MARKDOWN = "markdown"            # Platform-agnostic markdown specification
 
 
+# Supported LLM models for wizard backend (billing selection)
+SUPPORTED_MODELS: tuple[str, ...] = (
+    "claude-opus-4.5",
+    "claude-sonnet-4.5",
+    "claude-sonnet-4.6",
+    "gpt-5.3",
+    "gpt-5.3-codex",
+    "claude-haiku-3.5",
+    "gpt-4o",
+    "gpt-4o-mini",
+)
+
+
 class WizardPhase(str, Enum):
     """Tracks progress through the guided wizard flow."""
 
@@ -159,6 +172,9 @@ class WizardState:
     # ─ Guided / public mode ─────────────────────────────────────────
     guided_mode: bool = False
     phase: "WizardPhase" = None  # type: ignore[assignment]  # set post-init
+
+    # ─ Wizard session model (for billing) ───────────────────────────
+    model: str = "claude-opus-4.5"
     data_types: List[str] = field(default_factory=list)
     analysis_goals: List[str] = field(default_factory=list)
     experience_level: str = ""  # beginner / intermediate / advanced
@@ -199,5 +215,6 @@ class WizardState:
             "data_types": self.data_types,
             "analysis_goals": self.analysis_goals,
             "experience_level": self.experience_level,
+            "model": self.model,
         }
         return d

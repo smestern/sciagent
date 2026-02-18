@@ -49,6 +49,9 @@ class IngestorState:
     source_url: str = ""
     docs_url: str = ""
 
+    # LLM model for this session (for billing)
+    model: str = "claude-opus-4.5"
+
     # Raw crawled content
     scraped_pages: List[ScrapedPage] = field(default_factory=list)
     pypi_metadata: Dict[str, str] = field(default_factory=dict)
@@ -90,4 +93,5 @@ class IngestorState:
             "total_chars": self.total_scraped_chars,
             "sections_filled": self.sections_filled,
             "finalized": self.final_markdown is not None,
+            "model": self.model,
         }

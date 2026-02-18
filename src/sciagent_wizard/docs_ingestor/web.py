@@ -147,6 +147,7 @@ async def ws_ingest():
         package_name = msg.get("package_name", "").strip()
         github_url = msg.get("github_url", "").strip() or None
         session_id = msg.get("session_id", str(uuid.uuid4()))
+        selected_model = msg.get("model", "claude-opus-4.5")
 
         if not package_name:
             send_queue.put_nowait({
@@ -205,6 +206,12 @@ async def ws_ingest():
         state.docs_url = metadata.get("docs_url", "")
         state.pypi_metadata = metadata
         state.scraped_pages = pages
+
+        # Apply model selection (for billing)
+        from sciagent_wizard.models import SUPPORTED_MODELS
+        if selected_model in SUPPORTED_MODELS:
+            state.model = selected_model
+            logger.info("Set ingestor model to %s", selected_model)
 
         await agent.start()
         session = await agent.create_session(

@@ -386,6 +386,19 @@ async def _run_ws_session(
         agents[ws_id] = agent
         set_output_dir(output_dir)
 
+        # ── Apply model selection from query params (for billing) ──
+        try:
+            model_param = websocket.args.get("model")
+            if model_param:
+                wizard_state = getattr(agent, "_wizard_state", None)
+                if wizard_state is not None:
+                    from sciagent_wizard.models import SUPPORTED_MODELS
+                    if model_param in SUPPORTED_MODELS:
+                        wizard_state.model = model_param
+                        logger.info("Set wizard model to %s", model_param)
+        except Exception as e:
+            logger.debug("Could not set model from query param: %s", e)
+
         is_guided = getattr(agent, "_guided_mode", False)
         kickoff_received = False
 

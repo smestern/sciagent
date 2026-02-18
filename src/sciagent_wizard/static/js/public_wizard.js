@@ -19,6 +19,7 @@ const wizardState = {
     uploadedFiles: [],
     uploadedFilePaths: [],
     sessionId: null,
+    model: 'claude-opus-4.5',  // LLM model for billing
 };
 
 // ── Quick-start templates ──────────────────────────────────────────────
@@ -362,7 +363,8 @@ function initGuidedChat(kickoffPrompt) {
     appendMessage('system', '🧙 Connecting to the wizard…');
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${protocol}//${location.host}/ws/public-chat`);
+    const modelParam = encodeURIComponent(wizardState.model);
+    ws = new WebSocket(`${protocol}//${location.host}/ws/public-chat?model=${modelParam}`);
 
     ws.onopen = () => {
         appendMessage('system', '🧙 Connected! Searching for domain tools…');

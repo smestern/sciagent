@@ -57,7 +57,15 @@ class DocsIngestorAgent(BaseScientificAgent):
     @property
     def ingestor_state(self) -> IngestorState:
         return self._ingestor_state
+    @property
+    def model(self) -> str:
+        """Return the current model from ingestor state (for billing)."""
+        return self._ingestor_state.model
 
+    @model.setter
+    def model(self, value: str) -> None:
+        """Update the model in ingestor state."""
+        self._ingestor_state.model = value
     # ── Tool registration ───────────────────────────────────────────
 
     def _load_tools(self) -> List:
