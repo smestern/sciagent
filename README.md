@@ -125,6 +125,29 @@ my_agent/
 
 Copy the project into your workspace and the agents appear automatically in VS Code Copilot chat or Claude Code.
 
+#### Default Scientific Agents
+
+SciAgent also ships **5 ready-to-use agents** in the [`templates/agents/`](templates/agents/) directory that implement common scientific workflow roles:
+
+| Agent | Role |
+|-------|------|
+| `analysis-planner` | Design the analysis roadmap (read-only) |
+| `data-qc` | Check data quality before analysis |
+| `rigor-reviewer` | Audit results for scientific rigor (read-only) |
+| `report-writer` | Generate structured reports |
+| `code-reviewer` | Review scripts for correctness (read-only) |
+
+Copy them into your workspace to get a full scientific workflow with handoff buttons between agents (planner → QC → your agent → rigor review → report).
+
+You can also convert any `AgentConfig` or YAML file to `.agent.md` / `.claude` format with the converter script:
+
+```bash
+python scripts/convert_to_agents.py --from-config my_module.config:MY_CONFIG -o .
+python scripts/convert_to_agents.py --from-yaml my_agent.yaml -o .
+```
+
+See [docs/copilot-agents.md](docs/copilot-agents.md) for the full guide on using agents in VS Code and Claude Code.
+
 ### Mode 3 — Platform-Agnostic Markdown (`markdown`)
 
 Generates a self-contained set of Markdown files that define the agent's persona, tools, data handling, guardrails, and workflow. Paste them into **any** LLM — ChatGPT, Gemini, Claude, local models, etc.:
@@ -227,6 +250,7 @@ app.run(host="0.0.0.0", port=8080)
 
 | Module | Description |
 |--------|-------------|
+| `sciagent.agents` | Default agent presets (rigor reviewer, planner, QC, report writer, code reviewer) + converter |
 | `sciagent.base_agent` | Abstract base class with Copilot SDK session lifecycle |
 | `sciagent.config` | `AgentConfig` dataclass for all customisation |
 | `sciagent.prompts` | Composable system message building blocks |

@@ -40,6 +40,8 @@ class ScientificCLI:
         agent_factory: ``(output_dir=...) -> BaseScientificAgent``
         config: Domain configuration (name, colours, prompts, etc.).
         output_dir: Override output directory (defaults to CWD/output).
+        rigor_level: Override for the rigor enforcement level
+            (``"strict"``, ``"standard"``, ``"relaxed"``, ``"bypass"``).
     """
 
     def __init__(
@@ -47,9 +49,12 @@ class ScientificCLI:
         agent_factory: Callable,
         config: Optional[AgentConfig] = None,
         output_dir: Optional[Path] = None,
+        rigor_level: Optional[str] = None,
     ):
         self.agent_factory = agent_factory
         self.config = config or AgentConfig()
+        if rigor_level is not None:
+            self.config.rigor_level = rigor_level
         self.output_dir = output_dir or Path.cwd() / "output"
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -401,9 +406,10 @@ def run_cli(
     agent_factory: Callable,
     config: Optional[AgentConfig] = None,
     output_dir: Optional[Path] = None,
+    rigor_level: Optional[str] = None,
 ):
     """Convenience wrapper: create a ``ScientificCLI`` and start the REPL."""
-    cli = ScientificCLI(agent_factory, config, output_dir)
+    cli = ScientificCLI(agent_factory, config, output_dir, rigor_level=rigor_level)
     asyncio.run(cli.run())
 
 
@@ -434,6 +440,12 @@ def wizard(
         "-m",
         help="Output mode: fullstack, copilot_agent, or markdown.",
     ),
+    rigor_level: str = typer.Option(
+        "standard",
+        "--rigor-level",
+        "-r",
+        help="Rigor enforcement level: strict, standard, relaxed, or bypass.",
+    ),
 ):
     """🧙 Launch the self-assembly wizard to build a domain-specific agent."""
     from sciagent_wizard import create_wizard, WIZARD_CONFIG
@@ -447,20 +459,28 @@ def wizard(
         console.print("[dim]Valid modes: fullstack, copilot_agent, markdown[/dim]")
         raise typer.Exit(1)
 
+    # Validate rigor level
+    from sciagent.guardrails.scanner import RigorLevel
+    _rigor = RigorLevel.from_str(rigor_level)
+
     def _factory(**kwargs):
         w = create_wizard(**kwargs)
         w.wizard_state.output_mode = mode
         return w
+
+    # Apply rigor level to the wizard config
+    WIZARD_CONFIG.rigor_level = _rigor.value
 
     if web:
         from sciagent.web.app import create_app
         console.print(Panel(
             "[bold]🧙 SciAgent Self-Assembly Wizard[/bold]\n"
             f"[dim]Open http://localhost:{port}/wizard in your browser[/dim]\n"
-            f"[dim]Output mode: {mode.value}[/dim]",
+            f"[dim]Output mode: {mode.value}[/dim]\n"
+            f"[dim]Rigor level: {_rigor.value}[/dim]",
             expand=False,
         ))
         app_instance = create_app(_factory, WIZARD_CONFIG)
         app_instance.run(host="0.0.0.0", port=port)
     else:
-        run_cli(_factory, WIZARD_CONFIG, output_dir)
+        run_cli(_factory, WIZARD_CONFIG, output_dir, rigor_level=_rigor.value)

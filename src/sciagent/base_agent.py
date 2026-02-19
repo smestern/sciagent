@@ -48,6 +48,16 @@ from .config import AgentConfig
 
 logger = logging.getLogger(__name__)
 
+# Tools whose arguments are already scanned inside their own handler —
+# the middleware should not double-scan them.
+_SELF_SCANNING_TOOLS = frozenset({
+    "execute_code", "validate_code", "run_custom_analysis",
+})
+
+# Minimum argument string length to bother scanning (avoids false
+# positives on short flag-like values).
+_MIN_SCAN_LENGTH = 50
+
 
 def _normalize_result(result: Any) -> ToolResult:
     """Convert any return value to a ``ToolResult``.
@@ -86,6 +96,13 @@ def _create_tool(
     ``ToolInvocation`` dict rather than the raw invocation envelope.
     The return value is normalised into a ``ToolResult``.
 
+    **Middleware**: When ``AgentConfig.intercept_all_tools`` is enabled
+    (the default) and the tool is *not* in ``_SELF_SCANNING_TOOLS``,
+    every string argument longer than ``_MIN_SCAN_LENGTH`` is scanned by
+    the active ``CodeScanner``.  If hard-block violations or
+    needs-confirmation items are found the tool call is rejected with a
+    descriptive message instructing the agent to ask the user.
+
     Args:
         name: Tool name (function name).
         description: What the tool does.
@@ -109,6 +126,13 @@ def _create_tool(
                 args = json.loads(args)
             except (json.JSONDecodeError, TypeError):
                 args = {}
+
+        # ── Rigor middleware — scan code-like strings in arguments ──
+        if name not in _SELF_SCANNING_TOOLS:
+            rejection = _rigor_middleware(name, args)
+            if rejection is not None:
+                return rejection
+
         try:
             if _is_async:
                 import concurrent.futures
@@ -130,6 +154,49 @@ def _create_tool(
         handler=_wrapped_handler,
         parameters=parameters or {"type": "object", "properties": {}},
     )
+
+
+def _rigor_middleware(
+    tool_name: str, args: Dict[str, Any],
+) -> Optional[ToolResult]:
+    """Scan string-valued tool arguments for rigor violations.
+
+    Returns a ``ToolResult`` with ``resultType="failure"`` if the
+    code scanner finds hard-block violations or needs-confirmation
+    items.  Returns ``None`` to allow the call through.
+    """
+    from .tools.context import get_active_context
+
+    ctx = get_active_context()
+    if ctx is None:
+        return None
+
+    # Respect the intercept_all_tools config flag.
+    if not ctx.intercept_all_tools:
+        return None
+
+    scanner = ctx.scanner
+
+    issues: List[str] = []
+    for key, value in args.items():
+        if not isinstance(value, str) or len(value) < _MIN_SCAN_LENGTH:
+            continue
+        result = scanner.check(value)
+        issues.extend(result["violations"])
+        issues.extend(result["needs_confirmation"])
+
+    if not issues:
+        return None
+
+    msg = (
+        f"⚠️ RIGOR INTERCEPTION on tool '{tool_name}':\n"
+        + "\n".join(f"• {i}" for i in issues)
+        + "\n\nThe argument text contains code that would bypass the "
+        "analysis sandbox.  Present these concerns to the user and ask "
+        "whether to proceed.  If the user approves, use execute_code "
+        "with confirmed=True instead."
+    )
+    return ToolResult(textResultForLlm=msg, resultType="failure")
 
 
 class BaseScientificAgent:
@@ -189,11 +256,22 @@ class BaseScientificAgent:
         self._session_log = SessionLog()
         set_session_log(self._session_log)
 
+        # Build a CodeScanner with the configured rigor level & custom patterns
+        from .guardrails.scanner import CodeScanner, RigorLevel
+        rigor = RigorLevel.from_str(self.config.rigor_level)
+        scanner = CodeScanner(rigor_level=rigor)
+        if self.config.forbidden_patterns:
+            scanner.add_forbidden_batch(self.config.forbidden_patterns)
+        if self.config.warning_patterns:
+            scanner.add_warning_batch(self.config.warning_patterns)
+
         # Execution context — replaces scattered module-level singletons
         from .tools.context import ExecutionContext, set_active_context
         self._exec_ctx = ExecutionContext(
             output_dir=self._output_dir,
+            scanner=scanner,
             session_log=self._session_log,
+            intercept_all_tools=self.config.intercept_all_tools,
         )
         set_active_context(self._exec_ctx)
 

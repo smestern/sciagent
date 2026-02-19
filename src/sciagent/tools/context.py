@@ -42,11 +42,13 @@ class ExecutionContext:
         scanner: Optional[CodeScanner] = None,
         session_log: Optional[SessionLog] = None,
         on_file_loaded: Optional[Callable[[str], None]] = None,
+        intercept_all_tools: bool = True,
     ) -> None:
         self.output_dir = output_dir
         self.scanner = scanner or CodeScanner()
         self.session_log = session_log or SessionLog()
         self.on_file_loaded = on_file_loaded
+        self.intercept_all_tools = intercept_all_tools
 
     def notify_file_loaded(self, file_path: str) -> None:
         """Record a file load and trigger the hook."""

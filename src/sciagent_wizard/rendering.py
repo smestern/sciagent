@@ -404,10 +404,19 @@ def _build_repeat_context(
 
 
 def _build_agent_overview_table(state: WizardState) -> str:
-    """Build the agent overview table for agents.md."""
+    """Build the agent overview table for agents.md.
+
+    Includes the 5 default sciagent agents plus the domain-specific main
+    agent from the wizard conversation.
+    """
     rows = [
         "| Agent | Role | Primary Skills |",
         "|-------|------|----------------|",
         f"| {state.agent_name} | Main coordinator | All skills |",
+        "| analysis-planner | Analysis roadmap designer | Planning, incremental validation |",
+        "| data-qc | Data quality gatekeeper | QC checks, outlier detection |",
+        "| rigor-reviewer | Scientific rigor auditor | Statistical review, integrity checks |",
+        "| report-writer | Report generator | Structured reports, figures, tables |",
+        "| code-reviewer | Script correctness auditor | Code review, reproducibility |",
     ]
     return "\n".join(rows)

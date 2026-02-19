@@ -140,8 +140,17 @@ def validate_code(code: str) -> Dict[str, Any]:
         result["errors"].append(f"Syntax error at line {e.lineno}: {e.msg}")
         return result
 
-    dangerous_calls = ["eval", "exec", "compile", "__import__", "open", "os.system"]
+    dangerous_calls = [
+        "eval", "exec", "compile", "__import__", "open", "os.system",
+    ]
     dangerous_attrs = ["__class__", "__bases__", "__subclasses__"]
+
+    # Additional dangerous module-level calls (subprocess.*, os.popen, etc.)
+    dangerous_module_calls = {
+        "subprocess": {"run", "Popen", "call", "check_output", "check_call"},
+        "os": {"system", "popen", "execl", "execle", "execlp", "execv",
+               "execve", "execvp", "execvpe", "spawnl", "spawnle"},
+    }
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
@@ -149,6 +158,16 @@ def validate_code(code: str) -> Dict[str, Any]:
                 result["warnings"].append(
                     f"Potentially dangerous call: {node.func.id}()"
                 )
+        # Detect module.func() calls like subprocess.run(), os.popen()
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            if isinstance(node.func.value, ast.Name):
+                mod = node.func.value.id
+                func = node.func.attr
+                if mod in dangerous_module_calls and func in dangerous_module_calls[mod]:
+                    result["warnings"].append(
+                        f"BLOCKED: {mod}.{func}() — shell execution is not "
+                        f"permitted inside the sandbox."
+                    )
         if isinstance(node, ast.Attribute) and node.attr in dangerous_attrs:
             result["warnings"].append(f"Accessing special attribute: {node.attr}")
 
@@ -162,13 +181,25 @@ def validate_code(code: str) -> Dict[str, Any]:
     name="execute_code",
     description=(
         "Execute custom Python code for analysis. Code is validated for "
-        "scientific rigor. numpy, scipy, matplotlib, and pandas are available."
+        "scientific rigor. numpy, scipy, matplotlib, and pandas are available. "
+        "If the tool returns needs_confirmation=True, present the warnings to "
+        "the user and ask whether to proceed. If they agree, call again with "
+        "confirmed=True."
     ),
     parameters={
         "type": "object",
         "properties": {
             "code": {"type": "string", "description": "Python code to execute"},
             "context": {"type": "object", "description": "Variables to make available"},
+            "confirmed": {
+                "type": "boolean",
+                "description": (
+                    "Set to true after the user has confirmed a rigor warning. "
+                    "When true, WARNING-level rigor patterns are skipped "
+                    "(CRITICAL violations still block)."
+                ),
+                "default": False,
+            },
         },
         "required": ["code"],
     },
@@ -183,6 +214,7 @@ def execute_code(
     extra_env: Optional[Dict[str, Any]] = None,
     _figure_push_fn: Optional[Any] = None,
     ctx: Optional[ExecutionContext] = None,
+    confirmed: bool = False,
 ) -> Dict[str, Any]:
     """Execute custom Python code in a controlled environment.
 
@@ -197,10 +229,14 @@ def execute_code(
         _figure_push_fn: Optional callback ``(fig_dict) -> None`` for
             pushing captured figures to a web UI queue.
         ctx: Optional ``ExecutionContext`` (falls back to active context).
+        confirmed: When ``True``, the user has acknowledged rigor
+            warnings — WARNING-level matches are allowed through.
+            CRITICAL violations still block regardless.
 
     Returns:
         Dict with ``success``, ``output``, ``error``, ``result``,
-        ``variables``, ``figures``, ``rigor_warnings``.
+        ``variables``, ``figures``, ``rigor_warnings``, and optionally
+        ``needs_confirmation``.
     """
     from .figures import capture_figures
     from .scripts import save_script
@@ -212,6 +248,8 @@ def execute_code(
     # Rigor check — scan for forbidden patterns
     if enforce_rigor:
         rigor_check = scanner.check(code)
+
+        # Hard-block violations (CRITICAL patterns in STANDARD, all in STRICT)
         if not rigor_check["passed"]:
             return {
                 "success": False,
@@ -225,6 +263,29 @@ def execute_code(
                 "figures": [],
                 "rigor_warnings": rigor_check["violations"],
             }
+
+        # Needs-confirmation items — require user acknowledgement
+        if rigor_check["needs_confirmation"] and not confirmed:
+            confirmation_items = rigor_check["needs_confirmation"]
+            return {
+                "success": False,
+                "needs_confirmation": True,
+                "output": "",
+                "error": None,
+                "result": None,
+                "variables": {},
+                "figures": [],
+                "rigor_warnings": confirmation_items,
+                "message": (
+                    "⚠️ RIGOR WARNING — The following concerns were detected:\n"
+                    + "\n".join(f"• {w}" for w in confirmation_items)
+                    + "\n\nPresent these warnings to the user and ask whether "
+                    "to proceed. If they confirm, re-call execute_code with "
+                    "confirmed=True."
+                ),
+            }
+
+        # Informational warnings — always pass through
         rigor_warnings.extend(rigor_check["warnings"])
 
     # Validate input data integrity

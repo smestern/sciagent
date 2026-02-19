@@ -73,6 +73,14 @@ class AgentConfig:
     bounds: Dict[str, Tuple[float, float]] = field(default_factory=dict)
     forbidden_patterns: List[Tuple[str, str]] = field(default_factory=list)
     warning_patterns: List[Tuple[str, str]] = field(default_factory=list)
+    rigor_level: str = "standard"
+    """Rigor enforcement level: ``"strict"``, ``"standard"``,
+    ``"relaxed"``, or ``"bypass"``.  See
+    :class:`~sciagent.guardrails.scanner.RigorLevel` for semantics."""
+    intercept_all_tools: bool = True
+    """When ``True``, every tool invocation is scanned for code-like
+    strings that might bypass the sandbox (e.g. shell commands).  Set
+    ``False`` to disable the middleware."""
 
     # Sandbox
     extra_libraries: Dict[str, str] = field(default_factory=dict)

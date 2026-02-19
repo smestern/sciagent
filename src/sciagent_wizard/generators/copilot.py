@@ -90,6 +90,25 @@ def generate_copilot_project(
 
 # ── VS Code .agent.md ──────────────────────────────────────────────────
 
+_RIGOR_GUARDRAIL_INSTRUCTIONS = """\
+### Scientific Rigor — Shell / Terminal Policy
+
+**NEVER** use the `terminal` tool to execute data analysis or computation code.
+All analysis must go through the provided analysis tools (e.g. `execute_code`)
+which enforce scientific rigor checks automatically.
+
+The `terminal` tool may be used **only** for environment setup tasks such as
+`pip install`, `git` commands, or opening files — and only after describing the
+command to the user.
+
+If a rigor warning is raised by `execute_code` (indicated by
+`needs_confirmation: true` in the result), you **MUST**:
+1. Present the warnings to the user verbatim.
+2. Ask whether to proceed.
+3. If confirmed, re-call `execute_code` with `confirmed: true`.
+4. Never silently bypass or suppress rigor warnings.
+"""
+
 
 def _vscode_agent_md(state: WizardState, instructions: str) -> str:
     """Generate a VS Code custom agent file (.agent.md format)."""
@@ -126,7 +145,7 @@ tools:
 {handoffs_yaml}
 ---"""
 
-    return f"{frontmatter}\n\n{instructions}\n"
+    return f"{frontmatter}\n\n{instructions}\n\n{_RIGOR_GUARDRAIL_INSTRUCTIONS}\n"
 
 
 # ── Claude Code sub-agent .md ──────────────────────────────────────────
@@ -144,7 +163,7 @@ tools: {tools}
 model: sonnet
 ---"""
 
-    return f"{frontmatter}\n\n{instructions}\n"
+    return f"{frontmatter}\n\n{instructions}\n\n{_RIGOR_GUARDRAIL_INSTRUCTIONS}\n"
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────

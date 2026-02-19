@@ -111,11 +111,31 @@ def create_app(
             "accent_color": config.accent_color,
             "github_url": config.github_url,
             "accepted_file_types": config.accepted_file_types,
+            "rigor_level": config.rigor_level,
             "suggestion_chips": [
                 {"label": c.label, "prompt": c.prompt}
                 for c in config.suggestion_chips
             ],
         })
+
+    @app.route("/api/config/rigor", methods=["POST"])
+    async def api_set_rigor():
+        """Change the rigor enforcement level at runtime."""
+        from sciagent.guardrails.scanner import RigorLevel
+        from sciagent.tools.context import get_active_context
+
+        body = await request.get_json(silent=True) or {}
+        level_str = body.get("rigor_level", "").strip().lower()
+        if level_str not in ("strict", "standard", "relaxed", "bypass"):
+            return jsonify({"error": f"Invalid rigor_level: {level_str!r}"}), 400
+
+        config.rigor_level = level_str  # persist on config object
+        ctx = get_active_context()
+        if ctx and ctx.scanner:
+            ctx.scanner.rigor_level = RigorLevel.from_str(level_str)
+
+        logger.info("Rigor level changed to %s", level_str)
+        return jsonify({"rigor_level": level_str})
 
     # ── Static pages ──────────────────────────────────────────────
     @app.route("/")
