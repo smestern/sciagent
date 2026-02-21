@@ -45,6 +45,7 @@ from copilot import CopilotClient
 from copilot.types import Tool, ToolInvocation, ToolResult, SessionConfig, CustomAgentConfig
 
 from .config import AgentConfig
+from .agents import ALL_DEFAULT_AGENTS
 
 logger = logging.getLogger(__name__)
 
@@ -288,6 +289,7 @@ class BaseScientificAgent:
         self._tools: List[Tool] = []
         self._sessions: Dict[str, Any] = {}
         self._tools = self._load_tools()
+        self._subagents = ALL_DEFAULT_AGENTS
 
     # -- output_dir property --------------------------------------------------
 
@@ -481,7 +483,7 @@ class BaseScientificAgent:
             model=model or self.model,
             tools=all_tools,
             system_message=system_message,
-            custom_agents=[agent_config],
+            custom_agents=[agent_config, *[x.to_copilot_config() for x in self._subagents.values()]], #brute force inject subagent configs as custom agents (since the SDK doesn't have a first-class subagent concept)
             streaming=True,
         )
         if session_id:

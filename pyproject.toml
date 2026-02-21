@@ -39,6 +39,7 @@ dependencies = [
     "scipy>=1.7",
     "matplotlib>=3.4",
     "Pillow>=9.0",
+    "PyYAML>=6.0",
     "github-copilot-sdk",  # GitHub Copilot SDK
 ]
 

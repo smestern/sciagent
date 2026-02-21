@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from copilot.types import CustomAgentConfig
 
 
 @dataclass
@@ -91,3 +92,11 @@ class AgentConfig:
     # Runtime
     model: str = "claude-opus-4.5"
     output_dir: Optional[str] = None
+
+    def to_copilot_config(self) -> CustomAgentConfig:
+        """Convert to a GitHub Copilot SDK CustomAgentConfig."""
+        return CustomAgentConfig(
+            name=self.name,
+            description=self.description,
+            prompt=self.instructions,
+        )
