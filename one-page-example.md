@@ -1,1 +1,0 @@
-C:/Users/SMest/Dropbox/patchAgent/blog/00-one-page_summary.md

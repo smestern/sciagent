@@ -5,23 +5,27 @@ Each skill represents a coherent set of capabilities the agent can apply to
 a specific type of analysis task.
 
 > **Tip:** Skills are a way to organise your agent's expertise into
-> discoverable, trigger-able units. Not every agent needs multiple skills —
-> a single "general analysis" skill may be sufficient for simpler domains.
+> discoverable, trigger-able units.  They follow the
+> [Agent Skills](https://agentskills.io/) open standard and work in
+> VS Code Copilot, Copilot CLI, and the Copilot coding agent.
+>
+> Skills can be used **alongside or instead of** custom agents.  Agents
+> provide persona-based workflows with tools and handoffs; skills provide
+> procedural capabilities loaded on-demand.
 
-## Skill Overview
+## Default Skills
 
-<!-- REPLACE: skills_overview_table — A Markdown table listing your agent's skills. Columns: Skill, Location, Description. Example:
-| Skill | Location | Description |
-|-------|----------|-------------|
-| Data Loading | skills/data_loading/ | File parsing and format detection |
-| Quality Control | skills/quality_control/ | Data quality assessment |
-| Feature Extraction | skills/feature_extraction/ | Extracting measurements from raw data |
-| Visualisation | skills/visualisation/ | Generating plots and figures |
--->
+SciAgent ships 6 default skills in `templates/skills/`.  Copy them into
+`.github/skills/` in your workspace to activate them.
 
-| Skill | Location | Description |
-|-------|----------|-------------|
-| *skill_name* | *path* | *brief description* |
+| Skill | Location | Description | Slash Command |
+|-------|----------|-------------|---------------|
+| Scientific Rigor | `skills/scientific-rigor/` | Mandatory rigor principles — data integrity, objectivity, uncertainty, reproducibility | *(auto-loads)* |
+| Analysis Planner | `skills/analysis-planner/` | Step-by-step analysis planning with incremental validation | `/analysis-planner` |
+| Data QC | `skills/data-qc/` | Systematic data quality control checklist with severity-rated reporting | `/data-qc` |
+| Rigor Reviewer | `skills/rigor-reviewer/` | 8-point scientific rigor audit checklist | `/rigor-reviewer` |
+| Report Writer | `skills/report-writer/` | Publication-quality report generation template and guidelines | `/report-writer` |
+| Code Reviewer | `skills/code-reviewer/` | 7-point code review checklist for scientific scripts | `/code-reviewer` |
 
 ---
 
@@ -49,45 +53,49 @@ a specific type of analysis task.
 
 ## Adding New Skills
 
-1. Create a new directory for the skill: `skills/<skill_name>/`
-2. Add a `SKILL.md` with the skill definition
+1. Create a new directory for the skill: `.github/skills/<skill_name>/`
+2. Add a `SKILL.md` with YAML frontmatter and instructions
 3. Update this document with the new skill
 
-### Skill File Template
+### SKILL.md Template
 
 ```markdown
-# Skill Name
+---
+name: skill-name
+description: Description of what the skill does and when to use it (max 1024 chars)
+argument-hint: Hint text shown when invoked via /slash command
+---
 
-## Description
-Brief description of the skill's purpose.
+# Skill Name
 
 ## When to Use
 - Trigger condition 1
 - Trigger condition 2
 
-## Capabilities
-### Capability 1
+## Procedure
+### Step 1
 Details...
 
-### Capability 2
+### Step 2
 Details...
 
-## Tools Used
-- tool_1
-- tool_2
+## Examples
+### Example 1
+Expected input and output
 
-## Example Workflows
-### Workflow 1
-```
-1. Step 1
-2. Step 2
+## Domain Customization
+<!-- Add domain-specific guidance below this line. -->
 ```
 
-## Parameters Reference
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| param1    | value   | description |
+### Skill vs Agent — When to Choose Which
 
-## Notes
-Additional information...
-```
+| Use a **Skill** when... | Use an **Agent** when... |
+|------------------------|------------------------|
+| You want on-demand procedural guidance | You need a distinct persona with tool restrictions |
+| The capability is self-contained | You need handoff workflows between roles |
+| You want portability across Copilot, CLI, and coding agent | You need Claude Code compatibility via `.claude/agents/` |
+| The instructions augment any active agent | The instructions replace the default agent behavior |
+
+You can also use **both** — install agents for workflow handoffs and skills
+for ad-hoc capabilities.  The `scientific-rigor` skill auto-loads to
+supplement any agent with rigor principles.

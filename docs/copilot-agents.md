@@ -1,11 +1,14 @@
-# Using SciAgent Agents in VS Code & Claude Code
+# Using SciAgent Agents and Skills in VS Code & Claude Code
 
-This guide explains how to use sciagent's default agents — and your own
-custom agents — as **VS Code GitHub Copilot custom agents** and **Claude
-Code sub-agents**.
+> **New here?** Start with [Getting Started: Copilot / Claude Code](getting-started-copilot.md) for a step-by-step setup walkthrough. This page is the detailed reference.
+
+This guide explains how to use sciagent's default agents and skills — and
+your own custom ones — as **VS Code GitHub Copilot custom agents**,
+**Agent Skills**, and **Claude Code sub-agents**.
 
 > **VS Code docs reference:**
 > [Custom agents in VS Code](https://code.visualstudio.com/docs/copilot/customization/custom-agents)
+> · [Agent Skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills)
 
 ---
 
@@ -21,6 +24,27 @@ VS Code also detects `.md` files in `.claude/agents/`, following the
 [Claude Code sub-agents format](https://code.claude.com/docs/en/sub-agents).
 This means you can use the same agent definitions across VS Code Copilot
 and Claude Code.
+
+## What are Agent Skills?
+
+Agent Skills are folders containing a `SKILL.md` file that teach Copilot
+specialized capabilities — instructions, checklists, and procedures it
+can load on-demand.  Skills follow the open
+[Agent Skills](https://agentskills.io/) standard and work across VS Code
+Copilot, Copilot CLI, and the Copilot coding agent.
+
+**Skills vs Agents** — when to use which:
+
+| | Agents | Skills |
+|---|--------|--------|
+| **What they are** | Personas with tools, handoffs, and constraints | Procedural capabilities loaded on-demand |
+| **How they activate** | Select from the Agents dropdown | Auto-loaded by relevance or invoked via `/slash` |
+| **Handoff workflows** | Yes — buttons connect agents in sequence | No — skills add knowledge, not workflow routing |
+| **Tool restrictions** | Can restrict which tools are available | No tool restrictions — uses the active tool set |
+| **Best for** | Multi-step workflows with distinct roles | Adding domain expertise or review checklists |
+
+You can use **agents only**, **skills only**, or **both together**.  When
+both are active, the skill's instructions augment the agent's persona.
 
 ---
 
@@ -53,6 +77,40 @@ Run Claude Code — it auto-detects agents in `.claude/agents/`.
 ```bash
 cp -r templates/agents/.github/ templates/agents/.claude/ /path/to/your/workspace/
 ```
+
+---
+
+## Quick Start: Using the Default Skills
+
+SciAgent ships 6 default skills in the [`templates/skills/`](../templates/skills/) directory.
+To use them:
+
+```bash
+# Copy the skill directories into your workspace's .github/skills/
+mkdir -p /path/to/your/workspace/.github/skills
+cp -r templates/skills/*  /path/to/your/workspace/.github/skills/
+```
+
+In VS Code → Copilot Chat → type `/` to see available skills as slash
+commands (e.g. `/rigor-reviewer`, `/data-qc`).
+
+> **Note:** The `scientific-rigor` skill has `user-invokable: false` — it
+> auto-loads whenever Copilot detects scientific analysis, without
+> appearing in the `/` menu.
+
+### Using Both Agents and Skills
+
+```bash
+# Copy agents AND skills into your workspace
+cp -r templates/agents/.github/ templates/agents/.claude/ /path/to/your/workspace/
+mkdir -p /path/to/your/workspace/.github/skills
+cp -r templates/skills/*  /path/to/your/workspace/.github/skills/
+```
+
+When both are installed, you get agent **workflow handoffs** (planner →
+QC → analysis → rigor review → report) *and* skill **slash commands**
+for ad-hoc use.  The `scientific-rigor` skill auto-loads to supplement
+any active agent with rigor principles.
 
 ---
 
@@ -95,6 +153,34 @@ actions that appear after a chat response completes:
 
 Handoff buttons appear at the bottom of the chat response.  Clicking one
 switches to the target agent with the prompt pre-filled.
+
+---
+
+## Default Skill Roster
+
+| Skill | Slash Command | Description | Auto-loads? |
+|-------|---------------|-------------|-------------|
+| **scientific-rigor** | *(hidden)* | Mandatory rigor principles: data integrity, objectivity, sanity checks, uncertainty, reproducibility | Yes — always |
+| **analysis-planner** | `/analysis-planner` | Step-by-step analysis planning methodology with incremental validation | No |
+| **data-qc** | `/data-qc` | Systematic 6-point data quality checklist with severity-rated reporting | No |
+| **rigor-reviewer** | `/rigor-reviewer` | 8-point scientific rigor audit checklist | No |
+| **report-writer** | `/report-writer` | Publication-quality report generation template and guidelines | No |
+| **code-reviewer** | `/code-reviewer` | 7-point code review checklist for scientific scripts | No |
+
+### How Skills Load
+
+Skills use **progressive disclosure** — Copilot only loads what's needed:
+
+1. **Discovery** — Copilot reads `name` and `description` from each
+   `SKILL.md` frontmatter (always available, lightweight).
+2. **Instructions** — When your request matches a skill's description,
+   Copilot loads the full `SKILL.md` body into context.
+3. **Resources** — Additional files in the skill directory (scripts,
+   examples) load only when referenced.
+
+The `scientific-rigor` skill is special: it has `user-invokable: false`
+so it never appears in the `/` menu, but Copilot auto-loads it whenever
+scientific data analysis is relevant.
 
 ---
 
@@ -151,11 +237,24 @@ my_project/
         agents/csv-analyst.md
 ```
 
+With `--skills`:
+
+```
+my_project/
+    .github/
+        agents/csv-analyst.agent.md
+        instructions/csv-analyst.instructions.md
+        skills/csv-analyst/SKILL.md
+    .claude/
+        agents/csv-analyst.md
+```
+
 ### Options
 
 ```
 --format vscode|claude|both    Which format(s) to generate (default: both)
---include-defaults             Also copy the 5 default agents
+--include-defaults             Also copy the 5 default agents (+ 6 skills with --skills)
+--skills                       Also generate SKILL.md files
 ```
 
 ### Programmatic usage
@@ -171,7 +270,19 @@ config = AgentConfig(
     instructions="You are an expert in ...",
 )
 
+# Generate agents only
 agent_to_copilot_files(config, output_dir="./my_project")
+
+# Generate agents AND a matching skill
+agent_to_copilot_files(config, output_dir="./my_project", skills=True)
+```
+
+To also copy the 6 default skills:
+
+```python
+from sciagent.agents.converter import copy_default_skills
+
+copy_default_skills("./my_project")
 ```
 
 ---
@@ -328,6 +439,30 @@ Agent instructions go here in Markdown.
 | `model` | AI model to use (optional) |
 | `user-invokable` | Show in dropdown (default: true) |
 
+### Skill `SKILL.md`
+
+```yaml
+---
+name: skill-name
+description: What the skill does and when to use it (max 1024 chars)
+argument-hint: Hint text shown in the chat input when invoked
+user-invokable: true        # false to hide from /menu (auto-load only)
+disable-model-invocation: false  # true to require manual /slash invocation
+---
+
+Skill instructions go here in Markdown.
+```
+
+### Skill key fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Lowercase slug, must match directory name (max 64 chars) |
+| `description` | Yes | Capabilities and use cases for skill discovery (max 1024 chars) |
+| `argument-hint` | No | Hint shown when invoked as `/slash` command |
+| `user-invokable` | No | Show in `/` menu (default: `true`) |
+| `disable-model-invocation` | No | Prevent auto-loading (default: `false`) |
+
 ---
 
 ## Troubleshooting
@@ -336,6 +471,13 @@ Agent instructions go here in Markdown.
 - Ensure files are in `.github/agents/` (not just `agents/`)
 - Check VS Code version is 1.106+ (agents require this)
 - Run `Ctrl+Shift+P` → "Chat: Diagnostics" to see loaded agents
+
+**Skills don't appear in the `/` menu:**
+- Ensure each skill is in its own directory: `.github/skills/<name>/SKILL.md`
+- The directory name must match the `name` field in the YAML frontmatter
+- Skills with `user-invokable: false` (like `scientific-rigor`) are
+  intentionally hidden — they auto-load when relevant
+- Type `/skills` in chat to open the Configure Skills menu
 
 **Handoff buttons don't appear:**
 - Verify the target agent name matches exactly

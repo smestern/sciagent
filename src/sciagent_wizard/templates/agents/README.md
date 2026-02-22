@@ -19,6 +19,22 @@ cp -r templates/agents/.github/ templates/agents/.claude/ /path/to/your/workspac
 
 Open VS Code — the agents appear in the **Agents dropdown** in Copilot Chat.
 
+## Also Available: Agent Skills
+
+SciAgent also ships **Agent Skills** — an alternative (or complement) to
+custom agents.  Skills are on-demand capabilities that Copilot loads when
+relevant, accessible via `/slash` commands.
+
+```bash
+# Copy default skills into your workspace
+mkdir -p /path/to/your/workspace/.github/skills
+cp -r templates/skills/*  /path/to/your/workspace/.github/skills/
+```
+
+See [`templates/skills/`](../skills/) for the 6 default skills, or
+[docs/copilot-agents.md](../../docs/copilot-agents.md) for the full guide
+on using agents and skills together.
+
 ## Included Agents
 
 | Agent | Role | Mode |

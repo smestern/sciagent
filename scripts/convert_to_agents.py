@@ -19,6 +19,7 @@ Options:
 
   --format    vscode | claude | both   (default: both)
   --include-defaults                   Bundle the 5 default agents alongside
+  --skills                             Also generate SKILL.md files
 
 Usage::
 
@@ -185,6 +186,15 @@ def main() -> None:
         action="store_true",
         help="Also copy the 5 default sciagent agents into the output",
     )
+    parser.add_argument(
+        "--skills",
+        action="store_true",
+        help=(
+            "Also generate SKILL.md files alongside agent files. "
+            "When combined with --include-defaults, copies the 6 "
+            "default skills as well."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -209,11 +219,18 @@ def main() -> None:
         tools_vscode=tools_vscode,
         tools_claude=tools_claude,
         fmt=args.format,
+        skills=args.skills,
     )
 
     if args.include_defaults:
         _copy_default_agents(output_dir, args.format)
         print("  + Default agents copied")
+
+        if args.skills:
+            from sciagent.agents.converter import copy_default_skills
+
+            copied = copy_default_skills(output_dir)
+            print(f"  + {len(copied)} default skills copied")
 
     print(f"\nDone. Agent files written to: {result}")
 
@@ -224,6 +241,11 @@ def main() -> None:
     if args.format in ("claude", "both"):
         cl = result / ".claude" / "agents"
         print(f"  Claude:   {cl / (config.name + '.md')}")
+    if args.skills:
+        sk = result / ".github" / "skills" / config.name
+        print(f"  Skill:    {sk / 'SKILL.md'}")
+        if args.include_defaults:
+            print(f"  Default skills: {result / '.github' / 'skills'}")
 
 
 if __name__ == "__main__":

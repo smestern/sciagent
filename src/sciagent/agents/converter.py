@@ -193,6 +193,125 @@ def _make_claude_agent_md(
     )
 
 
+def _make_skill_md(
+    config: AgentConfig,
+    instructions: str,
+    *,
+    argument_hint: Optional[str] = None,
+    user_invokable: bool = True,
+) -> str:
+    """Generate a VS Code Agent Skill ``SKILL.md`` from an ``AgentConfig``.
+
+    Skills follow the `agentskills.io <https://agentskills.io/>`_
+    specification: YAML frontmatter with ``name``, ``description``, and
+    optional ``argument-hint``, ``user-invokable``, followed by Markdown
+    instructions in the body.
+    """
+    desc = config.description[:1024]  # spec max length
+    hint = (
+        argument_hint
+        or f"Provide your data or results for"
+        f" {config.display_name}."
+    )
+
+    lines = [
+        "---",
+        f"name: {config.name}",
+        "description: >-",
+        f"  {desc}",
+        f"argument-hint: {hint}",
+    ]
+    if not user_invokable:
+        lines.append("user-invokable: false")
+    lines.append("---")
+    lines.append("")
+
+    # Rewrite instructions in skill-style (procedural guidelines)
+    lines.append(f"# {config.display_name}")
+    lines.append("")
+    lines.append(instructions)
+    lines.append("")
+    lines.append("## Domain Customization")
+    lines.append("")
+    lines.append("<!-- Add domain-specific guidance below this line. -->")
+
+    return "\n".join(lines) + "\n"
+
+
+# ── Default skill template copying ──────────────────────────────────────
+
+_DEFAULT_SKILLS = [
+    "scientific-rigor",
+    "analysis-planner",
+    "data-qc",
+    "rigor-reviewer",
+    "report-writer",
+    "code-reviewer",
+]
+"""Names of the 6 default skill directories
+shipped in ``templates/skills/``."""
+
+
+def _find_templates_skills_dir() -> Optional[Path]:
+    """Locate the ``templates/skills/`` directory shipped with sciagent."""
+    # Walk upward from this file to find the repo/package root
+    here = Path(__file__).resolve().parent
+    for ancestor in [
+        here, here.parent,
+        here.parent.parent,
+        here.parent.parent.parent,
+    ]:
+        candidate = ancestor / "templates" / "skills"
+        if candidate.is_dir():
+            return candidate
+    # Fallback: installed package — look relative to package data
+    import importlib.resources as _res
+
+    try:
+        ref = _res.files("sciagent").joinpath("../../templates/skills")
+        if Path(str(ref)).is_dir():
+            return Path(str(ref))
+    except Exception:
+        pass
+    return None
+
+
+def copy_default_skills(output_dir: str | Path) -> List[Path]:
+    """Copy the 6 default skill templates
+    into ``<output_dir>/.github/skills/``.
+
+    Returns:
+        List of paths to the copied ``SKILL.md`` files.
+    """
+    import shutil
+
+    src_root = _find_templates_skills_dir()
+    if src_root is None:
+        logger.warning(
+            "Could not locate templates/skills/ directory — "
+            "default skills will not be copied."
+        )
+        return []
+
+    out = Path(output_dir)
+    copied: List[Path] = []
+
+    for skill_name in _DEFAULT_SKILLS:
+        src_dir = src_root / skill_name
+        if not src_dir.is_dir():
+            logger.warning("Default skill directory not found: %s", src_dir)
+            continue
+
+        dst_dir = out / ".github" / "skills" / skill_name
+        if dst_dir.exists():
+            shutil.rmtree(dst_dir)
+        shutil.copytree(src_dir, dst_dir)
+        copied.append(dst_dir / "SKILL.md")
+        logger.info("Copied default skill: %s", dst_dir)
+
+    return copied
+
+
 def agent_to_copilot_files(
     config: AgentConfig,
     output_dir: str | Path,
@@ -201,6 +320,7 @@ def agent_to_copilot_files(
     tools_vscode: Optional[List[str]] = None,
     tools_claude: Optional[str] = None,
     fmt: str = "both",
+    skills: bool = False,
 ) -> Path:
     """Generate VS Code / Claude Code agent files from an ``AgentConfig``.
 
@@ -212,6 +332,8 @@ def agent_to_copilot_files(
         tools_vscode: Override the VS Code tool list.
         tools_claude: Override the Claude tool string.
         fmt: ``"vscode"``, ``"claude"``, or ``"both"`` (default).
+        skills: If ``True``, also generate a VS Code Agent Skill
+            (``SKILL.md``) alongside the agent files.
 
     Returns:
         Path to the output directory.
@@ -248,5 +370,15 @@ def agent_to_copilot_files(
             encoding="utf-8",
         )
         logger.info("Wrote Claude agent: %s", claude_path)
+
+    if skills:
+        skill_dir = out / ".github" / "skills" / config.name
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        skill_path = skill_dir / "SKILL.md"
+        skill_path.write_text(
+            _make_skill_md(config, instructions),
+            encoding="utf-8",
+        )
+        logger.info("Wrote skill: %s", skill_path)
 
     return out
