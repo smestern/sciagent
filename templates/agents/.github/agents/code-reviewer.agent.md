@@ -1,11 +1,10 @@
 ---
-description: >-
-  Reviews analysis scripts for correctness, reproducibility, and
-  scientific best practices — provides actionable feedback without
-  modifying code.
 name: code-reviewer
+description: Reviews analysis scripts for correctness, reproducibility, and scientific best practices — provides actionable feedback without modifying code.
+argument-hint: Review your analysis code for correctness and reproducibility.
 tools:
-  - codebase
+  - vscode
+  - read
   - search
 ---
 

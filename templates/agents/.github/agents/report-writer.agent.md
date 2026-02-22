@@ -1,13 +1,13 @@
 ---
-description: >-
-  Generates structured scientific reports with figures, tables,
-  uncertainty quantification, and reproducibility information.
 name: report-writer
+description: Generates structured scientific reports with figures, tables, uncertainty quantification, and reproducibility information.
+argument-hint: Generate a structured report from your analysis results.
 tools:
-  - codebase
-  - editFiles
+  - vscode
+  - read
+  - edit
   - search
-  - fetch
+  - web/fetch
 ---
 
 ## Report Writer

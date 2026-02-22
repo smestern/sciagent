@@ -1,12 +1,12 @@
 ---
-description: >-
-  Checks data quality before analysis — missing values, outliers,
-  distributions, unit validation, and structural integrity.
 name: data-qc
+description: Checks data quality before analysis — missing values, outliers, distributions, unit validation, and structural integrity.
+argument-hint: Run data quality checks on your dataset before analysis.
 tools:
-  - codebase
-  - terminal
-  - editFiles
+  - vscode
+  - execute
+  - read
+  - edit
   - search
 handoffs:
   - label: "Proceed to Analysis"

@@ -1,13 +1,12 @@
 ---
-description: >-
-  Creates step-by-step analysis plans before execution — designs the
-  roadmap, specifies parameters, and anticipates risks without running
-  any code.
 name: analysis-planner
+description: Creates step-by-step analysis plans before execution — designs the roadmap, specifies parameters, and anticipates risks without running any code.
+argument-hint: Plan a scientific analysis pipeline for your data.
 tools:
-  - codebase
+  - vscode
+  - read
   - search
-  - fetch
+  - web/fetch
 handoffs:
   - label: "Run Data QC"
     agent: data-qc

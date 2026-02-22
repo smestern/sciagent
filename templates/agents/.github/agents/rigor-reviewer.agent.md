@@ -1,12 +1,12 @@
 ---
-description: >-
-  Reviews analysis output for scientific rigor violations — statistical
-  validity, data integrity, reproducibility, and reporting completeness.
 name: rigor-reviewer
+description: Reviews analysis output for scientific rigor violations — statistical validity, data integrity, reproducibility, and reporting completeness.
+argument-hint: Audit your analysis for scientific rigor and best practices.
 tools:
-  - codebase
+  - vscode
+  - read
   - search
-  - fetch
+  - web/fetch
 handoffs:
   - label: "Generate Report"
     agent: report-writer
