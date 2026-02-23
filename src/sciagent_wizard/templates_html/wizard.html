@@ -264,6 +264,79 @@
             border: none;
             border-radius: 12px;
         }
+
+        /* Question card in chat */
+        .question-card {
+            background: var(--bg-secondary);
+            border: 1px solid #a855f7;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+        }
+        .question-header {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 0.75rem 0;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+        .question-body {
+            font-size: 0.9rem;
+            line-height: 1.65;
+            color: var(--text-secondary);
+            margin: 0 0 1rem 0;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .question-body strong {
+            color: #c084fc;
+        }
+        .question-body hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 0.75rem 0;
+        }
+        .question-body ul {
+            margin: 0.4rem 0 0.4rem 1.25rem;
+            padding: 0;
+        }
+        .question-text {
+            margin: 0 0 1rem 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+        .question-text strong {
+            color: #c084fc;
+        }
+        .question-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .question-option {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 2rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .question-option:hover {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+        .question-option.selected {
+            border-color: #a855f7;
+            background: #a855f7;
+            color: white;
+        }
     </style>
 </head>
 <body>

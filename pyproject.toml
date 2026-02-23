@@ -59,6 +59,7 @@ cli = [
 web = [
     "quart>=0.19",
     "quart-cors>=0.7",
+    "hypercorn>=0.17",
 ]
 wizard = [
     "sciagent[cli,web]",

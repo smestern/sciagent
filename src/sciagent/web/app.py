@@ -74,7 +74,7 @@ def create_app(
         )
 
         configure_app_sessions(app)
-        if is_oauth_configured():
+        if is_oauth_configured() or os.environ.get("SCIAGENT_INVITE_CODE"):
             app.register_blueprint(create_auth_blueprint())
     except ImportError:
         pass  # wizard package not installed
@@ -99,6 +99,13 @@ def create_app(
             app.register_blueprint(public_bp)
         except ImportError:
             pass
+
+    # ── Register docs ingestor blueprint ──────────────────────────
+    try:
+        from sciagent_wizard.docs_ingestor.web import ingestor_bp
+        app.register_blueprint(ingestor_bp)
+    except ImportError:
+        pass  # docs ingestor dependencies not installed
 
     # ── Config endpoint (used by chat.js) ─────────────────────────
     @app.route("/api/config")
@@ -402,6 +409,10 @@ async def _run_ws_session(
         except ImportError:
             pass
 
+        # ── Fallback: use service token for invite-code users ─────
+        if not _github_token:
+            _github_token = os.environ.get("SCIAGENT_SERVICE_TOKEN")
+
         agent = factory(output_dir=output_dir, github_token=_github_token)
         agents[ws_id] = agent
         set_output_dir(output_dir)
@@ -617,29 +628,21 @@ async def stream_response(
             if hasattr(event, "data") and hasattr(event.data, "content"):
                 content = event.data.content
             if content and content.strip():
-                send_queue.put_nowait({"type": "message", "text": content})
-            # Check for question_card payloads (guided mode)
-            if content:
+                # Suppress forwarding raw question_card JSON as plain
+                # text — the card is already sent from
+                # _maybe_forward_question_card on TOOL_EXECUTION_COMPLETE.
+                _is_qcard = False
                 try:
                     import json as _json
-                    payload = _json.loads(content)
-                    if isinstance(payload, dict) and payload.get(
+                    _parsed = _json.loads(content)
+                    if isinstance(_parsed, dict) and _parsed.get(
                         "__type__"
                     ) == "question_card":
-                        send_queue.put_nowait({
-                            "type": "question_card",
-                            "question": payload.get("question", ""),
-                            "options": payload.get("options", []),
-                            "allow_freetext": payload.get(
-                                "allow_freetext", False
-                            ),
-                            "max_length": payload.get("max_length", 100),
-                            "allow_multiple": payload.get(
-                                "allow_multiple", False
-                            ),
-                        })
-                except (json.JSONDecodeError, TypeError):
+                        _is_qcard = True
+                except (json.JSONDecodeError, TypeError, ValueError):
                     pass
+                if not _is_qcard:
+                    send_queue.put_nowait({"type": "message", "text": content})
 
         elif etype == SessionEventType.TOOL_EXECUTION_START:
             name = getattr(event.data, "tool_name", None) or "tool"
@@ -892,6 +895,9 @@ def _maybe_forward_question_card(
         "type": "question_card",
         **payload,
     })
+    # Clear pending_question so the card is never sent twice.
+    if wizard_state is not None:
+        wizard_state.pending_question = None
 
 
 def _maybe_forward_download_ready(

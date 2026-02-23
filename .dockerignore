@@ -1,0 +1,26 @@
+# Ignore dev/test artifacts
+.git
+.venv
+__pycache__
+*.pyc
+*.egg-info
+.pytest_cache
+.ruff_cache
+.mypy_cache
+node_modules
+
+# Docs and examples (not needed at runtime)
+docs/
+examples/
+scripts/
+tests/
+*.md
+!README.md
+
+# Editor / OS
+.vscode
+.idea
+*.swp
+*.swo
+Thumbs.db
+.DS_Store

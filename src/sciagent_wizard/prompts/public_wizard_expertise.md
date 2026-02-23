@@ -46,8 +46,28 @@ directly and build upon it.
    Do NOT dump all keywords into one query — use focused phrases.
 
 3. **Recommend** — Use `present_question` to show discovered packages
-   and let the user select which ones to include. Present as a
-   multi-select question with package names and brief descriptions.
+   and let the user select which ones to include. Set
+   `allow_multiple=true` so they can pick several.
+
+   **Question text formatting** — Keep the `question` parameter well
+   structured so the UI card renders cleanly:
+   - Start with ONE short sentence (the actual question), followed by
+     a blank line (`\n\n`).
+   - Then list each package on its own line using markdown:
+     `**PackageName** — Short one-line description`
+   - Use `---` on its own line to separate the package list from any
+     additional notes (e.g. "Your existing packages…").
+   - Keep each option label short (just the package name).
+
+   Example `question` value:
+   ```
+   Select the packages you'd like to include:
+
+   **scipy** — Scientific computing & optimization
+   **numpy** — Numerical arrays & linear algebra
+   ---
+   Your existing packages (included automatically): pandas
+   ```
 
    **Important:** Before or alongside the recommendation list, tell
    the user that automated search can sometimes be rate-limited or

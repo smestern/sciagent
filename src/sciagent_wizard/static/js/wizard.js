@@ -399,15 +399,38 @@ function scrollChat() {
 }
 
 function renderMarkdown(text) {
-    // Basic markdown rendering (bold, code, lists)
-    return text
-        .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-        .replace(/`([^`]+)`/g, '<code style="background: var(--bg-primary); padding: 2px 4px; border-radius: 3px;">$1</code>')
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-        .replace(/^- (.+)$/gm, '• $1<br>')
-        .replace(/^(\d+)\. (.+)$/gm, '$1. $2<br>')
-        .replace(/\n/g, '<br>');
+    // Sanitise first (escape HTML entities already present)
+    let s = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // Fenced code blocks
+    s = s.replace(/```(\w*)\n([\s\S]*?)```/g,
+        '<pre style="background:var(--bg-primary);padding:0.75rem;border-radius:6px;overflow-x:auto;margin:0.5rem 0;"><code>$2</code></pre>');
+    // Inline code
+    s = s.replace(/`([^`]+)`/g,
+        '<code style="background:var(--bg-primary);padding:2px 4px;border-radius:3px;">$1</code>');
+    // Bold
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // Italic
+    s = s.replace(/(?<![\w*])\*([^*]+)\*(?![\w*])/g, '<em>$1</em>');
+    // Horizontal rule
+    s = s.replace(/^---+$/gm,
+        '<hr style="border:none;border-top:1px solid var(--border-color);margin:0.75rem 0;">');
+    // Unordered list items (- or •)
+    s = s.replace(/^[\-•]\s+(.+)$/gm, '<li style="margin:0.2rem 0;">$1</li>');
+    // Wrap consecutive <li> in <ul>
+    s = s.replace(/((?:<li[^>]*>.*?<\/li>\s*)+)/g,
+        '<ul style="margin:0.5rem 0 0.5rem 1.25rem;padding:0;list-style:disc;">$1</ul>');
+    // Numbered list items
+    s = s.replace(/^(\d+)\.\s+(.+)$/gm, '<li style="margin:0.2rem 0;">$2</li>');
+    // Newlines → <br> (but not inside <pre>)
+    s = s.replace(/\n/g, '<br>');
+    // Clean up <br> immediately inside block elements
+    s = s.replace(/<br>\s*(<\/?(?:ul|ol|li|hr|pre|div))/gi, '$1');
+    s = s.replace(/(<\/?(?:ul|ol|li|hr|pre|div)[^>]*>)\s*<br>/gi, '$1');
+    return s;
 }
 
 function escHtml(str) {
@@ -428,7 +451,24 @@ function renderQuestionCard(msg) {
     const maxLen = msg.max_length || 100;
     const cardId = 'qcard-' + Date.now();
 
-    let html = `<h3>${escHtml(msg.question)}</h3>`;
+    // Split question into a short header and a longer body.
+    const qText = msg.question || '';
+    let header = '';
+    let body = '';
+    const splitIdx = qText.search(/(?:\n\n|:\s*\n|:\s*📦|:\s*🔬)/);
+    if (splitIdx > 0 && splitIdx < 200) {
+        const colonMatch = qText.slice(splitIdx).match(/^:\s*/);
+        const offset = colonMatch ? colonMatch[0].length : 0;
+        header = qText.slice(0, splitIdx + (colonMatch ? 1 : 0)).trim();
+        body = qText.slice(splitIdx + offset).trim();
+    } else {
+        header = qText;
+    }
+
+    let html = `<div class="question-header">${renderMarkdown(header)}</div>`;
+    if (body) {
+        html += `<div class="question-body">${renderMarkdown(body)}</div>`;
+    }
 
     if (msg.options && msg.options.length > 0) {
         html += `<div class="question-options" id="${cardId}-options">`;

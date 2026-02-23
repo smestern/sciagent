@@ -123,3 +123,63 @@ def main_public():
     import os
     os.environ["SCIAGENT_PUBLIC_MODE"] = "1"
     main()
+
+
+def create_production_app():
+    """Application factory for production ASGI servers (Hypercorn/Uvicorn).
+
+    Returns a configured Quart app without calling ``app.run()``.
+    Reads configuration from environment variables:
+
+    * ``SCIAGENT_PUBLIC_MODE`` — set to ``1`` to enable public/guided mode.
+    * ``SCIAGENT_OUTPUT_MODE`` — ``markdown``, ``copilot_agent``, or
+      ``fullstack`` (defaults to ``markdown`` in public mode).
+
+    Usage with Hypercorn::
+
+        hypercorn "sciagent_wizard:create_production_app()" \
+            --bind 0.0.0.0:$PORT
+    """
+    import os
+    from sciagent_wizard.models import OutputMode
+
+    # Load .env file if present
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
+    public_mode = os.environ.get("SCIAGENT_PUBLIC_MODE", "0") == "1"
+    output_mode_str = os.environ.get("SCIAGENT_OUTPUT_MODE", "")
+    if output_mode_str:
+        try:
+            output_mode = OutputMode(output_mode_str)
+        except ValueError:
+            output_mode = OutputMode.MARKDOWN
+    elif public_mode:
+        output_mode = OutputMode.MARKDOWN
+    else:
+        output_mode = OutputMode.FULLSTACK
+
+    def _factory(**kwargs):
+        w = create_wizard(**kwargs)
+        w.wizard_state.output_mode = output_mode
+        return w
+
+    def _public_factory(**kwargs):
+        w = create_wizard(guided_mode=True, **kwargs)
+        w.wizard_state.output_mode = output_mode
+        return w
+
+    from sciagent.web.app import create_app
+
+    if public_mode:
+        app = create_app(
+            _factory, WIZARD_CONFIG,
+            public_agent_factory=_public_factory,
+        )
+    else:
+        app = create_app(_factory, WIZARD_CONFIG)
+
+    return app
