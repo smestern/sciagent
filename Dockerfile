@@ -25,7 +25,6 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src/ src/
 COPY templates/ templates/
-COPY genomics_analyst/ genomics_analyst/
 
 RUN pip install --no-cache-dir ".[wizard]" && \
     pip install --no-cache-dir playwright && \
