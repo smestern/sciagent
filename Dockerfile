@@ -40,8 +40,5 @@ EXPOSE ${PORT}
 # ── Start with Hypercorn (production ASGI server) ────────────────────
 # Single worker — required because session state, rate limits, and
 # background tasks are all in-memory.
-CMD hypercorn "sciagent_wizard:create_production_app()" \
-    --bind "0.0.0.0:${PORT}" \
-    --workers 1 \
-    --access-log - \
-    --error-log -
+# Use shell form so $PORT is expanded at runtime.
+CMD ["sh", "-c", "hypercorn 'sciagent_wizard:create_production_app()' --bind 0.0.0.0:${PORT:-8080} --workers 1 --access-log - --error-log -"]
