@@ -162,6 +162,10 @@ def create_production_app():
     else:
         output_mode = OutputMode.FULLSTACK
 
+    # In public mode, force non-fullstack default (match CLI behavior)
+    if public_mode and output_mode == OutputMode.FULLSTACK:
+        output_mode = OutputMode.MARKDOWN
+
     def _factory(**kwargs):
         w = create_wizard(**kwargs)
         w.wizard_state.output_mode = output_mode

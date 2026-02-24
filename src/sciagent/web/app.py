@@ -100,6 +100,18 @@ def create_app(
         except ImportError:
             pass
 
+        # ── Override /wizard routes to redirect to /public ────────
+        @app.route("/wizard/")
+        @app.route("/wizard")
+        async def wizard_redirect_to_public():
+            from quart import redirect
+            return redirect("/public/")
+
+        @app.route("/wizard/api/start", methods=["POST"])
+        async def wizard_api_redirect_to_public():
+            from quart import redirect
+            return redirect("/public/api/start", code=307)
+
     # ── Register docs ingestor blueprint ──────────────────────────
     try:
         from sciagent_wizard.docs_ingestor.web import ingestor_bp
