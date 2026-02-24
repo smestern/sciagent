@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 \
     libatspi2.0-0 libxshmfence1 libx11-xcb1 libxcb-dri3-0 \
     # Additional X11 libs required by Chromium
-    libxfixes3 libxext6 libxcursor1 libxi6 libxtst6 \
+    libxfixes3 libxext6 libxcursor1 libxi6 libxtst6 libxkbcommon0 \
     # Fonts so rendered pages aren't blank squares
     fonts-liberation fonts-dejavu-core \
     # Networking (for healthchecks)
