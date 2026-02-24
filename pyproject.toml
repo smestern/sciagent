@@ -86,13 +86,24 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "sciagent.prompts" = ["*.md"]
-"sciagent_wizard.prompts" = ["*.md"]
-"sciagent_wizard.templates" = ["*.md"]
-"sciagent_wizard.templates_html" = ["*.html"]
-"sciagent_wizard.static.js" = ["*.js"]
-"sciagent_wizard.docs_ingestor.prompts" = ["*.md"]
-"sciagent_wizard.docs_ingestor.templates_html" = ["*.html"]
-"sciagent_wizard.docs_ingestor.static" = ["*.js", "*.css"]
+"sciagent.web" = [
+    "static/css/*.css",
+    "static/js/*.js",
+    "templates/*.html",
+]
+"sciagent_wizard" = [
+    "prompts/*.md",
+    "templates/*.md",
+    "templates_html/*.html",
+    "static/js/*.js",
+    "static/css/*.css",
+]
+"sciagent_wizard.docs_ingestor" = [
+    "prompts/*.md",
+    "templates_html/*.html",
+    "static/*.js",
+    "static/*.css",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
