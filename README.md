@@ -175,18 +175,7 @@ The public wizard (`/public`) and docs ingestor (`/ingestor`) support **opt-in G
 
 3. Run: `sciagent-public` (wizard) or `sciagent-docs` (ingestor)
 
-### How it works
 
-- `/auth/login` → GitHub OAuth authorize → `/auth/callback` exchanges code for token → stored in HttpOnly session cookie
-- Protected routes redirect unauthenticated users to `/auth/login`
-- Token threaded through to `CopilotClient({"github_token": ...})`
-
-### Security
-
-- Session cookies: `HttpOnly`, `SameSite=Lax`
-- CSRF protection via `secrets.token_urlsafe(32)` state parameter
-- Only `gho_*`, `ghu_*`, `github_pat_*` tokens accepted (classic `ghp_*` PATs rejected)
-- When OAuth is disabled: **zero auth code runs** — no middleware, no redirects, no cookies
 
 </details>
 
