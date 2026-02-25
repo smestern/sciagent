@@ -64,7 +64,13 @@ async def public_index():
 @public_bp.route("/api/config")
 async def public_config():
     """Return available models and other frontend configuration."""
-    return jsonify(get_models_config())
+    try:
+        config = get_models_config()
+        logger.debug("Returning config with %d models", len(config.get("models", [])))
+        return jsonify(config)
+    except Exception as e:
+        logger.exception("Error in /api/config endpoint")
+        return jsonify({"error": str(e), "models": [], "default_model": "claude-opus-4.5"}), 500
 
 
 @public_bp.route("/api/start", methods=["POST"])

@@ -681,22 +681,36 @@ function escHtml(str) {
 
 async function loadConfig() {
     try {
-        const resp = await fetch('/public/api/config');
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const resp = await fetch('/public/api/config', {
+            credentials: 'same-origin',  // Ensure session cookie is sent
+        });
+        if (!resp.ok) {
+            const text = await resp.text();
+            console.error('Config fetch failed:', resp.status, text);
+            throw new Error(`HTTP ${resp.status}: ${text.slice(0, 100)}`);
+        }
         const config = await resp.json();
 
         // Populate model selector
         const select = document.getElementById('model-select');
-        if (select && config.models) {
+        if (select && config.models && config.models.length > 0) {
             select.innerHTML = config.models.map((m, i) => {
                 const isDefault = m.value === config.default_model;
                 return `<option value="${m.value}"${isDefault ? ' selected' : ''}>${m.label}${isDefault ? ' (default)' : ''}</option>`;
             }).join('');
             wizardState.model = config.default_model || config.models[0]?.value || 'claude-opus-4.5';
+            console.log('Loaded', config.models.length, 'models, default:', wizardState.model);
+        } else {
+            console.warn('Config response missing models:', config);
         }
     } catch (err) {
         console.error('Failed to load config:', err);
-        // Keep fallback option in HTML
+        // Show error in dropdown instead of silent failure
+        const select = document.getElementById('model-select');
+        if (select) {
+            select.innerHTML = '<option value="claude-opus-4.5">claude-opus-4.5 (fallback)</option>';
+            wizardState.model = 'claude-opus-4.5';
+        }
     }
 }
 
