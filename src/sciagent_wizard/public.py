@@ -18,6 +18,7 @@ from pathlib import Path
 from quart import Blueprint, request, jsonify, send_from_directory
 
 from .auth import require_auth, is_oauth_configured, get_github_token
+from .models import get_models_config
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,12 @@ def _check_rate_limit(ip: str) -> bool:
 async def public_index():
     """Serve the public guided wizard page."""
     return await send_from_directory(public_bp.template_folder, "public_wizard.html")
+
+
+@public_bp.route("/api/config")
+async def public_config():
+    """Return available models and other frontend configuration."""
+    return jsonify(get_models_config())
 
 
 @public_bp.route("/api/start", methods=["POST"])

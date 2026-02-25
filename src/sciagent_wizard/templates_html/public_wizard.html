@@ -749,16 +749,12 @@
                 pick a quick-start below and customize it.
             </p>
 
-            <!-- Model selector -->
+            <!-- Model selector (populated dynamically from /public/api/config) -->
             <div class="model-selector-group">
                 <label for="model-select">🤖 AI Model</label>
-                <p class="help-text">Choose which model powers the wizard (affects billing)</p>
+                <p class="help-text">Choose which model powers the wizard (affects billing). See <a href="https://docs.github.com/en/copilot/reference/ai-models/supported-models" target="_blank" rel="noopener" style="color: #a855f7;">supported models</a> for current pricing and capabilities.</p>
                 <select id="model-select" onchange="wizardState.model = this.value">
-                    <option value="claude-opus-4.5">Claude Opus 4.5 — Most capable (default)</option>
-                    <option value="claude-sonnet-4">Claude Sonnet 4 — Fast &amp; capable</option>
-                    <option value="claude-haiku-3.5">Claude Haiku 3.5 — Fastest, lowest cost</option>
-                    <option value="gpt-4o">GPT-4o — OpenAI flagship</option>
-                    <option value="gpt-4o-mini">GPT-4o Mini — OpenAI, cost-effective</option>
+                    <option value="">Loading models...</option>
                 </select>
             </div>
 

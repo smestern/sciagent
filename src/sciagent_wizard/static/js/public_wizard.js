@@ -677,9 +677,33 @@ function escHtml(str) {
     return div.innerHTML;
 }
 
+// ── Config Loading ─────────────────────────────────────────────────────
+
+async function loadConfig() {
+    try {
+        const resp = await fetch('/public/api/config');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const config = await resp.json();
+
+        // Populate model selector
+        const select = document.getElementById('model-select');
+        if (select && config.models) {
+            select.innerHTML = config.models.map((m, i) => {
+                const isDefault = m.value === config.default_model;
+                return `<option value="${m.value}"${isDefault ? ' selected' : ''}>${m.label}${isDefault ? ' (default)' : ''}</option>`;
+            }).join('');
+            wizardState.model = config.default_model || config.models[0]?.value || 'claude-opus-4.5';
+        }
+    } catch (err) {
+        console.error('Failed to load config:', err);
+        // Keep fallback option in HTML
+    }
+}
+
 // ── Init ───────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+    loadConfig();  // Load models dynamically
     setupTagInput('goals-container', 'goals-input', wizardState.researchGoals);
     setupTagInput('filetypes-container', 'filetypes-input', wizardState.fileTypes);
     setupTagInput('packages-container', 'packages-input', wizardState.knownPackages);

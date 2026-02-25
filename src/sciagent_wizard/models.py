@@ -32,6 +32,60 @@ SUPPORTED_MODELS: tuple[str, ...] = (
     "gpt-4o-mini",
 )
 
+# Display metadata for each model (label shown in UI)
+MODEL_METADATA: dict[str, dict[str, Any]] = {
+    "claude-opus-4.5": {
+        "label": "Claude Opus 4.5 — Most capable",
+        "default": False,
+    },
+    "claude-sonnet-4.5": {
+        "label": "Claude Sonnet 4.5 — Fast & capable",
+        "default": False,
+    },
+    "claude-sonnet-4.6": {
+        "label": "Claude Sonnet 4.6 — Latest Sonnet; 1x rates but strong",
+        "default": True,
+    },
+    "gpt-5.3": {
+        "label": "GPT-5.3 — OpenAI flagship",
+        "default": False,
+    },
+    "gpt-5.3-codex": {
+        "label": "GPT-5.3 Codex — Code-optimized",
+        "default": False,
+    },
+    "claude-haiku-3.5": {
+        "label": "Claude Haiku 3.5 — Fastest, lowest cost",
+        "default": False,
+    },
+    "gpt-4o": {
+        "label": "GPT-4o — OpenAI multi-modal",
+        "default": False,
+    },
+    "gpt-4o-mini": {
+        "label": "GPT-4o Mini — Cost-effective",
+        "default": False,
+    },
+}
+
+
+def get_models_config() -> dict[str, Any]:
+    """Return model configuration for the frontend."""
+    models = []
+    default_model = SUPPORTED_MODELS[0]  # fallback
+    for model_id in SUPPORTED_MODELS:
+        meta = MODEL_METADATA.get(model_id, {})
+        models.append({
+            "value": model_id,
+            "label": meta.get("label", model_id),
+        })
+        if meta.get("default"):
+            default_model = model_id
+    return {
+        "models": models,
+        "default_model": default_model,
+    }
+
 
 class WizardPhase(str, Enum):
     """Tracks progress through the guided wizard flow."""
