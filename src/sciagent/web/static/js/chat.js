@@ -58,7 +58,10 @@ marked.setOptions({
 
 function applyConfig(cfg) {
     document.getElementById("pageTitle").textContent = cfg.display_name || "SciAgent";
-    document.getElementById("logoEmoji").textContent = cfg.logo_emoji || "🔬";
+    const logoEl = document.getElementById("logoEmoji");
+    if (logoEl.tagName !== "IMG" && cfg.logo_emoji) {
+        logoEl.textContent = cfg.logo_emoji;
+    }
     document.getElementById("logoName").textContent = cfg.display_name || "SciAgent";
     document.getElementById("tagline").textContent = cfg.description || "AI-powered scientific analysis";
     document.getElementById("welcomeTitle").textContent = "Welcome to " + (cfg.display_name || "SciAgent");

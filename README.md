@@ -1,4 +1,4 @@
-# 🔬 SciAgent
+# <img src="logo.svg" height="32" alt="SciAgent"> SciAgent
 
 **A generic framework for building AI-powered scientific data analysis agents.**
 
