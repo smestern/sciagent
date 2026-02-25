@@ -407,8 +407,12 @@ def get_github_token() -> Optional[str]:
 
 
 def _build_callback_url() -> str:
-    """Build the absolute callback URL from the current request."""
-    scheme = request.scheme
+    """Build the absolute callback URL from the current request.
+
+    Respects X-Forwarded-Proto header for SSL-terminating proxies.
+    """
+    # Check for forwarded scheme from reverse proxy (Railway, Heroku, nginx, etc.)
+    scheme = request.headers.get("X-Forwarded-Proto", request.scheme)
     host = request.host
     return f"{scheme}://{host}/auth/callback"
 
