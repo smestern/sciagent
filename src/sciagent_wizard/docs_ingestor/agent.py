@@ -34,6 +34,8 @@ INGESTOR_CONFIG = AgentConfig(
     instructions="",
     logo_emoji="📚",
     accent_color="#3b82f6",
+    # Library docs legitimately use example/simulated data - skip rigor checks
+    intercept_all_tools=False,
 )
 
 
