@@ -37,6 +37,8 @@ import hmac
 import logging
 import os
 import secrets
+import time
+from datetime import timedelta
 from functools import wraps
 from typing import Optional
 from urllib.parse import urlencode, quote
@@ -79,6 +81,10 @@ _GITHUB_USER_URL = "https://api.github.com/user"
 
 # Allowed token prefixes (Copilot SDK supported types)
 _ALLOWED_TOKEN_PREFIXES = ("gho_", "ghu_", "github_pat_")
+
+# Session and token validation timing
+_SESSION_LIFETIME_HOURS = 1  # Sessions expire after 1 hour
+_TOKEN_REVALIDATION_MINUTES = 15  # Re-validate token every 15 minutes
 
 
 def is_oauth_configured() -> bool:
@@ -126,6 +132,8 @@ def configure_app_sessions(app) -> None:  # noqa: ANN001
     app.config["SESSION_COOKIE_SECURE"] = (
         os.environ.get("SCIAGENT_SESSION_SECURE", "0") == "1"
     )
+    # Sessions expire after configured lifetime (requires session.permanent = True)
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=_SESSION_LIFETIME_HOURS)
 
 
 # ── Auth blueprint ──────────────────────────────────────────────────────
@@ -238,8 +246,10 @@ def create_auth_blueprint() -> Blueprint:
         logger.info("GitHub OAuth successful for user: %s", github_login)
 
         # ── Store token in session (HttpOnly cookie) ────────────
+        session.permanent = True  # Enable PERMANENT_SESSION_LIFETIME
         session["github_token"] = access_token
         session["github_login"] = github_login
+        session["token_validated_at"] = time.time()  # Track last validation
 
         return redirect(return_to)
 
@@ -318,6 +328,61 @@ def create_auth_blueprint() -> Blueprint:
     return auth_bp
 
 
+# ── Token validation helper ─────────────────────────────────────────────
+
+
+async def _validate_token_if_needed() -> bool:
+    """Re-validate the GitHub token if it hasn't been checked recently.
+
+    Returns True if the token is valid, False if invalid/expired.
+    Automatically clears the session if the token is no longer valid.
+    """
+    token = session.get("github_token")
+    if not token:
+        return False
+
+    last_validated = session.get("token_validated_at", 0)
+    now = time.time()
+
+    # Skip validation if checked within the revalidation window
+    if now - last_validated < (_TOKEN_REVALIDATION_MINUTES * 60):
+        return True
+
+    # Re-validate by calling GitHub /user API
+    import httpx  # lazy import
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                _GITHUB_USER_URL,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github+json",
+                },
+            )
+
+        if resp.status_code == 200:
+            session["token_validated_at"] = now
+            logger.debug("Token re-validated for user: %s", session.get("github_login"))
+            return True
+
+        # Token is invalid or expired
+        logger.warning(
+            "Token validation failed for user %s (HTTP %d)",
+            session.get("github_login"),
+            resp.status_code,
+        )
+    except Exception as e:
+        logger.warning("Token validation request failed: %s", e)
+        # On network errors, allow the request (don't lock out users)
+        # but don't update the validation timestamp
+        return True
+
+    # Clear invalid session
+    session.clear()
+    return False
+
+
 # ── Route decorator ─────────────────────────────────────────────────────
 
 
@@ -338,28 +403,31 @@ def require_auth(f):
         if _is_invite_authenticated():
             return await f(*args, **kwargs)
 
-        if is_oauth_configured() and not session.get("github_token"):
-            return_to = request.path
-            login_url = f"/auth/login?return_to={quote(return_to)}"
+        if is_oauth_configured():
+            # Check if user has a token and if it's still valid
+            has_valid_token = session.get("github_token") and await _validate_token_if_needed()
+            if not has_valid_token:
+                return_to = request.path
+                login_url = f"/auth/login?return_to={quote(return_to)}"
 
-            # Detect API/fetch calls: check Accept header, Content-Type,
-            # X-Requested-With, or /api/ in the path.
-            accept = request.headers.get("Accept", "")
-            content_type = request.headers.get("Content-Type", "")
-            xhr = request.headers.get("X-Requested-With", "")
-            is_api = (
-                "application/json" in accept
-                or "application/json" in content_type
-                or xhr == "XMLHttpRequest"
-                or "/api/" in request.path
-            )
-            if is_api:
-                return jsonify({
-                    "auth_required": True,
-                    "login_url": login_url,
-                }), 401
+                # Detect API/fetch calls: check Accept header, Content-Type,
+                # X-Requested-With, or /api/ in the path.
+                accept = request.headers.get("Accept", "")
+                content_type = request.headers.get("Content-Type", "")
+                xhr = request.headers.get("X-Requested-With", "")
+                is_api = (
+                    "application/json" in accept
+                    or "application/json" in content_type
+                    or xhr == "XMLHttpRequest"
+                    or "/api/" in request.path
+                )
+                if is_api:
+                    return jsonify({
+                        "auth_required": True,
+                        "login_url": login_url,
+                    }), 401
 
-            return redirect(login_url)
+                return redirect(login_url)
         return await f(*args, **kwargs)
     return wrapper
 
