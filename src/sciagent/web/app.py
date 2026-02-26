@@ -265,9 +265,43 @@ def create_app(
                     arcname = f"{project_name}/{fpath.relative_to(project_dir)}"
                     zf.write(fpath, arcname)
         buf.seek(0)
+        zip_bytes = buf.getvalue()
+
+        # ── Clean up generated files after building zip ────
+        # The zip is fully in memory so it's safe to remove the
+        # project directory (and session output dir) now to free
+        # disk space on the server.
+        try:
+            if project_dir and project_dir.exists():
+                shutil.rmtree(project_dir, ignore_errors=True)
+                logger.info(
+                    "Cleaned up project dir after zip download: %s",
+                    project_dir,
+                )
+        except Exception as cleanup_err:
+            logger.warning(
+                "Failed to clean project dir %s: %s",
+                project_dir, cleanup_err,
+            )
+        try:
+            out_dir = _session_output_dirs.get(session_id)
+            if out_dir and out_dir.exists():
+                shutil.rmtree(out_dir, ignore_errors=True)
+                logger.info(
+                    "Cleaned up session output dir after zip download: %s",
+                    out_dir,
+                )
+            _session_output_dirs.pop(session_id, None)
+            _session_agents.pop(session_id, None)
+        except Exception as cleanup_err:
+            logger.warning(
+                "Failed to clean session data for %s: %s",
+                session_id, cleanup_err,
+            )
+
         from quart import Response
         return Response(
-            buf.getvalue(),
+            zip_bytes,
             mimetype='application/zip',
             headers={
                 'Content-Disposition':
@@ -535,6 +569,19 @@ async def _run_ws_session(
                 await agent.stop()
             except Exception:
                 pass
+        # ── Clean up session temp directory from disk ─────────
+        try:
+            if output_dir and output_dir.exists():
+                shutil.rmtree(output_dir, ignore_errors=True)
+                logger.info(
+                    "Cleaned up session temp dir on disconnect: %s",
+                    output_dir,
+                )
+        except Exception as cleanup_err:
+            logger.warning(
+                "Failed to clean temp dir %s: %s",
+                output_dir, cleanup_err,
+            )
 
 
 def _handle_guided_message(

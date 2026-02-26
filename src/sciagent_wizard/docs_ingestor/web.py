@@ -87,11 +87,19 @@ async def ingestor_start():
 
 @ingestor_bp.route("/api/result/<session_id>")
 async def ingestor_result(session_id: str):
-    """Download the completed library_api.md for a session."""
-    md = _results.get(session_id)
+    """Download the completed library_api.md for a session.
+
+    The result is removed from the in-memory store after serving
+    to free server memory.
+    """
+    md = _results.pop(session_id, None)
     if not md:
         return jsonify({"error": "No result for this session"}), 404
 
+    logger.info(
+        "Serving and clearing ingestor result for session %s",
+        session_id,
+    )
     return Response(
         md,
         mimetype="text/markdown",
