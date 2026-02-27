@@ -3,3 +3,6 @@
 src/sciagent.egg-info/*
 ./venv/
 __pycache__/
+/build/
+build/**/*
+build/lib/sciagent/prompts/output_dir.md

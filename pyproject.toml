@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sciagent"
-version = "0.2.0"
+version = "0.3.0"
 description = "A framework for building rigorous, human-in-the-loop scientific coding agents"
 readme = "README.md"
 license = {text = "MIT"}
@@ -61,24 +61,16 @@ web = [
     "quart-cors>=0.7",
     "hypercorn>=0.17",
 ]
-wizard = [
-    "sciagent[cli,web]",
-    "httpx>=0.25",
-    "python-dotenv>=1.0",
+wizard= [
+    "sciagent-wizard @ git+https://github.com/smestern/sciagent-wizard.git",
 ]
 all = [
-    "sciagent[cli,web,wizard]",
+    "sciagent[cli,web, wizard]",
 ]
 
 [project.scripts]
 sciagent = "sciagent.cli:app"
 sciagent-web = "sciagent.web.app:main"
-sciagent-wizard = "sciagent_wizard:main"
-sciagent-public = "sciagent_wizard:main_public"
-sciagent-docs = "sciagent_wizard.docs_ingestor:main"
-
-[project.entry-points."sciagent.plugins"]
-wizard = "sciagent_wizard:register_plugin"
 
 [project.urls]
 Homepage = "https://github.com/smestern/sciagent"
@@ -94,19 +86,7 @@ where = ["src"]
     "static/js/*.js",
     "templates/*.html",
 ]
-"sciagent_wizard" = [
-    "prompts/*.md",
-    "templates/*.md",
-    "templates_html/*.html",
-    "static/js/*.js",
-    "static/css/*.css",
-]
-"sciagent_wizard.docs_ingestor" = [
-    "prompts/*.md",
-    "templates_html/*.html",
-    "static/*.js",
-    "static/*.css",
-]
+
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

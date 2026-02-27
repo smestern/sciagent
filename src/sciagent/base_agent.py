@@ -43,6 +43,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from copilot import CopilotClient
 from copilot.types import Tool, ToolInvocation, ToolResult, SessionConfig, CustomAgentConfig
+from copilot.types import PermissionHandler
 
 from .config import AgentConfig
 from .agents import ALL_DEFAULT_AGENTS
@@ -485,6 +486,7 @@ class BaseScientificAgent:
             system_message=system_message,
             custom_agents=[agent_config, *[x.to_copilot_config() for x in self._subagents.values()]], #brute force inject subagent configs as custom agents (since the SDK doesn't have a first-class subagent concept)
             streaming=True,
+            on_permission_request=PermissionHandler.approve_all,
         )
         if session_id:
             config["session_id"] = session_id
