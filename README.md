@@ -22,7 +22,7 @@ The way I envision users utilizing this repo is in one of three ways.
    2. A custom code execution environment with preloaded packages and tools.
    3. Producing reproducible scripts for reuse with other data.
    4. The agent also has the ability to ingest the docs of new packages and modify its own codebase, to give itself more power.
-3. **A self-assembling wizard** - ***VERY WIP*** Built for novice coders. Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format.
+3. **A self-assembling wizard** - ***VERY WIP*** Built for novice coders. Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format. **The wizard now lives in its own package** ([sciagent-wizard](https://github.com/smestern/sciagent-wizard)) so framework users aren't affected by wizard-only releases.
 
 Ideally, I was hoping to host a public version of the wizard for open use - however, I can't afford the hosting / llm api fees as a grad student. If you are a company that would be willing to help out, please contact me.
 
@@ -55,8 +55,9 @@ You may be interested in [DAAF](https://github.com/DAAF-Contribution-Community/d
 ## Quick Start
 
 ```bash
-pip install sciagent[all]       # install everything
-sciagent wizard                 # launch the self-assembly wizard
+pip install "sciagent[all] @ git+https://github.com/smestern/sciagent.git"       # install core framework + CLI + web UI
+pip install "sciagent-wizard @ git+https://github.com/smestern/sciagent-wizard.git"  # install the wizard (optional)
+sciagent wizard                 # launch the wizard (only available when sciagent-wizard is installed)
 ```
 
 The wizard walks you through a conversation — describe your research domain, confirm discovered packages, and choose an output mode. A ready-to-use agent drops out the other end.
@@ -132,19 +133,49 @@ All layers are configurable and extensible. See [Architecture](docs/architecture
 ## Installation
 
 ```bash
-pip install sciagent            # core only
-pip install sciagent[cli]       # + terminal REPL
-pip install sciagent[web]       # + browser chat UI
-pip install sciagent[wizard]    # + self-assembly wizard
-pip install sciagent[all]       # everything
+# Neither package is on PyPI yet — install from GitHub
+pip install "sciagent @ git+https://github.com/smestern/sciagent.git"            # core framework only
+pip install "sciagent[cli] @ git+https://github.com/smestern/sciagent.git"       # + terminal REPL (Rich, Typer)
+pip install "sciagent[web] @ git+https://github.com/smestern/sciagent.git"       # + browser chat UI (Quart)
+pip install "sciagent[all] @ git+https://github.com/smestern/sciagent.git"       # core + CLI + web
+
+# Self-assembly wizard (separate package)
+pip install "sciagent-wizard @ git+https://github.com/smestern/sciagent-wizard.git"
 ```
+
+The wizard is a **separate package** (`sciagent-wizard`) that registers itself as a plugin via the `sciagent.plugins` entry-point group. Installing it automatically adds the `sciagent wizard` CLI command, web blueprints (`/wizard/`, `/public/`, `/ingestor/`), and the `ingest_library_docs` tool — no configuration needed.
 
 See [Installation](docs/installation.md) for prerequisites, dev setup, and verification steps.
 
 ---
 
+## Plugin Architecture
+
+SciAgent uses a plugin system based on [setuptools entry points](https://packaging.python.org/en/latest/specifications/entry-points/). Any installed package can extend the framework by registering under the `sciagent.plugins` group:
+
+```toml
+# In your package's pyproject.toml
+[project.entry-points."sciagent.plugins"]
+my-plugin = "my_package:register_plugin"
+```
+
+The `register_plugin()` callable returns a `PluginRegistration` declaring:
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `register_web` | `(app, **ctx) → None` | Register Quart blueprints and auth middleware |
+| `register_cli` | `(app) → None` | Add Typer sub-commands |
+| `get_auth_token` | `() → str | None` | Provide auth tokens (e.g. OAuth) |
+| `supported_models` | `dict` | Declare LLM models for routing/billing |
+| `tool_providers` | `dict[str, callable]` | Lazy-load tool functions |
+
+The wizard (`sciagent-wizard`) is the first plugin built on this system. See [`src/sciagent/plugins.py`](src/sciagent/plugins.py) for the full API.
+
+---
+
 ## See Also
 
+- [sciagent-wizard](https://github.com/smestern/sciagent-wizard) — self-assembly wizard for building domain agents (plugin)
 - [PatchAgent](https://github.com/smestern/patchAgent) — a full SciAgent implementation for electrophysiology (see [Showcase](docs/showcase.md))
 - [Templates README](templates/README.md) — blank templates for manual agent specification
 
