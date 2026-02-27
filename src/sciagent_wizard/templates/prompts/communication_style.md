@@ -1,1 +1,0 @@
-../../src/sciagent/prompts/communication_style.md

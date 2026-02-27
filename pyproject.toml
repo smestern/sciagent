@@ -77,6 +77,9 @@ sciagent-wizard = "sciagent_wizard:main"
 sciagent-public = "sciagent_wizard:main_public"
 sciagent-docs = "sciagent_wizard.docs_ingestor:main"
 
+[project.entry-points."sciagent.plugins"]
+wizard = "sciagent_wizard:register_plugin"
+
 [project.urls]
 Homepage = "https://github.com/smestern/sciagent"
 Repository = "https://github.com/smestern/sciagent"

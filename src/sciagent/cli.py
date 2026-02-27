@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import logging
 import os
 import re
 import sys
@@ -28,6 +29,7 @@ from rich.table import Table
 from sciagent.config import AgentConfig
 
 console = Console()
+logger = logging.getLogger(__name__)
 
 # ── Slash-command type ──────────────────────────────────────────────────
 SlashEntry = Tuple[str, str, Callable]  # (name, description, handler_coro)
@@ -429,58 +431,21 @@ def _app_main(ctx: typer.Context):
         ctx.get_help()
 
 
-@app.command()
-def wizard(
-    web: bool = typer.Option(True, "--web/--cli", help="Launch in web or CLI mode."),
-    port: int = typer.Option(5000, "--port", "-p", help="Web server port."),
-    output_dir: Optional[Path] = typer.Option(None, "--output-dir", "-o", help="Output directory for generated agents."),
-    output_mode: str = typer.Option(
-        "fullstack",
-        "--output-mode",
-        "-m",
-        help="Output mode: fullstack, copilot_agent, or markdown.",
-    ),
-    rigor_level: str = typer.Option(
-        "standard",
-        "--rigor-level",
-        "-r",
-        help="Rigor enforcement level: strict, standard, relaxed, or bypass.",
-    ),
-):
-    """🧙 Launch the self-assembly wizard to build a domain-specific agent."""
-    from sciagent_wizard import create_wizard, WIZARD_CONFIG
-    from sciagent_wizard.models import OutputMode
+# ── Register CLI commands from plugins ─────────────────────────────────
+def _register_plugin_commands() -> None:
+    """Discover installed plugins and register their CLI sub-commands."""
+    from sciagent.plugins import discover_plugins
 
-    # Pre-set the output mode on the wizard's state
-    try:
-        mode = OutputMode(output_mode)
-    except ValueError:
-        console.print(f"[red]Invalid output mode: {output_mode}[/red]")
-        console.print("[dim]Valid modes: fullstack, copilot_agent, markdown[/dim]")
-        raise typer.Exit(1)
+    for plugin in discover_plugins():
+        if plugin.register_cli:
+            try:
+                plugin.register_cli(app)
+            except Exception:
+                logger.debug(
+                    "Plugin %r register_cli failed",
+                    plugin.name,
+                    exc_info=True,
+                )
 
-    # Validate rigor level
-    from sciagent.guardrails.scanner import RigorLevel
-    _rigor = RigorLevel.from_str(rigor_level)
 
-    def _factory(**kwargs):
-        w = create_wizard(**kwargs)
-        w.wizard_state.output_mode = mode
-        return w
-
-    # Apply rigor level to the wizard config
-    WIZARD_CONFIG.rigor_level = _rigor.value
-
-    if web:
-        from sciagent.web.app import create_app
-        console.print(Panel(
-            "[bold]🧙 SciAgent Self-Assembly Wizard[/bold]\n"
-            f"[dim]Open http://localhost:{port}/wizard in your browser[/dim]\n"
-            f"[dim]Output mode: {mode.value}[/dim]\n"
-            f"[dim]Rigor level: {_rigor.value}[/dim]",
-            expand=False,
-        ))
-        app_instance = create_app(_factory, WIZARD_CONFIG)
-        app_instance.run(host="0.0.0.0", port=port)
-    else:
-        run_cli(_factory, WIZARD_CONFIG, output_dir, rigor_level=_rigor.value)
+_register_plugin_commands()

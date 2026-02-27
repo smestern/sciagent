@@ -79,16 +79,18 @@ def ingest_library_docs(
         ``{"status": "success", "doc_name": ..., "path": ...}``
         on success, or ``{"error": ...}`` on failure.
     """
-    # Check that the docs ingestor is available
-    try:
-        from sciagent_wizard.docs_ingestor import ingest_package_docs_sync
-    except ImportError:
+    # Check that the docs ingestor is available (via plugin system)
+    from sciagent.plugins import get_tool_provider
+
+    _provider = get_tool_provider("ingest_package_docs_sync")
+    if _provider is None:
         return {
             "error": (
-                "The docs ingestor requires the sciagent[wizard] extra. "
-                "Install it with: pip install sciagent[wizard]"
+                "The docs ingestor requires the sciagent-wizard package. "
+                "Install it with: pip install sciagent-wizard"
             ),
         }
+    ingest_package_docs_sync = _provider()
 
     # Determine output directory
     docs_dir = get_docs_dir()

@@ -1,1 +1,0 @@
-../../src/sciagent_wizard/prompts/public_wizard_expertise.md

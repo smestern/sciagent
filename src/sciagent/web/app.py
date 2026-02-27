@@ -32,6 +32,51 @@ from sciagent.config import AgentConfig
 
 logger = logging.getLogger(__name__)
 
+# Seconds to keep session files on disk after WebSocket disconnects,
+# giving the user time to click the download link.
+_CLEANUP_DELAY_SECS = int(
+    os.environ.get("SCIAGENT_CLEANUP_DELAY", "900")  # 15 min default
+)
+
+# Pending deferred-cleanup handles so the download endpoint can cancel
+# them when the user downloads before the timer fires.
+_pending_cleanups: dict[str, asyncio.TimerHandle] = {}
+
+
+def _deferred_cleanup(
+    session_id: str,
+    output_dir: Path | None,
+    agents: dict,
+    output_dirs: dict,
+) -> None:
+    """Remove session files from disk after the grace period."""
+    _pending_cleanups.pop(session_id, None)
+    try:
+        if output_dir and output_dir.exists():
+            shutil.rmtree(output_dir, ignore_errors=True)
+            logger.info(
+                "Deferred cleanup removed session dir: %s",
+                output_dir,
+            )
+    except Exception as exc:
+        logger.warning(
+            "Deferred cleanup failed for %s: %s",
+            output_dir, exc,
+        )
+    agents.pop(session_id, None)
+    output_dirs.pop(session_id, None)
+
+
+def _cancel_deferred_cleanup(session_id: str) -> None:
+    """Cancel a pending deferred cleanup (e.g. user downloaded early)."""
+    handle = _pending_cleanups.pop(session_id, None)
+    if handle is not None:
+        handle.cancel()
+        logger.debug(
+            "Cancelled deferred cleanup for session %s",
+            session_id,
+        )
+
 
 def create_app(
     agent_factory: Callable,
@@ -65,59 +110,26 @@ def create_app(
     _cors_origin = os.environ.get("SCIAGENT_ALLOWED_ORIGINS", "*")
     app = cors(app, allow_origin=_cors_origin)
 
-    # ── OAuth session support (opt-in) ────────────────────────────
-    try:
-        from sciagent_wizard.auth import (
-            is_oauth_configured,
-            configure_app_sessions,
-            create_auth_blueprint,
-        )
-
-        configure_app_sessions(app)
-        if is_oauth_configured() or os.environ.get("SCIAGENT_INVITE_CODE"):
-            app.register_blueprint(create_auth_blueprint())
-    except ImportError:
-        pass  # wizard package not installed
-
     app.ws_sessions: dict = {}  # type: ignore[attr-defined]
     _session_agents: dict = {}  # ws_id -> agent instance
     _session_output_dirs: dict = {}  # ws_id -> output_dir Path
     # Track which sessions use the public factory
     _public_sessions: Set[str] = set()
 
-    # ── Register wizard blueprint ─────────────────────────────────
-    try:
-        from sciagent_wizard.web import wizard_bp
-        app.register_blueprint(wizard_bp)
-    except ImportError:
-        pass  # wizard dependencies not installed
+    # ── Register plugins (blueprints, auth, etc.) ─────────────────
+    from sciagent.plugins import discover_plugins
 
-    # ── Register public wizard blueprint ──────────────────────────
-    if public_agent_factory is not None:
-        try:
-            from sciagent_wizard.public import public_bp
-            app.register_blueprint(public_bp)
-        except ImportError:
-            pass
-
-        # ── Override /wizard routes to redirect to /public ────────
-        @app.route("/wizard/")
-        @app.route("/wizard")
-        async def wizard_redirect_to_public():
-            from quart import redirect
-            return redirect("/public/")
-
-        @app.route("/wizard/api/start", methods=["POST"])
-        async def wizard_api_redirect_to_public():
-            from quart import redirect
-            return redirect("/public/api/start", code=307)
-
-    # ── Register docs ingestor blueprint ──────────────────────────
-    try:
-        from sciagent_wizard.docs_ingestor.web import ingestor_bp
-        app.register_blueprint(ingestor_bp)
-    except ImportError:
-        pass  # docs ingestor dependencies not installed
+    for _plugin in discover_plugins():
+        if _plugin.register_web:
+            try:
+                _plugin.register_web(
+                    app,
+                    public_agent_factory=public_agent_factory,
+                )
+            except Exception:
+                logger.exception(
+                    "Plugin %r register_web failed", _plugin.name,
+                )
 
     # ── Config endpoint (used by chat.js) ─────────────────────────
     @app.route("/api/config")
@@ -271,6 +283,7 @@ def create_app(
         # The zip is fully in memory so it's safe to remove the
         # project directory (and session output dir) now to free
         # disk space on the server.
+        _cancel_deferred_cleanup(session_id)
         try:
             if project_dir and project_dir.exists():
                 shutil.rmtree(project_dir, ignore_errors=True)
@@ -447,13 +460,9 @@ async def _run_ws_session(
     try:
         from sciagent.tools.code_tools import set_output_dir
 
-        # ── Extract GitHub token from session (if OAuth enabled) ──
-        _github_token = None
-        try:
-            from sciagent_wizard.auth import get_github_token
-            _github_token = get_github_token()
-        except ImportError:
-            pass
+        # ── Extract auth token from plugins (e.g. OAuth session) ──
+        from sciagent.plugins import get_auth_token as _plugin_get_token
+        _github_token = _plugin_get_token()
 
         # ── Fallback: use service token for invite-code users ─────
         if not _github_token:
@@ -469,8 +478,9 @@ async def _run_ws_session(
             if model_param:
                 wizard_state = getattr(agent, "_wizard_state", None)
                 if wizard_state is not None:
-                    from sciagent_wizard.models import SUPPORTED_MODELS
-                    if model_param in SUPPORTED_MODELS:
+                    from sciagent.plugins import get_supported_models
+                    _models = get_supported_models()
+                    if model_param in _models:
                         wizard_state.model = model_param
                         logger.info("Set wizard model to %s", model_param)
         except Exception as e:
@@ -569,19 +579,41 @@ async def _run_ws_session(
                 await agent.stop()
             except Exception:
                 pass
-        # ── Clean up session temp directory from disk ─────────
+        # ── Schedule deferred cleanup of session temp dir ─────
+        # Don't delete immediately — the user may still need to
+        # click the download link.  A timer fires after
+        # _CLEANUP_DELAY_SECS (default 15 min) to remove the
+        # files.  If the user downloads first, the download
+        # endpoint cancels this timer and cleans up right away.
         try:
-            if output_dir and output_dir.exists():
-                shutil.rmtree(output_dir, ignore_errors=True)
-                logger.info(
-                    "Cleaned up session temp dir on disconnect: %s",
-                    output_dir,
-                )
+            loop = asyncio.get_running_loop()
+            handle = loop.call_later(
+                _CLEANUP_DELAY_SECS,
+                _deferred_cleanup,
+                ws_id,
+                output_dir,
+                agents,
+                output_dirs,
+            )
+            _pending_cleanups[ws_id] = handle
+            logger.info(
+                "Scheduled deferred cleanup for session %s "
+                "in %d seconds",
+                ws_id, _CLEANUP_DELAY_SECS,
+            )
         except Exception as cleanup_err:
             logger.warning(
-                "Failed to clean temp dir %s: %s",
-                output_dir, cleanup_err,
+                "Failed to schedule deferred cleanup "
+                "for %s: %s — cleaning immediately",
+                ws_id, cleanup_err,
             )
+            try:
+                if output_dir and output_dir.exists():
+                    shutil.rmtree(
+                        output_dir, ignore_errors=True,
+                    )
+            except Exception:
+                pass
 
 
 def _handle_guided_message(

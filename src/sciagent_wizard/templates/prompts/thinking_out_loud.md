@@ -1,1 +1,0 @@
-../../src/sciagent/prompts/thinking_out_loud.md
