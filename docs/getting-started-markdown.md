@@ -181,7 +181,8 @@ You don't need the wizard to create Markdown specs. The blank templates are avai
 
 | Template | Purpose |
 |----------|---------|
-| `templates/agents.md` | Sub-agent roster |
+| `templates/AGENTS.md` | Template-level instruction router |
+| `templates/builtin_agents.md` | Sub-agent roster |
 | `templates/operations.md` | Standard operating procedures |
 | `templates/skills.md` | Skill overview |
 | `templates/tools.md` | Tool API reference |

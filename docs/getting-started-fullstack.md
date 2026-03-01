@@ -200,7 +200,8 @@ The wizard also generates a suite of **documentation templates** in your agent's
 
 | Template | Purpose |
 |----------|---------|
-| `agents.md` | Sub-agent roster — roles, capabilities, trigger phrases |
+| `AGENTS.md` | Template-level instruction router with links |
+| `builtin_agents.md` | Sub-agent roster — roles, capabilities, trigger phrases |
 | `operations.md` | Standard operating procedures — rigor policy, workflows |
 | `skills.md` | Skill overview — purpose, capabilities, trigger keywords |
 | `tools.md` | Tool API reference — signatures, parameters, return schemas |

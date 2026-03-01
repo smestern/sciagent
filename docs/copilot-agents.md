@@ -60,6 +60,12 @@ To use them:
 cp -r templates/agents/.github/  /path/to/your/workspace/
 ```
 
+Or install instruction templates with the transition script:
+
+```bash
+python scripts/install_templates.py --layout hybrid --target workspace
+```
+
 Open VS Code → Copilot Chat → click the **Agents dropdown** → select an
 agent (e.g. "rigor-reviewer").
 

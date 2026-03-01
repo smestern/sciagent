@@ -88,6 +88,33 @@ cp -r my_agent/.claude/ .claude/
 cp -r my_agent/docs/ docs/
 ```
 
+### Optional: Install template-based instructions (hybrid or mono)
+
+If you want to bootstrap workspace-wide instructions directly from
+`templates/*.md`, use the transition installer:
+
+```bash
+# Hybrid (recommended): AGENTS router + modular .instructions.md files
+python scripts/install_templates.py --layout hybrid --target workspace
+
+# Mono: merge all major templates into one AGENTS.md
+python scripts/install_templates.py --layout mono --target workspace
+```
+
+User-wide instructions (current VS Code profile):
+
+```bash
+python scripts/install_templates.py --layout hybrid --target user
+```
+
+User-wide skills location (optional):
+
+```bash
+python scripts/install_templates.py --target user --install-user-skills
+```
+
+This copies skill directories to `~/.copilot/skills` by default.
+
 ### VS Code Copilot
 
 1. Open your workspace in VS Code.
