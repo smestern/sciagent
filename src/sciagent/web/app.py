@@ -692,7 +692,7 @@ async def stream_response(
     )
     from copilot.generated.session_events import SessionEventType
 
-    MAX_RETRIES = 2
+    MAX_RETRIES = 5
     idle_event = asyncio.Event()
     transient_error: list[str] = []  # use list to allow mutation in closure
 
@@ -803,12 +803,14 @@ async def stream_response(
     finally:
         unsub()
 
-    # Retry on transient errors
+    # Retry on transient errors with exponential backoff
     if transient_error and _retry < MAX_RETRIES:
+        backoff = min(2 ** _retry, 30)  # 1, 2, 4, 8, 16 s (capped at 30)
         send_queue.put_nowait({
-            "type": "status", "text": "Retrying\u2026",
+            "type": "status",
+            "text": f"Retrying in {backoff}s\u2026 (attempt {_retry + 1}/{MAX_RETRIES})",
         })
-        await asyncio.sleep(1)
+        await asyncio.sleep(backoff)
         await stream_response(
             session, user_text, send_queue,
             session_id=session_id, agent=agent,

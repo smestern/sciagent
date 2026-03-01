@@ -45,6 +45,23 @@ from copilot import CopilotClient
 from copilot.types import Tool, ToolInvocation, ToolResult, SessionConfig, CustomAgentConfig
 from copilot.types import PermissionHandler
 
+
+def _model_error_handler(input_data, context):
+    """Hook that retries transient model-call errors with generous limits.
+
+    The default SDK behaviour retries 5 times with ~6 s total backoff,
+    which is too aggressive for slow or overloaded model endpoints.
+    We allow up to 8 retries and let the CLI compute its own backoff
+    on top of that.
+    """
+    if input_data.get("errorContext") == "model_call" and input_data.get("recoverable", True):
+        return {
+            "errorHandling": "retry",
+            "retryCount": 8,
+            "suppressOutput": True,
+        }
+    return None
+
 from .config import AgentConfig
 from .agents import ALL_DEFAULT_AGENTS
 
@@ -350,6 +367,18 @@ class BaseScientificAgent:
         """
         return list(self.config.extra_libraries) if self.config.extra_libraries else []
 
+    def _get_available_tools(self) -> Optional[List[str]]:
+        """Return an explicit allowlist of tool names for this session.
+
+        When provided, this takes precedence over ``_get_excluded_tools()``
+        per Copilot SDK semantics.
+        """
+        return None
+
+    def _get_excluded_tools(self) -> Optional[List[str]]:
+        """Return tool names to disable for this session."""
+        return None
+
     # -- base tools (inherited by all domain agents) ---------------------------
 
     def _base_tools(self) -> List[Tool]:
@@ -487,7 +516,14 @@ class BaseScientificAgent:
             custom_agents=[agent_config, *[x.to_copilot_config() for x in self._subagents.values()]], #brute force inject subagent configs as custom agents (since the SDK doesn't have a first-class subagent concept)
             streaming=True,
             on_permission_request=PermissionHandler.approve_all,
+            hooks={"on_error_occurred": _model_error_handler},
         )
+        available_tools = self._get_available_tools()
+        excluded_tools = self._get_excluded_tools()
+        if available_tools:
+            config["available_tools"] = available_tools
+        elif excluded_tools:
+            config["excluded_tools"] = excluded_tools
         if session_id:
             config["session_id"] = session_id
 
