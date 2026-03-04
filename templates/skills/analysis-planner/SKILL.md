@@ -1,9 +1,6 @@
 ---
 name: analysis-planner
-description: >-
-  Creates step-by-step analysis plans for scientific data — designs the
-  pipeline, specifies parameters, anticipates risks, and defines success
-  criteria before any code is executed.
+description: Creates step-by-step analysis plans for scientific data — designs the pipeline, specifies parameters, anticipates risks, and defines success criteria before any code is executed.
 argument-hint: Describe your data and research question to get an analysis plan.
 ---
 

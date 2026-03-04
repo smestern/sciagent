@@ -19,6 +19,7 @@ workspace, or use the Python presets in `sciagent.agents`.
 | `rigor-reviewer` | Audit results for scientific rigor | codebase, search, fetch | → `report-writer` |
 | `report-writer` | Generate structured reports | codebase, editFiles, search, fetch | *(end)* |
 | `code-reviewer` | Review scripts for correctness | codebase, search | *(standalone)* |
+| `docs-ingestor` | Learn new library APIs | codebase, search, fetch, terminal | → `analysis-planner` |
 
 ### Handoff Workflow
 
@@ -26,11 +27,11 @@ workspace, or use the Python presets in `sciagent.agents`.
 ┌──────────────────┐     ┌──────────┐     ┌─────────────────────┐
 │ Analysis Planner │ ──► │ Data QC  │ ──► │ Your Domain Agent   │
 └──────────────────┘     └──────────┘     └─────────┬───────────┘
-                                                    │
-                                          ┌─────────▼───────────┐
-                                          │  Rigor Reviewer     │
-                                          └─────────┬───────────┘
-                                                    │
+        ▲                                           │
+        │                                 ┌─────────▼───────────┐
+┌───────┴──────────┐                      │  Rigor Reviewer     │
+│  Docs Ingestor   │                      └─────────┬───────────┘
+└──────────────────┘                                │
                                           ┌─────────▼───────────┐
                                           │  Report Writer      │
                                           └─────────────────────┘
@@ -181,6 +182,39 @@ electrophysiology), add a new agent following the same pattern:
 
 Or use the self-assembly wizard (`sciagent wizard -m copilot_agent`) to
 generate domain-specific agents automatically from a conversation.
+
+---
+
+## Docs Ingestor
+
+**Role**: Library documentation specialist
+
+**Description**: Ingests documentation for any Python library by crawling
+PyPI, ReadTheDocs, and GitHub.  Produces a structured API reference
+(classes, functions, pitfalls, recipes) that all other agents can consult
+via `read_doc()`.  Use this when you need to learn an unfamiliar library
+for scientific analysis.
+
+**Tools**: `codebase`, `search`, `fetch`, `terminal` (terminal for `pip install`)
+
+**Capabilities**:
+- Check for existing ingested docs before re-crawling
+- Deep-crawl PyPI metadata, ReadTheDocs/Sphinx API pages, GitHub source
+- LLM-powered extraction of Core Classes, Key Functions, Common Pitfalls,
+  and Quick-Start Recipes
+- Save structured `<package>_api.md` reference to the docs directory
+- Summarise key capabilities for the user after ingestion
+- Install missing libraries via terminal (with user confirmation)
+
+**Handoff**: → `analysis-planner` ("Library docs ingested, plan an analysis")
+
+**Requirements**: Requires `sciagent[wizard]` — install with
+`pip install sciagent[wizard]`.
+
+**Extension Points**:
+Add domain-specific default libraries to ingest, preferred GitHub URLs
+for internal packages, and post-ingestion checklist items in the
+`## Domain Customization` section.
 
 ```python
 from sciagent.agents import get_agent_config

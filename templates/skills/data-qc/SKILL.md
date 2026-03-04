@@ -1,9 +1,6 @@
 ---
 name: data-qc
-description: >-
-  Performs systematic data quality control checks before analysis — missing
-  values, outliers, distributions, unit validation, duplicates, and
-  structural integrity assessment with severity-rated reporting.
+description: Performs systematic data quality control checks before analysis — missing values, outliers, distributions, unit validation, duplicates, and structural integrity assessment with severity-rated reporting.
 argument-hint: Provide your dataset to run quality control checks.
 ---
 

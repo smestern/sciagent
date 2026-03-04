@@ -1,10 +1,6 @@
 ---
 name: scientific-rigor
-description: >-
-  Enforces scientific rigor principles during data analysis — data integrity,
-  objective analysis, sanity checks, transparent reporting, uncertainty
-  quantification, reproducibility, and safe code execution. Auto-loads when
-  scientific analysis is detected.
+description: Enforces scientific rigor principles during data analysis — data integrity, objective analysis, sanity checks, transparent reporting, uncertainty quantification, reproducibility, and safe code execution. Auto-loads when scientific analysis is detected.
 user-invokable: false
 ---
 

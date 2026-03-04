@@ -1,9 +1,6 @@
 ---
 name: rigor-reviewer
-description: >-
-  Audits analysis outputs, code, and claims for scientific rigor violations —
-  statistical validity, effect sizes, data integrity, p-hacking risks,
-  reproducibility, visualization integrity, and reporting completeness.
+description: Audits analysis outputs, code, and claims for scientific rigor violations — statistical validity, effect sizes, data integrity, p-hacking risks, reproducibility, visualization integrity, and reporting completeness.
 argument-hint: Provide analysis results or code to audit for scientific rigor.
 ---
 

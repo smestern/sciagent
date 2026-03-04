@@ -31,6 +31,7 @@ from .planner import ANALYSIS_PLANNER_CONFIG
 from .data_qc import DATA_QC_CONFIG
 from .report_writer import REPORT_WRITER_CONFIG
 from .code_reviewer import CODE_REVIEWER_CONFIG
+from .docs_ingestor import DOCS_INGESTOR_CONFIG
 
 # Canonical ordered mapping: slug → AgentConfig
 ALL_DEFAULT_AGENTS: Dict[str, AgentConfig] = {
@@ -39,6 +40,7 @@ ALL_DEFAULT_AGENTS: Dict[str, AgentConfig] = {
     "data-qc": DATA_QC_CONFIG,
     "report-writer": REPORT_WRITER_CONFIG,
     "code-reviewer": CODE_REVIEWER_CONFIG,
+    "docs-ingestor": DOCS_INGESTOR_CONFIG,
 }
 
 __all__ = [
@@ -50,6 +52,7 @@ __all__ = [
     "DATA_QC_CONFIG",
     "REPORT_WRITER_CONFIG",
     "CODE_REVIEWER_CONFIG",
+    "DOCS_INGESTOR_CONFIG",
 ]
 
 DEFAULT_AGENT_PATHS = ["./agents/*.agent.md",

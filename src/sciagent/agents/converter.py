@@ -217,8 +217,7 @@ def _make_skill_md(
     lines = [
         "---",
         f"name: {config.name}",
-        "description: >-",
-        f"  {desc}",
+        f"description: {desc}",
         f"argument-hint: {hint}",
     ]
     if not user_invokable:

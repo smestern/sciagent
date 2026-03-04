@@ -1,9 +1,6 @@
 ---
 name: report-writer
-description: >-
-  Generates structured scientific reports from analysis results — publication-
-  quality Markdown with abstract, methods, results, figures, tables, uncertainty
-  quantification, limitations, and reproducibility information.
+description: Generates structured scientific reports from analysis results — publication-quality Markdown with abstract, methods, results, figures, tables, uncertainty quantification, limitations, and reproducibility information.
 argument-hint: Provide analysis results to generate a structured scientific report.
 ---
 

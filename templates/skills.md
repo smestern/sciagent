@@ -26,6 +26,7 @@ SciAgent ships 6 default skills in `templates/skills/`.  Copy them into
 | Rigor Reviewer | `skills/rigor-reviewer/` | 8-point scientific rigor audit checklist | `/rigor-reviewer` |
 | Report Writer | `skills/report-writer/` | Publication-quality report generation template and guidelines | `/report-writer` |
 | Code Reviewer | `skills/code-reviewer/` | 7-point code review checklist for scientific scripts | `/code-reviewer` |
+| Docs Ingestor | `skills/docs-ingestor/` | Ingest documentation for any Python library to learn its API for scientific analysis | `/docs-ingestor` |
 
 ---
 

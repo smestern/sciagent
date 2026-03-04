@@ -1,9 +1,6 @@
 ---
 name: code-reviewer
-description: >-
-  Reviews scientific analysis scripts for correctness, reproducibility,
-  error handling, code quality, performance, and scientific best practices —
-  provides severity-rated actionable feedback without modifying code.
+description: Reviews scientific analysis scripts for correctness, reproducibility, error handling, code quality, performance, and scientific best practices — provides severity-rated actionable feedback without modifying code.
 argument-hint: Provide a script or code to review for correctness and best practices.
 ---
 

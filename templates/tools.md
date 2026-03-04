@@ -20,6 +20,69 @@ function with defined inputs and outputs.
 -->
 
 - [I/O Tools](#io-tools) — File loading and data access
+- [Documentation & Learning](#documentation--learning) — Library ingestion and doc lookup
+
+---
+
+## Documentation & Learning
+
+Tools for ingesting library documentation and consulting ingested
+references.  These let the agent learn unfamiliar libraries at runtime.
+
+### `ingest_library_docs`
+
+Deep-crawl documentation for a Python package and generate a structured
+API reference document.  Crawls ReadTheDocs API pages, GitHub source code,
+and PyPI metadata, then uses an LLM to extract classes, functions,
+pitfalls, and recipes into a standard reference format.
+
+The generated document is saved to the agent's docs directory and becomes
+available via `read_doc(name)`.
+
+> **Requires** `sciagent[wizard]` — install with `pip install sciagent[wizard]`.
+
+```python
+ingest_library_docs(package_name: str, github_url: str | None = None) -> Dict
+```
+
+**Parameters**:
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `package_name` | `str` | required | The PyPI package name (e.g. `"numpy"`, `"pandas"`, `"scikit-learn"`) |
+| `github_url` | `str` | `None` | Optional GitHub repository URL for deeper source-code analysis. If omitted, discovered from PyPI metadata. |
+
+**Returns**:
+
+```python
+{
+    "status": "success",          # or "error"
+    "doc_name": str,              # e.g. "scipy_api"
+    "path": str,                  # Full path to the saved .md file
+    "word_count": int,            # Word count of the generated reference
+    "message": str,               # Human-readable confirmation
+}
+```
+
+---
+
+### `read_doc`
+
+Read a previously ingested or manually placed documentation file from
+the docs directory.
+
+```python
+read_doc(name: str) -> str
+```
+
+**Parameters**:
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `name` | `str` | required | Document name without `.md` extension (e.g. `"scipy_api"`) |
+
+**Returns**: The full Markdown content of the document, or an error
+message if not found.
 
 ---
 
