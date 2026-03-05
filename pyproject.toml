@@ -65,7 +65,7 @@ wizard= [
     "sciagent-wizard @ git+https://github.com/smestern/sciagent-wizard.git",
 ]
 all = [
-    "sciagent[cli,web, wizard]",
+    "sciagent[cli,web,wizard]",
 ]
 
 [project.scripts]
