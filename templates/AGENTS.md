@@ -25,6 +25,12 @@ Always follow the scientific rigor policy in
 - [skills.md](skills.md) — skill-level guidance and trigger patterns
 - [builtin_agents.md](builtin_agents.md) — default scientific agent roster and handoffs
 
+## Domain Setup
+
+If template files still contain `<!-- REPLACE: ... -->` placeholder
+comments, run `/configure-domain` to set up your domain-specific
+content, or invoke `@domain-assembler` for guided self-assembly.
+
 ## Usage Notes
 
 - For modular VS Code instructions, transition templates to

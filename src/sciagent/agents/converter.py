@@ -246,8 +246,10 @@ _DEFAULT_SKILLS = [
     "rigor-reviewer",
     "report-writer",
     "code-reviewer",
+    "configure-domain",
+    "update-domain",
 ]
-"""Names of the 6 default skill directories
+"""Names of the 8 default skill directories
 shipped in ``templates/skills/``."""
 
 

@@ -19,11 +19,17 @@ workspace, or use the Python presets in `sciagent.agents`.
 | `rigor-reviewer` | Audit results for scientific rigor | codebase, search, fetch | → `report-writer` |
 | `report-writer` | Generate structured reports | codebase, editFiles, search, fetch | *(end)* |
 | `code-reviewer` | Review scripts for correctness | codebase, search | *(standalone)* |
+| `domain-assembler` | Configure SciAgent for your domain | codebase, editFiles, search, fetch | → `docs-ingestor` |
 | `docs-ingestor` | Learn new library APIs | codebase, search, fetch, terminal | → `analysis-planner` |
 
 ### Handoff Workflow
 
 ```
+┌────────────────────┐
+│ Domain Assembler   │ ◄── /configure-domain, /update-domain
+└────────┬───────────┘
+         │
+         ▼
 ┌──────────────────┐     ┌──────────┐     ┌─────────────────────┐
 │ Analysis Planner │ ──► │ Data QC  │ ──► │ Your Domain Agent   │
 └──────────────────┘     └──────────┘     └─────────┬───────────┘
@@ -182,6 +188,44 @@ electrophysiology), add a new agent following the same pattern:
 
 Or use the self-assembly wizard (`sciagent wizard -m copilot_agent`) to
 generate domain-specific agents automatically from a conversation.
+
+---
+
+## Domain Assembler
+
+**Role**: Self-assembly domain configurator
+
+**Description**: Configures SciAgent for your research domain by
+interviewing you, discovering relevant scientific packages via PyPI and
+GitHub, and filling in the `<!-- REPLACE: ... -->` placeholder sections
+across your template instruction files.  No wizard dependency needed —
+uses only VS Code's built-in `fetch` and `editFiles` tools.
+
+**Tools**: `codebase`, `editFiles`, `search`, `fetch`
+
+**Capabilities**:
+- Auto-detect unfilled `<!-- REPLACE: ... -->` placeholders and suggest setup
+- Conversational domain interview (data types, packages, workflows, goals)
+- Lightweight package discovery via PyPI JSON API and GitHub READMEs
+- Fill all template placeholders with domain-specific content
+- Append custom guardrails, workflows, and skills beyond placeholders
+- Create condensed package API references in `docs/`
+- Incremental updates without re-running the full setup
+
+**Skills**: Exposes two user-invokable skills:
+- `/configure-domain` — Full first-time setup (interview → discover → fill → verify)
+- `/update-domain` — Incremental updates (add packages, refine workflows)
+
+**Handoff**: → `docs-ingestor` ("Deep-crawl library docs for the
+packages identified during assembly")
+
+**Requirements**: None — works with any SciAgent installation.  For
+deep documentation crawling, the `docs-ingestor` agent requires
+`sciagent[wizard]`.
+
+**Extension Points**:
+Add default packages, preferred search queries, and domain-specific
+assembly guidance in the `## Domain Customization` section.
 
 ---
 

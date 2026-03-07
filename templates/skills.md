@@ -27,6 +27,8 @@ SciAgent ships 6 default skills in `templates/skills/`.  Copy them into
 | Report Writer | `skills/report-writer/` | Publication-quality report generation template and guidelines | `/report-writer` |
 | Code Reviewer | `skills/code-reviewer/` | 7-point code review checklist for scientific scripts | `/code-reviewer` |
 | Docs Ingestor | `skills/docs-ingestor/` | Ingest documentation for any Python library to learn its API for scientific analysis | `/docs-ingestor` |
+| Configure Domain | `skills/configure-domain/` | First-time domain setup — interviews you, discovers packages, fills template placeholders | `/configure-domain` |
+| Update Domain | `skills/update-domain/` | Incrementally add packages, refine workflows, or extend domain content | `/update-domain` |
 
 ---
 

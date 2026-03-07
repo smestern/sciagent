@@ -277,3 +277,13 @@ When analysis methods or defaults change:
 - Document changes in this file
 - Note version in analysis reports if relevant
 - Maintain backwards compatibility when possible
+
+---
+
+## Domain Setup Detection
+
+If you encounter `<!-- REPLACE: ... -->` placeholder comments in any
+SciAgent instruction or template file, this means the domain-specific
+content has not been configured yet.  Suggest that the user run
+`/configure-domain` to set up their research domain, or
+`/update-domain` to add incremental changes.
