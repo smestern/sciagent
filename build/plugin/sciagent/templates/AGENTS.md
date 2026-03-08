@@ -30,6 +30,8 @@ Always follow the scientific rigor policy in
 If template files still contain `<!-- REPLACE: ... -->` placeholder
 comments, run `/configure-domain` to set up your domain-specific
 content, or invoke `@domain-assembler` for guided self-assembly.
+Domain knowledge will be placed in `docs/domain/` with links from
+the template files.
 
 ## Usage Notes
 

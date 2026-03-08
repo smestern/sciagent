@@ -83,6 +83,38 @@ REPLACE_PATTERN = re.compile(
     flags=re.DOTALL,
 )
 
+# Captures the human-readable description from unfilled REPLACE placeholders.
+REPLACE_HUMANIZE_RE = re.compile(
+    r"<!--\s*REPLACE:\s*[a-zA-Z0-9_]+\s*[—-]\s*(.*?)\s*-->",
+    flags=re.DOTALL,
+)
+
+
+def _humanize_unfilled_placeholders(text: str) -> str:
+    """Convert remaining ``<!-- REPLACE: key — desc -->`` to user-friendly markers.
+
+    Unfilled placeholders become::
+
+        <!replace --- <description> --- or add a link--->
+
+    Skips matches inside backtick inline code.
+    """
+
+    def _humanize_match(match: re.Match[str]) -> str:
+        start = match.start()
+        preceding = text[:start]
+        if preceding.count('`') % 2 == 1:
+            return match.group(0)
+
+        desc = match.group(1).strip()
+        example_idx = desc.find("Example:")
+        if example_idx > 0:
+            desc = desc[:example_idx].rstrip().rstrip(".")
+        desc = " ".join(desc.split())
+        return f"<!replace --- {desc} --- or add a link--->"
+
+    return REPLACE_HUMANIZE_RE.sub(_humanize_match, text)
+
 
 def _detect_user_prompts_dir() -> Path:
     if sys.platform == "win32":
@@ -228,6 +260,7 @@ def _install_workspace_hybrid(
     for spec in TEMPLATE_SPECS:
         source_path = TEMPLATES_DIR / spec.source_name
         content = _apply_replacements(source_path.read_text(encoding="utf-8"), replacements)
+        content = _humanize_unfilled_placeholders(content)
         content = _with_frontmatter(
             body=content,
             name=spec.instruction_name.replace(".instructions.md", ""),
@@ -282,6 +315,7 @@ def _install_workspace_mono(
     ):
         source_path = TEMPLATES_DIR / source
         text = _apply_replacements(source_path.read_text(encoding="utf-8"), replacements)
+        text = _humanize_unfilled_placeholders(text)
         rendered.append((source, text))
 
     agents_path = workspace_root / "AGENTS.md"
@@ -317,6 +351,7 @@ def _install_user_instructions(
             "skills.md",
         ):
             text = _apply_replacements((TEMPLATES_DIR / source).read_text(encoding="utf-8"), replacements)
+            text = _humanize_unfilled_placeholders(text)
             rendered.append((source, text))
 
         body = _mono_agents_content(rendered)
@@ -333,6 +368,7 @@ def _install_user_instructions(
 
     for spec in TEMPLATE_SPECS:
         text = _apply_replacements((TEMPLATES_DIR / spec.source_name).read_text(encoding="utf-8"), replacements)
+        text = _humanize_unfilled_placeholders(text)
         content = _with_frontmatter(
             body=text,
             name=spec.instruction_name.replace(".instructions.md", ""),

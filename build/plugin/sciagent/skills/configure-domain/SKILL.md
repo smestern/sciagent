@@ -53,8 +53,11 @@ placeholders:
    `workflows.md`, `tools.md`, `library_api.md`, `skills.md` in
    `.github/instructions/` and the workspace root.
 2. In each file, look for `<!-- REPLACE: key — description -->` comments.
-3. Build a checklist of every placeholder found, grouped by file.
-4. Show the checklist to the user: "I found N unfilled placeholders
+3. Also check whether `docs/domain/` already exists with domain
+   knowledge files from a previous run.
+4. Build a checklist of every unfilled placeholder found, grouped by
+   file.
+5. Show the checklist to the user: "I found N unfilled placeholders
    across M files.  Here's what needs filling: ..."
 
 ### Step 3 — Discover Packages
@@ -81,25 +84,65 @@ Ask the user to confirm which packages to include.
 
 ### Step 4 — Fill Template Placeholders
 
-For each confirmed placeholder, generate domain-appropriate content and
-use `editFiles` to replace the `<!-- REPLACE: key — description -->`
-comment with the actual content.
+For each confirmed placeholder, **do not** inline the full domain content
+into the template file.  Instead, create separate domain knowledge files
+and insert links.
+
+**Domain docs structure** — create one file per template in `docs/domain/`:
+
+- `docs/domain/operations.md` — Standard workflows, analysis parameters,
+  parameter adjustment guidance, edge cases, reporting precision table
+- `docs/domain/workflows.md` — Workflow overview table, individual
+  workflow sections with steps, parameters, and expected outputs
+- `docs/domain/library-api.md` — Core classes, key functions, common
+  pitfalls, and quick-start recipes for confirmed packages
+- `docs/domain/tools.md` — Domain tool documentation and custom tool
+  templates
+- `docs/domain/skills.md` — Domain-specific skill entries (if any
+  custom skills are warranted by the domain)
+
+**For each placeholder:**
+
+1. Read the marker description to understand the expected content —
+   each `<!-- REPLACE: key — description. Example: ... -->` includes
+   guidance on the expected format and examples of what to put there.
+2. Write the domain-appropriate content under a Markdown heading in the
+   corresponding `docs/domain/<template>.md` file.  Use headings that
+   match the placeholder description (e.g. `## Standard Workflows`,
+   `## Analysis Parameters`).
+3. Insert a Markdown link **below** the marker in the template file
+   pointing to the relevant section.  Keep the marker itself intact.
+
+**Example** — before:
+```
+<!-- REPLACE: domain_workflows — Step-by-step workflows specific to your domain. Example:
+### Standard Workflow
+1. Load data
+2. Run analysis
+Or add a link to docs/domain/. -->
+```
+
+After assembly:
+```
+<!-- REPLACE: domain_workflows — Step-by-step workflows specific to your domain. Example:
+### Standard Workflow
+1. Load data
+2. Run analysis
+Or add a link to docs/domain/. -->
+
+See [domain workflows](docs/domain/operations.md#standard-workflows)
+```
+
+The full workflow content lives in `docs/domain/operations.md` under a
+`## Standard Workflows` heading.
 
 **Fill order** (adjust based on which files have placeholders):
 
-1. **operations.md** — Standard workflows, analysis parameters,
-   parameter adjustment guidance, edge cases, reporting precision table
-2. **workflows.md** — Workflow overview table, individual workflow
-   sections with steps, parameters, and expected outputs
-3. **library_api.md** — Core classes, key functions, common pitfalls,
-   and quick-start recipes for confirmed packages
-4. **tools.md** — Domain tool documentation and custom tool templates
-5. **skills.md** — Domain-specific skill entries (if any custom skills
-   are warranted by the domain)
-
-For each placeholder, follow the examples provided in the comment's
-description — each `<!-- REPLACE: key — description. Example: ... -->`
-includes guidance on the expected format.
+1. `operations.md`
+2. `workflows.md`
+3. `library_api.md`
+4. `tools.md`
+5. `skills.md`
 
 ### Step 5 — Append Domain-Specific Content
 
@@ -132,20 +175,25 @@ For deeper documentation crawling, suggest the user invoke
 ### Step 7 — Verify
 
 1. Re-scan all template files for remaining `<!-- REPLACE: ... -->`
-   placeholders.
-2. Summarize what was changed:
+   markers without links below them.
+2. Verify that `docs/domain/` files were created with the expected
+   content.
+3. Summarize what was changed:
    - Files modified (with placeholder counts before/after)
+   - Domain docs created
    - Packages included
    - New sections added
-3. If any placeholders remain unfilled (e.g. the user deferred some),
+4. If any placeholders remain unfilled (e.g. the user deferred some),
    note them and suggest running `/update-domain` later.
 
 ## Re-Run Safety
 
 If invoked on a workspace that already has filled content:
 
-- **Detect existing content** — Check whether placeholders have already
-  been replaced with domain content.
+- **Detect existing content** — Check whether markers already have
+  links below them pointing to `docs/domain/`.
+- **Check domain docs** — If `docs/domain/*.md` files already exist,
+  audit their content before proposing changes.
 - **Ask before overwriting** — If content exists, ask the user: "This
   section already has domain content.  Overwrite, skip, or append?"
 - **Never silently overwrite** — User-edited content is precious.
@@ -158,7 +206,7 @@ If invoked on a workspace that already has filled content:
 - Does **not** require `sciagent[wizard]` — works with VS Code's
   built-in `fetch` and `editFiles` tools only
 - Does **not** create new agent `.agent.md` files — it configures the
-  existing template files
+  existing template files and creates `docs/domain/` knowledge files
 
 ## Domain Customization
 

@@ -20,8 +20,9 @@ conversation and writes the rendered files into the generated project's
 ### 2. Manual (copy and fill)
 
 Copy any or all of these `.md` files into your own project and replace the
-`<!-- REPLACE: ... -->` placeholder comments by hand. Each placeholder
-includes a description and example so you know exactly what to put there.
+`<!replace ...>` markers (or `<!-- REPLACE: ... -->` placeholder comments)
+by hand, or add a link to a separate doc.  Each placeholder includes a
+description so you know exactly what to put there.
 
 ### 3. Transition script (install to Copilot-compatible files)
 
@@ -66,6 +67,14 @@ This copies skills to `~/.copilot/skills` (or `--user-skills-dir`).
 | `workflows.md` | Standard analysis workflows — step-by-step procedures for common tasks |
 
 ## Placeholder syntax
+
+After build/install, unfilled placeholders appear as:
+
+```markdown
+<!replace --- Description of what goes here --- or add a link--->
+```
+
+In source templates, the machine-readable format is:
 
 ```markdown
 <!-- REPLACE: placeholder_name — Description of what goes here. Example: "some example value" -->

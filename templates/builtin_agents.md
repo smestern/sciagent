@@ -229,17 +229,18 @@ generate domain-specific agents automatically from a conversation.
 
 **Description**: Configures SciAgent for your research domain by
 interviewing you, discovering relevant scientific packages via PyPI and
-GitHub, and filling in the `<!-- REPLACE: ... -->` placeholder sections
-across your template instruction files.  No wizard dependency needed —
+GitHub, and creating domain knowledge files in `docs/domain/` with
+links from the template instruction files.  No wizard dependency needed —
 uses only VS Code's built-in `fetch` and `editFiles` tools.
 
 **Tools**: `codebase`, `editFiles`, `search`, `fetch`
 
 **Capabilities**:
-- Auto-detect unfilled `<!-- REPLACE: ... -->` placeholders and suggest setup
+- Auto-detect unfilled `<!replace ...>` markers (or legacy
+  `<!-- REPLACE: ... -->` placeholders) and suggest setup
 - Conversational domain interview (data types, packages, workflows, goals)
 - Lightweight package discovery via PyPI JSON API and GitHub READMEs
-- Fill all template placeholders with domain-specific content
+- Create separate domain knowledge files in `docs/domain/` and link from templates
 - Append custom guardrails, workflows, and skills beyond placeholders
 - Create condensed package API references in `docs/`
 - Incremental updates without re-running the full setup

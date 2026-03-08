@@ -282,8 +282,9 @@ When analysis methods or defaults change:
 
 ## Domain Setup Detection
 
-If you encounter `<!-- REPLACE: ... -->` placeholder comments in any
-SciAgent instruction or template file, this means the domain-specific
-content has not been configured yet.  Suggest that the user run
-`/configure-domain` to set up their research domain, or
-`/update-domain` to add incremental changes.
+If you encounter `<!replace ...>` markers or `<!-- REPLACE: ... -->`
+placeholder comments in any SciAgent instruction or template file, this
+means the domain-specific content has not been configured yet.  Suggest
+that the user run `/configure-domain` to set up their research domain,
+or `/update-domain` to add incremental changes.  Domain knowledge will
+be created in `docs/domain/` with links from the template files.

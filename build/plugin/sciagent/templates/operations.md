@@ -105,8 +105,7 @@ When a user provides a file:
 3. Run matched analyses
 4. Compute statistics across groups
 5. Report with effect sizes and confidence intervals
-```
--->
+``` Or add a link to docs/domain/. -->
 
 ---
 
@@ -121,8 +120,7 @@ When a user provides a file:
 | detection_threshold | 0.5 | Signal detection sensitivity |
 | baseline_window | 100 ms | Window for baseline measurement |
 | smoothing_sigma | 2.0 | Gaussian smoothing kernel width |
-| min_sample_size | 3 | Minimum N for statistical tests |
--->
+| min_sample_size | 3 | Minimum N for statistical tests | Or add a link to docs/domain/. -->
 
 | Parameter | Default | Context |
 |-----------|---------|---------|
@@ -140,8 +138,7 @@ When a user provides a file:
 **Higher detection_threshold (0.7–1.0)**:
 - Clean data
 - Conservative analysis
-- Publication-quality filtering
--->
+- Publication-quality filtering Or add a link to docs/domain/. -->
 
 ---
 
@@ -186,8 +183,7 @@ If analysis fails:
 **Inconsistent results across samples**:
 - Report per-sample results
 - Provide summary statistics
-- Flag inconsistencies for user review
--->
+- Flag inconsistencies for user review Or add a link to docs/domain/. -->
 
 ---
 
@@ -203,8 +199,7 @@ If analysis fails:
 | Concentration | 2 significant figures | µM |
 | Time | 3 decimals | s |
 | Ratios | 2 decimals | — |
-| Percentages | 1 decimal | % |
--->
+| Percentages | 1 decimal | % | Or add a link to docs/domain/. -->
 
 | Measurement | Precision | Units |
 |-------------|-----------|-------|
@@ -285,5 +280,6 @@ When analysis methods or defaults change:
 If you encounter `<!-- REPLACE: ... -->` placeholder comments in any
 SciAgent instruction or template file, this means the domain-specific
 content has not been configured yet.  Suggest that the user run
-`/configure-domain` to set up their research domain, or
-`/update-domain` to add incremental changes.
+`/configure-domain` to set up their research domain, or `/update-domain`
+to add incremental changes.  Domain knowledge will be created in
+`docs/domain/` with links from the template files.

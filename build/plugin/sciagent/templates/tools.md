@@ -16,8 +16,7 @@ function with defined inputs and outputs.
 - [Analysis Tools](#analysis-tools) — Core domain analysis
 - [QC Tools](#qc-tools) — Quality control
 - [Fitting Tools](#fitting-tools) — Curve fitting and modelling
-- [Visualisation Tools](#visualisation-tools) — Plotting and figure generation
--->
+- [Visualisation Tools](#visualisation-tools) — Plotting and figure generation Or add a link to docs/domain/. -->
 
 - [I/O Tools](#io-tools) — File loading and data access
 - [Documentation & Learning](#documentation--learning) — Library ingestion and doc lookup
@@ -88,13 +87,13 @@ message if not found.
 
 <!-- REPEAT: tool_category — One section per tool category. Each category contains one or more tool subsections. -->
 
-## <!-- REPLACE: tool_category_name — Category heading, e.g. "I/O Tools", "Analysis Tools", "QC Tools" -->
+## <!-- REPLACE: tool_category_name — Category heading, e.g. "I/O Tools", "Analysis Tools", "QC Tools" Or add a link to docs/domain/. -->
 
 <!-- REPEAT: tool_section — One subsection per tool within this category. -->
 
-### <!-- REPLACE: tool_name — The tool's function name, e.g. "load_file", "detect_events", "run_qc" -->
+### <!-- REPLACE: tool_name — The tool's function name, e.g. "load_file", "detect_events", "run_qc" Or add a link to docs/domain/. -->
 
-<!-- REPLACE: tool_short_description — A one-sentence description of what the tool does. Example: "Load a data file and return its contents as arrays." -->
+<!-- REPLACE: tool_short_description — A one-sentence description of what the tool does. Example: "Load a data file and return its contents as arrays." Or add a link to docs/domain/. -->
 
 ```python
 <!-- REPLACE: tool_signature — The full function signature with type hints. Example:
@@ -108,8 +107,7 @@ load_file(file_path: str, return_metadata: bool = False) -> Dict
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
 | file_path | str | required | Path to the data file |
-| return_metadata | bool | False | Include file metadata in the response |
--->
+| return_metadata | bool | False | Include file metadata in the response | Or add a link to docs/domain/. -->
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|

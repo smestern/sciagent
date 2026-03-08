@@ -17,8 +17,8 @@ packages, and filling in the template instruction files.
 ### Auto-Detection
 
 On first invocation — or whenever you notice that template files contain
-unfilled `<!-- REPLACE: ... -->` placeholder comments — proactively
-suggest configuration:
+unfilled `<!replace ...>` markers or `<!-- REPLACE: ... -->` placeholder
+comments — proactively suggest configuration:
 
 > "I notice your SciAgent templates still have unfilled placeholder
 > sections.  Would you like me to configure them for your research
@@ -38,8 +38,9 @@ If only a few remain, run the incremental update workflow.
    - Expected value ranges and units
 
 2. **Audit templates** — Use `Grep` to scan for
-   `<!-- REPLACE:` across all `.md` and `.instructions.md` files.
-   Build a checklist of unfilled placeholders grouped by file.
+   `<!replace` and `<!-- REPLACE:` across all `.md` and
+   `.instructions.md` files.  Build a checklist of unfilled
+   placeholders grouped by file.
 
 3. **Discover packages** — Use `Fetch` to query:
    - PyPI JSON API: `https://pypi.org/pypi/{name}/json` for candidate
@@ -47,10 +48,28 @@ If only a few remain, run the incremental update workflow.
    - GitHub READMEs for capabilities overview
    Present discovered packages and ask the user to confirm.
 
-4. **Fill placeholders** — For each `<!-- REPLACE: key — desc -->`
-   comment, generate domain-appropriate content and use `Edit` to
-   replace the comment.  Process files in order: operations.md,
-   workflows.md, library_api.md, tools.md, skills.md.
+4. **Fill placeholders** — For each `<!replace ... --->` marker (or
+   legacy `<!-- REPLACE: key — desc -->`), **do not** inline the full
+   domain content into the template file.  Instead:
+
+   a. Create a domain knowledge file in `docs/domain/` — one per
+      template (e.g. `docs/domain/operations.md`,
+      `docs/domain/workflows.md`, `docs/domain/library-api.md`,
+      `docs/domain/tools.md`, `docs/domain/skills.md`).
+   b. Write the domain content under a Markdown heading matching the
+      placeholder description.
+   c. Insert a Markdown link **below** the marker in the template
+      file, keeping the marker itself intact.
+
+   Example — after assembly:
+   ```
+   <!replace --- Step-by-step workflows --- or add a link--->
+
+   See [domain workflows](docs/domain/operations.md#standard-workflows)
+   ```
+
+   Process files in order: operations.md, workflows.md,
+   library_api.md, tools.md, skills.md.
 
 5. **Append custom content** — Add domain-specific guardrails,
    workflows, or skills beyond what the placeholders cover.
@@ -73,15 +92,23 @@ If only a few remain, run the incremental update workflow.
 ### Placeholder Pattern
 
 ```
+<!replace --- Description of what goes here --- or add a link--->
+```
+
+Legacy format:
+```
 <!-- REPLACE: key_name — Description. Example: "..." -->
 ```
 
-Replace the entire comment with domain content matching the described
-format.
+Insert a Markdown link below the marker pointing to the appropriate
+`docs/domain/` file and section.  Do **not** remove or replace the
+marker itself.
 
 ### Re-Run Safety
 
-- Detect already-filled sections before editing
+- Detect already-filled sections — check for existing links to
+  `docs/domain/` below markers
+- Check `docs/domain/*.md` files for existing domain content
 - Ask before overwriting existing domain content
 - Default to skipping filled sections
 - Never silently overwrite user-edited content

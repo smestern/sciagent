@@ -104,8 +104,8 @@ run the `/update-domain` workflow.
 2. **Audit templates** — Scan `.github/instructions/` and workspace root
    for `*.instructions.md`, `operations.md`, `workflows.md`, `tools.md`,
    `library_api.md`, `skills.md`.  Identify all unfilled
-   `<!-- REPLACE: key — description -->` placeholders.  Present a
-   checklist to the user.
+   `<!-- REPLACE: ... -->` placeholders.  Present a checklist to the
+   user.
 
 3. **Discover packages** — Use the `fetch` tool to query:
    - PyPI JSON API: `https://pypi.org/pypi/{name}/json` for known or
@@ -115,15 +115,54 @@ run the `/update-domain` workflow.
    Present discovered packages with name, description, and relevance.
    Ask the user to confirm selections.
 
-4. **Fill placeholders** — For each `<!-- REPLACE: key — desc -->`
-   comment, generate domain-appropriate content following the format
-   guidance in the comment's description.  Use `editFiles` to replace
-   each placeholder.  Process files in order:
-   - `operations.md` — workflows, parameters, edge cases, precision
-   - `workflows.md` — workflow overview, individual workflow sections
-   - `library_api.md` — Core Classes, Key Functions, Pitfalls, Recipes
-   - `tools.md` — domain tool documentation
-   - `skills.md` — domain skill entries
+4. **Fill placeholders** — For each `<!-- REPLACE: key — desc -->`,
+   **do not** inline the full domain content into the template file.
+   Instead:
+
+   a. Create a separate domain knowledge file in `docs/domain/` — one
+      file per template:
+      - `docs/domain/operations.md` — workflows, parameters, edge cases, precision
+      - `docs/domain/workflows.md` — workflow overview, individual workflow sections
+      - `docs/domain/library-api.md` — Core Classes, Key Functions, Pitfalls, Recipes
+      - `docs/domain/tools.md` — domain tool documentation
+      - `docs/domain/skills.md` — domain skill entries
+
+   b. Write the domain-specific content into the appropriate section
+      of the domain doc (use Markdown headings that match the
+      placeholder description).
+
+   c. Insert a Markdown link **below** the `<!-- REPLACE: ... -->`
+      marker pointing to the relevant doc section.  Keep the marker
+      itself intact so users can see what the placeholder is for.
+
+   **Example** — before:
+   ```
+   <!-- REPLACE: domain_workflows — Step-by-step workflows specific to your domain. Example:
+   ### Standard Workflow
+   1. Load data
+   2. Run analysis
+   Or add a link to docs/domain/. -->
+   ```
+   After assembly:
+   ```
+   <!-- REPLACE: domain_workflows — Step-by-step workflows specific to your domain. Example:
+   ### Standard Workflow
+   1. Load data
+   2. Run analysis
+   Or add a link to docs/domain/. -->
+
+   See [domain workflows](docs/domain/operations.md#standard-workflows)
+   ```
+
+   The full workflow content lives in `docs/domain/operations.md` under
+   a `## Standard Workflows` heading.
+
+   Process files in order:
+   - `operations.md`
+   - `workflows.md`
+   - `library_api.md`
+   - `tools.md`
+   - `skills.md`
 
 5. **Append custom content** — Add new sections beyond placeholders
    where the domain warrants it: guardrails, additional workflows,
@@ -164,23 +203,30 @@ When searching for packages:
 
 ### Placeholder Pattern
 
-The SciAgent templates use this pattern for configurable sections:
+The SciAgent templates use HTML comment markers for configurable sections:
 
 ```
-<!-- REPLACE: key_name — Description of what goes here. Example: "..." -->
+<!-- REPLACE: key_name — Description of what goes here. Example:
+- example item 1
+- example item 2
+Or add a link to docs/domain/. -->
 ```
 
-When filling a placeholder:
-- Read the key name and description carefully
-- Follow the format shown in the "Example:" portion
-- Replace the entire `<!-- REPLACE: ... -->` comment with the actual
-  content (not just the value — the whole comment disappears)
-- Preserve the surrounding Markdown structure
+The description and examples inside the comment tell you what content is
+needed.  When filling a placeholder:
+- Read the description and examples carefully
+- Create the content in the appropriate `docs/domain/` file
+- Insert a Markdown link below the marker — **do not** replace or
+  remove the marker itself
+- The marker stays so users can see what each section is for and
+  manually update it later if desired
 
 ### Re-Run Safety
 
 - **Detect existing content**: Check whether `<!-- REPLACE: ... -->`
-  comments have already been replaced with real content.
+  markers already have a link below them pointing to `docs/domain/`.
+- **Check domain docs**: If `docs/domain/*.md` files already exist,
+  audit their content before proposing changes.
 - **Ask before overwriting**: If domain content already exists, ask the
   user: "This section already has content. Overwrite, skip, or append?"
 - **Never silently overwrite**: Default to skipping filled sections.

@@ -62,6 +62,48 @@ REPLACE_PATTERN = re.compile(
     flags=re.DOTALL,
 )
 
+# Captures the human-readable description from unfilled REPLACE placeholders
+# so we can convert them to the user-friendly <!replace ...> format.
+REPLACE_HUMANIZE_RE = re.compile(
+    r"<!--\s*REPLACE:\s*[a-zA-Z0-9_]+\s*[—-]\s*(.*?)\s*-->",
+    flags=re.DOTALL,
+)
+
+
+def _humanize_unfilled_placeholders(text: str) -> str:
+    """Convert remaining ``<!-- REPLACE: key — desc -->`` to user-friendly markers.
+
+    Any REPLACE placeholder that was *not* filled by ``_apply_replacements()``
+    is rewritten to::
+
+        <!replace --- <description> --- or add a link--->
+
+    This makes the markers visible and actionable for end-users while
+    preserving the intent of each placeholder.
+
+    Skips matches inside backtick inline code so documentation references
+    are not accidentally transformed.
+    """
+
+    def _humanize_match(match: re.Match[str]) -> str:
+        # Skip if inside backtick inline code
+        start = match.start()
+        preceding = text[:start]
+        # Count backticks — odd count means we're inside inline code
+        if preceding.count('`') % 2 == 1:
+            return match.group(0)
+
+        desc = match.group(1).strip()
+        # Strip leading "Example:" blurb and anything after it for brevity
+        example_idx = desc.find("Example:")
+        if example_idx > 0:
+            desc = desc[:example_idx].rstrip().rstrip(".")
+        # Collapse whitespace / newlines from multiline comments
+        desc = " ".join(desc.split())
+        return f"<!replace --- {desc} --- or add a link--->"
+
+    return REPLACE_HUMANIZE_RE.sub(_humanize_match, text)
+
 # Reference to shared rigor instructions that each agent links to.
 # We replace this link with the inlined content.
 RIGOR_LINK_PATTERN = re.compile(
@@ -361,6 +403,7 @@ def _build_skills(
 
         content = skill_md.read_text(encoding="utf-8")
         content = _apply_replacements(content, replacements)
+        content = _humanize_unfilled_placeholders(content)
 
         dest = output / "skills" / skill_dir.name / "SKILL.md"
         _write(dest, content, force)
@@ -400,6 +443,7 @@ def _copy_templates(
             continue
         content = src.read_text(encoding="utf-8")
         content = _apply_replacements(content, replacements)
+        content = _humanize_unfilled_placeholders(content)
         dest = dest_dir / name
         _write(dest, content, force)
         written.append(dest)
@@ -410,6 +454,7 @@ def _copy_templates(
             if p.suffix == ".md" and p.is_file():
                 content = p.read_text(encoding="utf-8")
                 content = _apply_replacements(content, replacements)
+                content = _humanize_unfilled_placeholders(content)
                 dest = dest_dir / "prompts" / p.name
                 _write(dest, content, force)
                 written.append(dest)

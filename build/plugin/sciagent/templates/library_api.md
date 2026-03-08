@@ -1,7 +1,7 @@
-# <!-- REPLACE: library_display_name — The display name of the primary domain library, e.g. "IPFX", "scanpy", "MNE-Python", "Biopython" --> API Reference
+# <!-- REPLACE: library_display_name — The display name of the primary domain library, e.g. "IPFX", "scanpy", "MNE-Python", "Biopython" Or add a link to docs/domain/. --> API Reference
 
-> **Source**: <!-- REPLACE: library_source_url — URL to the library's source repository. Example: "https://github.com/AllenInstitute/ipfx" -->
-> **Docs**: <!-- REPLACE: library_docs_url — URL to the library's official documentation. Example: "https://ipfx.readthedocs.io/en/latest/" -->
+> **Source**: <!-- REPLACE: library_source_url — URL to the library's source repository. Example: "https://github.com/AllenInstitute/ipfx" Or add a link to docs/domain/. -->
+> **Docs**: <!-- REPLACE: library_docs_url — URL to the library's official documentation. Example: "https://ipfx.readthedocs.io/en/latest/" Or add a link to docs/domain/. -->
 > **Purpose**: This document provides the correct API surface for the
 > primary domain library that your agent wraps or exposes. It is the
 > authoritative reference for parameter names, types, defaults, and return
@@ -17,8 +17,7 @@
    - [HelperClass](#helperclass)
 2. [Analysis Functions](#2-analysis-functions)
 3. [Common Pitfalls](#3-common-pitfalls)
-4. [Quick-Start Recipes](#4-quick-start-recipes)
--->
+4. [Quick-Start Recipes](#4-quick-start-recipes) Or add a link to docs/domain/. -->
 
 1. [Core Classes](#1-core-classes)
 2. [Key Functions](#2-key-functions)
@@ -61,8 +60,7 @@ Run the analysis pipeline.
 | `data` | `np.ndarray` | — | Input data array |
 | `normalize` | `bool` | — | Pre-normalize input (default: True) |
 
-**Returns**: `ResultObject` with attributes `.values`, `.metadata`, `.quality`.
--->
+**Returns**: `ResultObject` with attributes `.values`, `.metadata`, `.quality`. Or add a link to docs/domain/. -->
 
 *Document your primary library's core classes here.*
 
@@ -84,8 +82,7 @@ Detect events in a 1-D signal.
 | `min_duration` | `int` | 10 | Minimum event duration (samples) |
 
 **Returns**: `List[Dict]` — one dict per detected event with keys
-`start_index`, `end_index`, `amplitude`, `duration`.
--->
+`start_index`, `end_index`, `amplitude`, `duration`. Or add a link to docs/domain/. -->
 
 *Document your primary library's key functions here.*
 
@@ -107,8 +104,7 @@ Detect events in a 1-D signal.
 ### Unit mismatches
 - Time arrays must be in **seconds**, not milliseconds
 - Voltage must be in **mV**, current in **pA**
-- The library will not warn you if units are wrong — results will just be incorrect
--->
+- The library will not warn you if units are wrong — results will just be incorrect Or add a link to docs/domain/. -->
 
 *List common mistakes and gotchas specific to this library.*
 
@@ -151,8 +147,7 @@ results = {}
 for path in Path("data/").glob("*.dat"):
     data = load_file(path)
     results[path.stem] = analyzer.run(data)
-```
--->
+``` Or add a link to docs/domain/. -->
 
 *Provide copy-paste recipes for common analysis tasks.*
 

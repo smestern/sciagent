@@ -43,11 +43,14 @@ Scan the relevant template files to understand what's already configured:
 
 1. Search for files matching `*.instructions.md`, `operations.md`,
    `workflows.md`, `tools.md`, `library_api.md`, `skills.md`.
-2. Identify which sections have domain content vs. unfilled
-   `<!-- REPLACE: ... -->` placeholders.
-3. Note any domain-specific content that might conflict with the
+2. Identify which sections have domain content links vs. unfilled
+   `<!replace ... --->` markers (or legacy `<!-- REPLACE: ... -->`
+   placeholders).
+3. Check `docs/domain/` for existing domain knowledge files from a
+   previous `/configure-domain` run.
+4. Note any domain-specific content that might conflict with the
    proposed changes.
-4. Brief the user: "Here's your current configuration in the affected
+5. Brief the user: "Here's your current configuration in the affected
    files.  I'll update X and Y."
 
 ### Step 3 — Discover (If Adding Packages)
@@ -72,15 +75,25 @@ Ask for confirmation before proceeding.
 
 ### Step 5 — Apply Updates
 
-Use `editFiles` to make the confirmed changes:
+Use `editFiles` to make the confirmed changes.  Domain content should
+live in `docs/domain/` files, **not** inlined into the template files:
 
-- **Adding a package**: Update `library_api.md` with API reference,
-  `tools.md` with tool documentation, and `operations.md` if the
-  package introduces new analysis parameters or workflows.
-- **Updating workflows**: Edit the relevant section in `workflows.md`.
-- **Changing parameters**: Edit the parameters table in `operations.md`.
-- **Adding skills**: Add a new skill section to `skills.md` and
-  optionally create a `SKILL.md` file in `.github/skills/`.
+- **Adding a package**: Update `docs/domain/library-api.md` with API
+  reference, `docs/domain/tools.md` with tool documentation, and
+  `docs/domain/operations.md` if the package introduces new analysis
+  parameters or workflows.  If the template marker doesn't yet have a
+  link below it, add one.
+- **Updating workflows**: Edit the relevant section in
+  `docs/domain/workflows.md` (or `docs/domain/operations.md` for the
+  standard workflows section).
+- **Changing parameters**: Edit the parameters section in
+  `docs/domain/operations.md`.
+- **Adding skills**: Add a new skill section to `docs/domain/skills.md`
+  and optionally create a `SKILL.md` file in `.github/skills/`.
+
+If `docs/domain/` doesn't exist yet (e.g. the user ran an older version
+of `/configure-domain`), create the directory and the appropriate domain
+knowledge file.
 
 ### Step 6 — Verify
 

@@ -18,8 +18,7 @@ user) through a common analysis task from start to finish.
 | Initial QC | Assess data quality before analysis | Load → inspect → validate → report |
 | Standard Analysis | Core measurement extraction | QC → detect → extract → summarise |
 | Comparative | Compare across conditions/groups | Load all → match → analyse → statistics |
-| Export | Package results for publication | Collect → format → figures → export |
--->
+| Export | Package results for publication | Collect → format → figures → export | Or add a link to docs/domain/. -->
 
 | Workflow | Purpose | Key Steps |
 |----------|---------|-----------|
@@ -29,16 +28,15 @@ user) through a common analysis task from start to finish.
 
 <!-- REPEAT: workflow_section — One section per workflow. Copy this block for each standard workflow. -->
 
-## <!-- REPLACE: workflow_name — The workflow's name, e.g. "Initial Quality Control", "Standard Analysis", "Batch Processing" -->
+## <!-- REPLACE: workflow_name — The workflow's name, e.g. "Initial Quality Control", "Standard Analysis", "Batch Processing" Or add a link to docs/domain/. -->
 
-**Purpose**: <!-- REPLACE: workflow_purpose — A sentence describing when and why to use this workflow. Example: "Assess recording quality before committing to a full analysis run." -->
+**Purpose**: <!-- REPLACE: workflow_purpose — A sentence describing when and why to use this workflow. Example: "Assess recording quality before committing to a full analysis run." Or add a link to docs/domain/. -->
 
 **When to Use**:
 <!-- REPLACE: workflow_when_to_use — Conditions or trigger phrases for this workflow. Example:
 - User provides a new data file
 - User asks "check the quality" or "is this data usable?"
-- Before any substantive analysis
--->
+- Before any substantive analysis Or add a link to docs/domain/. -->
 
 ### Steps
 
@@ -62,8 +60,7 @@ user) through a common analysis task from start to finish.
    - Summarise pass/fail status for each check
    - Recommend whether to proceed or exclude
    - Ask user for confirmation if issues found
-```
--->
+``` Or add a link to docs/domain/. -->
 
 ### Parameters
 
@@ -71,16 +68,14 @@ user) through a common analysis task from start to finish.
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | max_noise | 2.0 | Maximum acceptable noise level |
-| min_samples | 100 | Minimum number of data points required |
--->
+| min_samples | 100 | Minimum number of data points required | Or add a link to docs/domain/. -->
 
 ### Expected Outputs
 
 <!-- REPLACE: workflow_outputs — What the user should expect at the end of this workflow. Example:
 - QC summary table (pass/fail per check)
 - List of flagged issues with severity
-- Recommendation: proceed / exclude / review
--->
+- Recommendation: proceed / exclude / review Or add a link to docs/domain/. -->
 
 ---
 
