@@ -72,6 +72,7 @@ RIGOR_LINK_PATTERN = re.compile(
 # Which prompt modules to append to each agent.
 # Keys are agent stems (without extension), values are prompt filenames.
 AGENT_PROMPT_MAP: dict[str, list[str]] = {
+    "coordinator": ["scientific_rigor.md", "communication_style.md"],
     "analysis-planner": ["scientific_rigor.md", "communication_style.md"],
     "data-qc": [
         "scientific_rigor.md",
@@ -238,10 +239,18 @@ def _build_plugin_json(
     return path
 
 
+def _prefixed(name: str, prefix: str) -> str:
+    """Return *name* with *prefix*- prepended, or *name* unchanged if prefix is empty."""
+    if prefix:
+        return f"{prefix}-{name}"
+    return name
+
+
 def _build_agents(
     output: Path,
     replacements: dict[str, str],
     include_prompts: bool,
+    name_prefix: str,
     force: bool,
 ) -> list[Path]:
     """Compile agent .agent.md files → agents/<name>.md with inlined instructions."""
@@ -288,10 +297,34 @@ def _build_agents(
             if appendices:
                 body = body.rstrip() + "\n\n---\n\n" + "\n\n---\n\n".join(appendices) + "\n"
 
+        # Apply name prefix to frontmatter
+        prefixed_stem = _prefixed(agent_stem, name_prefix)
+        fm_text = re.sub(
+            r'^(name:\s*).+$',
+            rf'\g<1>{prefixed_stem}',
+            fm_text,
+            flags=re.MULTILINE,
+        )
+
+        # Prefix agent references in handoffs so cross-references stay consistent.
+        # Built-in VS Code agent names (e.g. "agent", "ask") are left unchanged.
+        _BUILTIN_AGENTS = {"agent", "ask"}
+        if name_prefix:
+            fm_text = re.sub(
+                r'^(\s*agent:\s*)(.+)$',
+                lambda m: (
+                    f"{m.group(1)}{m.group(2).strip()}"
+                    if m.group(2).strip() in _BUILTIN_AGENTS
+                    else f"{m.group(1)}{_prefixed(m.group(2).strip(), name_prefix)}"
+                ),
+                fm_text,
+                flags=re.MULTILINE,
+            )
+
         # Reassemble with frontmatter
         output_content = f"---\n{fm_text}\n---\n\n{body}"
 
-        dest = output / "agents" / f"{agent_stem}.md"
+        dest = output / "agents" / f"{prefixed_stem}.md"
         _write(dest, output_content, force)
         written.append(dest)
 
@@ -379,11 +412,12 @@ def _build_readme(
     version: str,
     agent_names: list[str],
     skill_names: list[str],
+    name_prefix: str,
     force: bool,
 ) -> Path:
     """Generate a README.md for the plugin."""
     agent_table = "\n".join(
-        f"| {name} | `@{name}` |"
+        f"| {_prefixed(name, name_prefix)} | `@{_prefixed(name, name_prefix)}` |"
         for name in agent_names
     )
     skill_table = "\n".join(
@@ -490,6 +524,11 @@ def _parse_args() -> argparse.Namespace:
         help="Plugin version string (default: read from pyproject.toml).",
     )
     parser.add_argument(
+        "--name-prefix",
+        default="sciagent",
+        help="Prefix for agent names, e.g. 'sciagent' → 'sciagent-analysis-planner' (default: sciagent). Use '' for no prefix.",
+    )
+    parser.add_argument(
         "--no-prompts",
         action="store_true",
         help="Do not inline prompt modules into agent bodies.",
@@ -511,16 +550,19 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _run_dry(output: Path, version: str, agent_names: list[str], skill_names: list[str]) -> None:
+def _run_dry(output: Path, version: str, agent_names: list[str], skill_names: list[str], name_prefix: str) -> None:
     print("[dry-run] SciAgent plugin build plan")
     print(f"  output:  {output}")
     print(f"  version: {version}")
+    if name_prefix:
+        print(f"  prefix:  {name_prefix}")
     print()
     print("  Files to write:")
     print(f"    {output / '.github' / 'plugin' / 'plugin.json'}")
     print(f"    {output / 'README.md'}")
     for name in agent_names:
-        print(f"    {output / 'agents' / (name + '.md')}")
+        pname = _prefixed(name, name_prefix)
+        print(f"    {output / 'agents' / (pname + '.md')}")
     for name in skill_names:
         print(f"    {output / 'skills' / name / 'SKILL.md'}")
     print(f"    --- templates ---")
@@ -552,8 +594,10 @@ def main() -> None:
 
     agent_names, skill_names = _collect_names()
 
+    name_prefix = args.name_prefix
+
     if args.dry_run:
-        _run_dry(output, version, agent_names, skill_names)
+        _run_dry(output, version, agent_names, skill_names, name_prefix)
         return
 
     replacements = _read_replacements(
@@ -569,11 +613,12 @@ def main() -> None:
             output, version, project_meta, agent_names, skill_names, args.force,
         )
         agent_files = _build_agents(
-            output, replacements, include_prompts=not args.no_prompts, force=args.force,
+            output, replacements, include_prompts=not args.no_prompts,
+            name_prefix=name_prefix, force=args.force,
         )
         skill_files = _build_skills(output, replacements, args.force)
         template_files = _copy_templates(output, replacements, args.force)
-        readme = _build_readme(output, version, agent_names, skill_names, args.force)
+        readme = _build_readme(output, version, agent_names, skill_names, name_prefix, args.force)
     except (FileNotFoundError, FileExistsError, RuntimeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         sys.exit(1)

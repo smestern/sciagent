@@ -10,8 +10,12 @@ tools:
   - search
 handoffs:
   - label: "Proceed to Analysis"
-    agent: ask
+    agent: agent
     prompt: "Data QC is complete. Review the QC report above and proceed with your analysis."
+    send: false
+  - label: "Plan Analysis"
+    agent: analysis-planner
+    prompt: "Data QC is complete and the data is ready. Plan the analysis pipeline based on the QC findings above."
     send: false
 ---
 

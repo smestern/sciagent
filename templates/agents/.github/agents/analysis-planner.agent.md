@@ -12,6 +12,10 @@ handoffs:
     agent: data-qc
     prompt: "Run quality checks on the data identified in the analysis plan above."
     send: false
+  - label: "Implement Plan"
+    agent: agent
+    prompt: "Implement the analysis plan outlined above, following each step in order."
+    send: true
 ---
 
 ## Analysis Planner

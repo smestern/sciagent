@@ -8,6 +8,11 @@ tools:
   - edit
   - search
   - web/fetch
+handoffs:
+  - label: "Review Rigor"
+    agent: rigor-reviewer
+    prompt: "Review the report above for scientific rigor — check statistical validity, data integrity, and reporting completeness."
+    send: false
 ---
 
 ## Report Writer

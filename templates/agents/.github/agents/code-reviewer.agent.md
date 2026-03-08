@@ -6,6 +6,15 @@ tools:
   - vscode
   - read
   - search
+handoffs:
+  - label: "Plan Fixes"
+    agent: analysis-planner
+    prompt: "Based on the code review above, plan the changes needed to address the identified issues."
+    send: false
+  - label: "Implement Fixes"
+    agent: agent
+    prompt: "Implement the code changes recommended in the review above."
+    send: true
 ---
 
 ## Code Reviewer
