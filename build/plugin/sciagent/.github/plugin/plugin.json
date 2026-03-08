@@ -1,0 +1,33 @@
+{
+  "name": "sciagent",
+  "description": "A framework for building rigorous, human-in-the-loop scientific coding agents",
+  "version": "1.1.0",
+  "author": {
+    "name": "Sam"
+  },
+  "repository": "https://github.com/smestern/sciagent",
+  "license": "MIT",
+  "keywords": [
+    "scientific-analysis",
+    "data-analysis",
+    "rigor",
+    "reproducibility",
+    "data-qc",
+    "code-review",
+    "report-writing"
+  ],
+  "agents": [
+    "./agents"
+  ],
+  "skills": [
+    "./skills/analysis-planner",
+    "./skills/code-reviewer",
+    "./skills/configure-domain",
+    "./skills/data-qc",
+    "./skills/docs-ingestor",
+    "./skills/report-writer",
+    "./skills/rigor-reviewer",
+    "./skills/scientific-rigor",
+    "./skills/update-domain"
+  ]
+}
