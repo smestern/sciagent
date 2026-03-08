@@ -4,6 +4,7 @@ description: Generates structured scientific reports with figures, tables, uncer
 argument-hint: Generate a structured report from your analysis results.
 tools:
   - vscode
+  - vscode/askQuestions
   - read
   - edit
   - search
@@ -24,6 +25,9 @@ read analysis outputs and produce publication-quality Markdown reports.
 Follow the [shared scientific rigor principles](.github/instructions/sciagent-rigor.instructions.md).
 
 ### Report Structure
+
+Use `#tool:vscode/askQuestions` to confirm report scope, target audience,
+and formatting preferences before drafting.
 
 Generate reports following this template:
 

@@ -72,22 +72,32 @@ RIGOR_LINK_PATTERN = re.compile(
 # Which prompt modules to append to each agent.
 # Keys are agent stems (without extension), values are prompt filenames.
 AGENT_PROMPT_MAP: dict[str, list[str]] = {
-    "coordinator": ["scientific_rigor.md", "communication_style.md"],
-    "analysis-planner": ["scientific_rigor.md", "communication_style.md"],
+    "coordinator": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
+    "analysis-planner": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
     "data-qc": [
         "scientific_rigor.md",
         "communication_style.md",
         "code_execution.md",
         "incremental_execution.md",
+        "clarification.md",
     ],
-    "rigor-reviewer": ["scientific_rigor.md", "communication_style.md"],
+    "rigor-reviewer": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
     "report-writer": [
         "scientific_rigor.md",
         "communication_style.md",
         "reproducible_script.md",
+        "clarification.md",
     ],
-    "code-reviewer": ["scientific_rigor.md", "communication_style.md"],
-    "docs-ingestor": ["scientific_rigor.md", "communication_style.md"],
+    "code-reviewer": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
+    "docs-ingestor": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
+    "sciagent-coder": [
+        "scientific_rigor.md",
+        "communication_style.md",
+        "code_execution.md",
+        "incremental_execution.md",
+        "reproducible_script.md",
+        "clarification.md",
+    ],
 }
 
 

@@ -28,12 +28,13 @@ sidebar → Agent Plugins view, or search `@agentPlugins sciagent`.
 |-------|------------|
 | sciagent-analysis-planner | `@sciagent-analysis-planner` |
 | sciagent-code-reviewer | `@sciagent-code-reviewer` |
+| sciagent-coordinator | `@sciagent-coordinator` |
 | sciagent-data-qc | `@sciagent-data-qc` |
 | sciagent-docs-ingestor | `@sciagent-docs-ingestor` |
 | sciagent-domain-assembler | `@sciagent-domain-assembler` |
 | sciagent-report-writer | `@sciagent-report-writer` |
 | sciagent-rigor-reviewer | `@sciagent-rigor-reviewer` |
-| sciagent-Sciagent | `@sciagent-Sciagent` |
+| sciagent-sciagent-coder | `@sciagent-sciagent-coder` |
 
 ## Skills
 

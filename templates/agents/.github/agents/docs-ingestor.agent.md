@@ -7,6 +7,7 @@ description: >-
 argument-hint: Package name to learn, e.g. scipy, neo, pyabf
 tools:
   - vscode
+  - vscode/askQuestions
   - read
   - search
   - web/fetch
@@ -27,6 +28,9 @@ producing a structured API reference that the analysis agents can consult.
 Follow the [shared scientific rigor principles](.github/instructions/sciagent-rigor.instructions.md).
 
 ### Workflow
+
+If the target library or ingestion scope is ambiguous, use
+`#tool:vscode/askQuestions` to clarify before proceeding.
 
 1. **Check existing docs** — Before ingesting, check whether a reference
    already exists by calling `read_doc("<package>_api")`.  If it exists

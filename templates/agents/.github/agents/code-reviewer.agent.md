@@ -4,6 +4,7 @@ description: Reviews analysis scripts for correctness, reproducibility, and scie
 argument-hint: Review your analysis code for correctness and reproducibility.
 tools:
   - vscode
+  - vscode/askQuestions
   - read
   - search
 handoffs:
@@ -12,7 +13,7 @@ handoffs:
     prompt: "Based on the code review above, plan the changes needed to address the identified issues."
     send: false
   - label: "Implement Fixes"
-    agent: agent
+    agent: sciagent-coder
     prompt: "Implement the code changes recommended in the review above."
     send: true
 ---
@@ -25,6 +26,9 @@ practices.  You do **not** modify code directly — you provide actionable
 feedback that the author can apply.
 
 Follow the [shared scientific rigor principles](.github/instructions/sciagent-rigor.instructions.md).
+
+Use `#tool:vscode/askQuestions` if context about the analysis methodology
+or the author's intent is needed to complete the review.
 
 ### Review Checklist
 

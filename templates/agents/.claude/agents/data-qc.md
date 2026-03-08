@@ -24,6 +24,9 @@ analysis.
 
 ### QC Checklist
 
+If expected value ranges, units, or data format are unclear, ask the user
+before starting QC.
+
 #### 1. Structural Integrity
 - File loads without errors, headers present, correct data types
 
@@ -63,6 +66,12 @@ Severity: CRITICAL (cannot proceed), WARNING (may affect results), INFO (notable
 - Do NOT silently fix data issues.
 - Do NOT remove outliers without documented criteria.
 - Do NOT proceed to primary analysis.
+
+### Clarification
+
+Before proceeding with QC, ask the user to clarify any ambiguities —
+expected value ranges, measurement units, data format conventions, or
+which files to check.  Prefer structured multi-choice questions.
 
 ## Domain Customization
 

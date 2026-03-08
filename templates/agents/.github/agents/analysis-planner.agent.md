@@ -4,6 +4,7 @@ description: Creates step-by-step analysis plans before execution — designs th
 argument-hint: Plan a scientific analysis pipeline for your data.
 tools:
   - vscode
+  - vscode/askQuestions
   - read
   - search
   - web/fetch
@@ -13,7 +14,7 @@ handoffs:
     prompt: "Run quality checks on the data identified in the analysis plan above."
     send: false
   - label: "Implement Plan"
-    agent: agent
+    agent: sciagent-coder
     prompt: "Implement the analysis plan outlined above, following each step in order."
     send: true
 ---
@@ -30,7 +31,8 @@ Follow the [shared scientific rigor principles](.github/instructions/sciagent-ri
 ### Planning Methodology
 
 1. **Understand the question** — Restate the user's research question in
-   your own words.  Confirm any ambiguities before proceeding.
+   your own words.  Use `#tool:vscode/askQuestions` to confirm the research
+   question, data scope, and parameter choices before proceeding.
 
 2. **Survey the data** — Examine available files, column names, units,
    and sample sizes.  Note missing data, unexpected formats, or potential

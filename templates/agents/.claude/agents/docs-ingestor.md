@@ -22,6 +22,9 @@ producing a structured API reference.
 
 ### Workflow
 
+If the target library or ingestion scope is ambiguous, ask the user to
+clarify before proceeding.
+
 1. **Check existing docs** — Call `read_doc("<package>_api")` first.
    If a reference exists, summarize it instead of re-ingesting.
 2. **Ingest** — Call `ingest_library_docs(package_name="<pkg>")`.
@@ -45,6 +48,12 @@ A structured API reference (`<package>_api.md`) with:
 - Do NOT invent API details — only report what was found.
 - Do NOT re-ingest if a current reference exists (unless asked).
 - Do NOT run analysis code — hand off to `analysis-planner`.
+
+### Clarification
+
+Before ingesting, ask the user to clarify any ambiguities — which
+library to learn, scope of the ingestion, or specific API areas to
+focus on.  Prefer structured multi-choice questions.
 
 ## Domain Customization
 

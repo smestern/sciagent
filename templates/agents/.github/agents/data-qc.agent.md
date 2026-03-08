@@ -4,13 +4,14 @@ description: Checks data quality before analysis — missing values, outliers, d
 argument-hint: Run data quality checks on your dataset before analysis.
 tools:
   - vscode
+  - vscode/askQuestions
   - execute
   - read
   - edit
   - search
 handoffs:
   - label: "Proceed to Analysis"
-    agent: agent
+    agent: sciagent-coder
     prompt: "Data QC is complete. Review the QC report above and proceed with your analysis."
     send: false
   - label: "Plan Analysis"
@@ -29,6 +30,9 @@ analysis — you ensure the data is fit for purpose.
 Follow the [shared scientific rigor principles](.github/instructions/sciagent-rigor.instructions.md).
 
 ### QC Checklist
+
+If expected value ranges, units, or data format are unclear, use
+`#tool:vscode/askQuestions` to ask the user before starting QC.
 
 Run these checks systematically for every dataset:
 

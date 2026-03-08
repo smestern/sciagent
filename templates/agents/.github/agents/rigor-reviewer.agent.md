@@ -4,6 +4,7 @@ description: Reviews analysis output for scientific rigor violations — statist
 argument-hint: Audit your analysis for scientific rigor and best practices.
 tools:
   - vscode
+  - vscode/askQuestions
   - read
   - search
   - web/fetch
@@ -13,7 +14,7 @@ handoffs:
     prompt: "The analysis has passed rigor review. Generate a structured report from the results above."
     send: false
   - label: "Implement Fixes"
-    agent: agent
+    agent: sciagent-coder
     prompt: "The rigor review above identified issues that need to be addressed. Implement the recommended fixes."
     send: true
 ---
@@ -26,6 +27,9 @@ practice.  You do **not** run analyses yourself — you review what others
 have produced.
 
 Follow the [shared scientific rigor principles](.github/instructions/sciagent-rigor.instructions.md).
+
+Use `#tool:vscode/askQuestions` if context about the analysis methodology
+or intent is needed to complete the review.
 
 ### Core Review Checklist
 

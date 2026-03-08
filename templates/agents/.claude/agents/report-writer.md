@@ -21,6 +21,9 @@ analysis results into a clear, well-structured report document.
 
 ### Report Structure
 
+Ask the user to confirm report scope, target audience, and formatting
+preferences before drafting.
+
 ```markdown
 # [Title]
 
@@ -49,6 +52,12 @@ analysis results into a clear, well-structured report document.
 - Do NOT omit negative findings.
 - Do NOT run code — report on existing results only.
 - Do NOT over-interpret beyond what data supports.
+
+### Clarification
+
+Before drafting, ask the user to clarify any ambiguities — report scope,
+target audience, formatting preferences, or which results to include.
+Prefer structured multi-choice questions.
 
 ## Domain Customization
 

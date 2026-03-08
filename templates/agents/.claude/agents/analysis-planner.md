@@ -25,8 +25,9 @@ implementation agent will follow.
 
 ### Planning Methodology
 
-1. **Understand the question** — Restate the research question.  Confirm
-   any ambiguities before proceeding.
+1. **Understand the question** — Restate the research question.  Ask the
+   user to confirm the research question, data scope, and parameter
+   choices before proceeding.
 
 2. **Survey the data** — Examine available files, column names, units,
    and sample sizes.  Note missing data or quality issues.
@@ -64,6 +65,13 @@ tool/library, expected output, checkpoint.
 
 - Do NOT run code, modify files, or execute analyses.
 - Do NOT skip planning and jump to implementation.
+
+### Clarification
+
+Before finalizing the plan, ask the user to clarify any ambiguities —
+unclear research questions, missing parameter choices, or multiple valid
+approaches.  Prefer structured multi-choice questions.  Do not guess
+when asking would yield a better plan.
 
 ## Domain Customization
 

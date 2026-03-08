@@ -6,6 +6,7 @@ description: >-
   Invoke directly or via /configure-domain and /update-domain skills.
 tools:
   - codebase
+  - vscode/askQuestions
   - editFiles
   - search
   - fetch
@@ -42,7 +43,8 @@ run the `/update-domain` workflow.
 ### Workflow: Full Configuration (`/configure-domain`)
 
 1. **Interview** — Learn the user's research domain through natural
-   conversation:
+   conversation.  Use `#tool:vscode/askQuestions` to structure your
+   interview questions:
    - Research domain and sub-field
    - Data types and file formats
    - Packages already in use

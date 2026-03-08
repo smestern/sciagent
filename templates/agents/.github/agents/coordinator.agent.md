@@ -4,6 +4,7 @@ description: Master entry point for scientific analysis — triages tasks and ro
 argument-hint: Describe your research task and I'll route you to the right workflow.
 tools:
   - vscode
+  - vscode/askQuestions
   - read
   - search
   - web/fetch
@@ -37,7 +38,7 @@ handoffs:
     prompt: "Configure SciAgent for the research domain described above."
     send: false
   - label: "Start Implementation"
-    agent: agent
+    agent: sciagent-coder
     prompt: "Implement the plan outlined above."
     send: true
 ---
@@ -54,7 +55,9 @@ Follow the [shared scientific rigor principles](.github/instructions/sciagent-ri
 ### How to Triage
 
 1. **Understand the request** — Read the user's question carefully.
-   Clarify ambiguities before routing.
+   Use `#tool:vscode/askQuestions` to clarify the user's intent before
+   routing to a specialist — do not guess when a quick question would
+   yield a better handoff.
 
 2. **Survey the workspace** — Examine available data files, existing
    scripts, and prior analysis outputs to inform your recommendation.
@@ -71,7 +74,7 @@ Follow the [shared scientific rigor principles](.github/instructions/sciagent-ri
 | Write a report | **report-writer** | Analysis and review are done, results need documentation |
 | Learn a new library | **docs-ingestor** | User needs to use an unfamiliar Python package |
 | Set up for a domain | **domain-assembler** | First-time setup or domain reconfiguration needed |
-| Execute / implement | **agent** | A plan or set of changes is ready to be implemented |
+| Execute / implement | **sciagent-coder** | A plan or set of changes is ready to be implemented |
 
 4. **Provide context** — When handing off, summarize what you've learned
    about the user's task so the specialist has full context.

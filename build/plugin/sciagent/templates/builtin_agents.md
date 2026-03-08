@@ -15,7 +15,8 @@ workspace, or use the Python presets in `sciagent.agents`.
 | Agent | Role | Tools (VS Code) | Handoff |
 |-------|------|-----------------|---------|
 | `analysis-planner` | Design the analysis roadmap | codebase, search, fetch | → `data-qc` |
-| `data-qc` | Check data quality before analysis | codebase, terminal, editFiles, search | → *(your domain agent)* |
+| `sciagent-coder` | Implement code with scientific rigor | codebase, terminal, editFiles, search | → `rigor-reviewer` |
+| `data-qc` | Check data quality before analysis | codebase, terminal, editFiles, search | → `sciagent-coder` |
 | `rigor-reviewer` | Audit results for scientific rigor | codebase, search, fetch | → `report-writer` |
 | `report-writer` | Generate structured reports | codebase, editFiles, search, fetch | *(end)* |
 | `code-reviewer` | Review scripts for correctness | codebase, search | *(standalone)* |
@@ -31,7 +32,7 @@ workspace, or use the Python presets in `sciagent.agents`.
          │
          ▼
 ┌──────────────────┐     ┌──────────┐     ┌─────────────────────┐
-│ Analysis Planner │ ──► │ Data QC  │ ──► │ Your Domain Agent   │
+│ Analysis Planner │ ──► │ Data QC  │ ──► │  Scientific Coder   │
 └──────────────────┘     └──────────┘     └─────────┬───────────┘
         ▲                                           │
         │                                 ┌─────────▼───────────┐
@@ -120,6 +121,37 @@ have produced.
 **Extension Points**:
 Add domain-specific value ranges, conventions, and common pitfalls in
 the `## Domain Customization` section.
+
+---
+
+## Scientific Coder
+
+**Role**: General-purpose implementation agent with scientific rigor
+
+**Description**: Writes, edits, and executes code — from utility scripts
+to full analysis pipelines.  When working with scientific data, enforces
+data integrity, reproducibility, and transparent reporting automatically.
+This is the default implementation target for all specialist handoffs.
+
+**Tools**: `codebase`, `terminal`, `editFiles`, `search` (full access)
+
+**Capabilities**:
+- Implement analysis plans produced by analysis-planner
+- Write and execute scientific analysis code with rigor enforcement
+- Follow the incremental execution principle (1 sample → batch → full)
+- Validate inputs, sanity-check intermediate values, flag anomalies
+- Report uncertainty (CI, SEM, SD) and state N for all measurements
+- Produce standalone, reproducible Python scripts with argparse
+- Handle general (non-scientific) coding tasks idiomatically
+
+**Handoff**: → `rigor-reviewer` ("Implementation complete, audit rigor")
+             → `report-writer` ("Generate report from results")
+             → `code-reviewer` ("Review the code")
+
+**Extension Points**:
+Add preferred libraries, standard output formats, common analysis
+patterns, and expected value ranges in the `## Domain Customization`
+section.
 
 ---
 

@@ -21,6 +21,9 @@ practice.  You do **not** run analyses yourself.
 - Report ALL results including negative findings
 - Always report uncertainty and state N
 
+Ask the user to clarify if context about the analysis methodology or
+intent is needed to complete the review.
+
 ### Core Review Checklist
 
 1. **Statistical validity** — Appropriate tests, assumptions checked,
@@ -52,6 +55,13 @@ practice.  You do **not** run analyses yourself.
 - Do NOT run code or modify files.
 - Do NOT fabricate concerns.
 - Do NOT soften critical issues.
+
+### Clarification
+
+Before completing a review, ask the user to clarify any ambiguities —
+analysis methodology, experimental intent, or expected value ranges.
+Prefer structured multi-choice questions.  Do not guess when asking
+would yield a better review.
 
 ## Domain Customization
 

@@ -30,7 +30,7 @@ If only a few remain, run the incremental update workflow.
 ### Workflow: Full Configuration
 
 1. **Interview** — Learn the user's research domain through natural
-   conversation:
+   conversation.  Ask structured questions to cover:
    - Research domain and sub-field
    - Data types and file formats
    - Packages already in use
@@ -93,6 +93,13 @@ format.
 - Do **not** skip user confirmation before editing
 - Do **not** overwrite user content without permission
 - Do **not** invent API details — suggest the docs-ingestor for deep docs
+
+### Clarification
+
+Before editing template files, ask the user to clarify any ambiguities —
+research domain, preferred packages, expected value ranges, or workflow
+preferences.  Prefer structured multi-choice questions.  Do not guess
+when asking would yield a better configuration.
 
 ## Domain Customization
 
