@@ -236,8 +236,8 @@ uses only VS Code's built-in `fetch` and `editFiles` tools.
 **Tools**: `codebase`, `editFiles`, `search`, `fetch`
 
 **Capabilities**:
-- Auto-detect unfilled `<!-- REPLACE: ... -->` placeholders and suggest
-  setup
+- Auto-detect unfilled `<!replace ...>` markers (or legacy
+  `<!-- REPLACE: ... -->` placeholders) and suggest setup
 - Conversational domain interview (data types, packages, workflows, goals)
 - Lightweight package discovery via PyPI JSON API and GitHub READMEs
 - Create separate domain knowledge files in `docs/domain/` and link from templates

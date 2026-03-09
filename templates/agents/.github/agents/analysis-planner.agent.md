@@ -14,7 +14,7 @@ handoffs:
     prompt: "Run quality checks on the data identified in the analysis plan above."
     send: false
   - label: "Implement Plan"
-    agent: sciagent-coder
+    agent: coder
     prompt: "Implement the analysis plan outlined above, following each step in order."
     send: true
 ---

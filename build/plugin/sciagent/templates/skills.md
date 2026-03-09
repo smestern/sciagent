@@ -34,20 +34,16 @@ SciAgent ships 6 default skills in `templates/skills/`.  Copy them into
 
 <!-- REPEAT: skill_section — One section per skill. Copy this block for each skill your agent supports. -->
 
-## <!-- REPLACE: skill_name — The skill's display name, e.g. "Spike Analysis", "Quality Control" Or add a link to docs/domain/. -->
+## <!replace --- The skill's display name, e.g. "Spike Analysis", "Quality Control" --- or add a link--->
 
-**File**: <!-- REPLACE: skill_file_path — Path to the skill definition file, e.g. "skills/spike_analysis/SKILL.md" Or add a link to docs/domain/. -->
+**File**: <!replace --- Path to the skill definition file, e.g. "skills/spike_analysis/SKILL.md" --- or add a link--->
 
-**Purpose**: <!-- REPLACE: skill_purpose — One sentence describing the skill's purpose. Example: "Detect and analyze action potentials in current-clamp recordings." Or add a link to docs/domain/. -->
+**Purpose**: <!replace --- One sentence describing the skill's purpose --- or add a link--->
 
 **Key Capabilities**:
-<!-- REPLACE: skill_capabilities — A bullet list of specific capabilities. Example:
-- Threshold-based event detection
-- Individual event feature extraction (amplitude, duration, kinetics)
-- Event train analysis (adaptation, intervals, statistics)
-- Rate-response curve construction Or add a link to docs/domain/. -->
+<!replace --- A bullet list of specific capabilities --- or add a link--->
 
-**Trigger Keywords**: <!-- REPLACE: skill_trigger_keywords — Comma-separated keywords or phrases that should activate this skill. Example: "spike, action potential, firing, threshold, rheobase, detection" Or add a link to docs/domain/. -->
+**Trigger Keywords**: <!replace --- Comma-separated keywords or phrases that should activate this skill --- or add a link--->
 
 ---
 

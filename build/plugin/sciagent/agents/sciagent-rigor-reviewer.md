@@ -14,7 +14,7 @@ handoffs:
     prompt: "The analysis has passed rigor review. Generate a structured report from the results above."
     send: false
   - label: "Implement Fixes"
-    agent: sciagent-sciagent-coder
+    agent: sciagent-coder
     prompt: "The rigor review above identified issues that need to be addressed. Implement the recommended fixes."
     send: true
 ---

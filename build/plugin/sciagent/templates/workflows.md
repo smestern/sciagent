@@ -12,13 +12,7 @@ user) through a common analysis task from start to finish.
 
 ## Workflow Overview
 
-<!-- REPLACE: workflow_overview_table — A table summarising your workflows. Columns: Workflow, Purpose, Key Steps. Example:
-| Workflow | Purpose | Key Steps |
-|----------|---------|-----------|
-| Initial QC | Assess data quality before analysis | Load → inspect → validate → report |
-| Standard Analysis | Core measurement extraction | QC → detect → extract → summarise |
-| Comparative | Compare across conditions/groups | Load all → match → analyse → statistics |
-| Export | Package results for publication | Collect → format → figures → export | Or add a link to docs/domain/. -->
+<!replace --- A table summarising your workflows. Columns: Workflow, Purpose, Key Steps --- or add a link--->
 
 | Workflow | Purpose | Key Steps |
 |----------|---------|-----------|
@@ -28,54 +22,24 @@ user) through a common analysis task from start to finish.
 
 <!-- REPEAT: workflow_section — One section per workflow. Copy this block for each standard workflow. -->
 
-## <!-- REPLACE: workflow_name — The workflow's name, e.g. "Initial Quality Control", "Standard Analysis", "Batch Processing" Or add a link to docs/domain/. -->
+## <!replace --- The workflow's name, e.g. "Initial Quality Control", "Standard Analysis", "Batch Processing" --- or add a link--->
 
-**Purpose**: <!-- REPLACE: workflow_purpose — A sentence describing when and why to use this workflow. Example: "Assess recording quality before committing to a full analysis run." Or add a link to docs/domain/. -->
+**Purpose**: <!replace --- A sentence describing when and why to use this workflow --- or add a link--->
 
 **When to Use**:
-<!-- REPLACE: workflow_when_to_use — Conditions or trigger phrases for this workflow. Example:
-- User provides a new data file
-- User asks "check the quality" or "is this data usable?"
-- Before any substantive analysis Or add a link to docs/domain/. -->
+<!replace --- Conditions or trigger phrases for this workflow --- or add a link--->
 
 ### Steps
 
-<!-- REPLACE: workflow_steps — Numbered steps with sub-steps where needed. Be specific about which tools to call and what to check at each step. Example:
-
-```
-1. Load file metadata (use get_file_metadata)
-   - Report file type, dimensions, key metadata
-   - Check file is a supported format
-
-2. Run quality control checks (use run_qc)
-   - Check for missing values, NaN, Inf
-   - Measure noise / baseline stability
-   - Flag any anomalies
-
-3. Validate value ranges
-   - Compare key measurements against expected bounds
-   - Flag out-of-range values with warnings
-
-4. Generate QC report
-   - Summarise pass/fail status for each check
-   - Recommend whether to proceed or exclude
-   - Ask user for confirmation if issues found
-``` Or add a link to docs/domain/. -->
+<!replace --- Numbered steps with sub-steps where needed. Be specific about which tools to call and what to check at each step --- or add a link--->
 
 ### Parameters
 
-<!-- REPLACE: workflow_parameters — Key parameters used in this workflow and their defaults. Example:
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| max_noise | 2.0 | Maximum acceptable noise level |
-| min_samples | 100 | Minimum number of data points required | Or add a link to docs/domain/. -->
+<!replace --- Key parameters used in this workflow and their defaults --- or add a link--->
 
 ### Expected Outputs
 
-<!-- REPLACE: workflow_outputs — What the user should expect at the end of this workflow. Example:
-- QC summary table (pass/fail per check)
-- List of flagged issues with severity
-- Recommendation: proceed / exclude / review Or add a link to docs/domain/. -->
+<!replace --- What the user should expect at the end of this workflow --- or add a link--->
 
 ---
 

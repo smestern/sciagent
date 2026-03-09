@@ -11,7 +11,7 @@ tools:
   - search
 handoffs:
   - label: "Proceed to Analysis"
-    agent: sciagent-coder
+    agent: coder
     prompt: "Data QC is complete. Review the QC report above and proceed with your analysis."
     send: false
   - label: "Plan Analysis"

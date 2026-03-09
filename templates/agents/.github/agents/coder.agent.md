@@ -1,5 +1,5 @@
 ---
-name: sciagent-coder
+name: coder
 description: General-purpose coding agent with built-in scientific rigor — implements analysis plans, writes scripts, and executes code while enforcing data integrity, reproducibility, and transparent reporting.
 argument-hint: Implement code, analysis scripts, or any coding task with scientific rigor.
 tools:

@@ -52,7 +52,8 @@ placeholders:
 1. Search for files matching `*.instructions.md`, `operations.md`,
    `workflows.md`, `tools.md`, `library_api.md`, `skills.md` in
    `.github/instructions/` and the workspace root.
-2. In each file, look for `<!-- REPLACE: key — description -->` comments.
+2. In each file, look for `<!replace ... --->` markers (or legacy
+   `<!-- REPLACE: key — description -->` comments).
 3. Also check whether `docs/domain/` already exists with domain
    knowledge files from a previous run.
 4. Build a checklist of every unfilled placeholder found, grouped by
@@ -104,8 +105,9 @@ and insert links.
 **For each placeholder:**
 
 1. Read the marker description to understand the expected content —
-   each `<!-- REPLACE: key — description. Example: ... -->` includes
-   guidance on the expected format and examples of what to put there.
+   each `<!replace --- description --- or add a link--->` (or legacy
+   `<!-- REPLACE: key — description. Example: ... -->`) includes
+   guidance on the expected format.
 2. Write the domain-appropriate content under a Markdown heading in the
    corresponding `docs/domain/<template>.md` file.  Use headings that
    match the placeholder description (e.g. `## Standard Workflows`,
@@ -115,20 +117,12 @@ and insert links.
 
 **Example** — before:
 ```
-<!-- REPLACE: domain_workflows — Step-by-step workflows specific to your domain. Example:
-### Standard Workflow
-1. Load data
-2. Run analysis
-Or add a link to docs/domain/. -->
+<!replace --- Step-by-step workflows specific to your domain --- or add a link--->
 ```
 
 After assembly:
 ```
-<!-- REPLACE: domain_workflows — Step-by-step workflows specific to your domain. Example:
-### Standard Workflow
-1. Load data
-2. Run analysis
-Or add a link to docs/domain/. -->
+<!replace --- Step-by-step workflows specific to your domain --- or add a link--->
 
 See [domain workflows](docs/domain/operations.md#standard-workflows)
 ```
@@ -174,8 +168,8 @@ For deeper documentation crawling, suggest the user invoke
 
 ### Step 7 — Verify
 
-1. Re-scan all template files for remaining `<!-- REPLACE: ... -->`
-   markers without links below them.
+1. Re-scan all template files for remaining `<!replace ...>` markers
+   without links below them.
 2. Verify that `docs/domain/` files were created with the expected
    content.
 3. Summarize what was changed:

@@ -132,7 +132,7 @@ AGENT_PROMPT_MAP: dict[str, list[str]] = {
     ],
     "code-reviewer": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
     "docs-ingestor": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
-    "sciagent-coder": [
+    "coder": [
         "scientific_rigor.md",
         "communication_style.md",
         "code_execution.md",
@@ -255,6 +255,7 @@ def _build_plugin_json(
     project_meta: dict[str, Any],
     agent_names: list[str],
     skill_names: list[str],
+    name_prefix: str,
     force: bool,
 ) -> Path:
     """Generate .github/plugin/plugin.json."""
@@ -282,7 +283,10 @@ def _build_plugin_json(
             "code-review",
             "report-writing",
         ],
-        "agents": ["./agents"],
+        "agents": [
+            f"./agents/{_prefixed(name, name_prefix)}.md"
+            for name in agent_names
+        ],
         "skills": [f"./skills/{name}" for name in skill_names],
     }
 
@@ -471,68 +475,113 @@ def _build_readme(
     force: bool,
 ) -> Path:
     """Generate a README.md for the plugin."""
+    # Build agent description table with richer info
+    agent_descriptions = {
+        "analysis-planner": "Designs step-by-step analysis plans before any code runs",
+        "code-reviewer": "Reviews scripts for correctness, reproducibility, and best practices",
+        "coder": "Implements analysis code with built-in rigor enforcement",
+        "coordinator": "Routes tasks to the right specialist agent",
+        "data-qc": "Checks data quality — missing values, outliers, distributions, integrity",
+        "docs-ingestor": "Ingests Python library docs into structured API references",
+        "domain-assembler": "Configures SciAgent for your specific research domain",
+        "report-writer": "Generates publication-quality reports with uncertainty quantification",
+        "rigor-reviewer": "Audits analysis for statistical validity and reproducibility",
+    }
     agent_table = "\n".join(
-        f"| {_prefixed(name, name_prefix)} | `@{_prefixed(name, name_prefix)}` |"
+        f"| `@{_prefixed(name, name_prefix)}` | {agent_descriptions.get(name, '')} |"
         for name in agent_names
     )
     skill_table = "\n".join(
-        f"| {name} | `/{name}` |"
+        f"| `/{name}` | On-demand {name.replace('-', ' ')} |"
         for name in skill_names
     )
 
+    n_agents = len(agent_names)
+    n_skills = len(skill_names)
+
     readme = f"""\
-# SciAgent — Copilot Agent Plugin
+# SciAgent — Scientific Analysis Agents for GitHub Copilot
 
-Scientific analysis agents with built-in rigor enforcement for GitHub Copilot.
+> **{n_agents} specialized agents** and **{n_skills} skills** that bring scientific rigor
+> to data analysis in VS Code. Plan experiments, check data quality, write
+> reproducible code, audit results, and generate publication-ready reports —
+> all with built-in guardrails against p-hacking, data fabrication, and
+> irreproducible workflows.
 
-**Version**: {version}
+**Version**: {version} | **License**: MIT | **Author**: [smestern](https://github.com/smestern)
+
+## Why SciAgent?
+
+Scientific coding is different from software engineering. A subtle off-by-one
+in a loop isn't just a bug — it's a retracted paper. SciAgent embeds
+**8 rigor principles** directly into every agent:
+
+1. **Data Integrity** — never fabricate or fill gaps with synthetic data
+2. **Objective Analysis** — reveal what data shows, not what you hope
+3. **Sanity Checks** — validate inputs, flag impossible values
+4. **Transparent Reporting** — report all results, even inconvenient ones
+5. **Uncertainty Quantification** — confidence intervals, SEM, N for everything
+6. **Reproducibility** — deterministic code, documented seeds, exact parameters
+7. **Safe Execution** — analysis runs through guardrailed tools, not raw shell
+8. **Rigor Warnings** — surface warnings to the user, never silently suppress
 
 ## Installation
 
-### Local (development)
+### From Awesome Copilot Marketplace
 
-Clone or download this plugin directory, then add it to your VS Code settings:
+```bash
+copilot plugin marketplace add github/awesome-copilot
+copilot plugin install sciagent@awesome-copilot
+```
+
+### Manual (VS Code)
+
+Clone this repo and add to your VS Code settings:
 
 ```jsonc
 // settings.json
 "chat.plugins.paths": {{
-    "/path/to/sciagent": true
+    "/path/to/sciagent-plugin": true
 }}
 ```
 
-### From marketplace
-
-If published to a plugin marketplace repository, install via the Extensions
-sidebar → Agent Plugins view, or search `@agentPlugins sciagent`.
-
 ## Agents
 
-| Agent | Invocation |
-|-------|------------|
+| Agent | Description |
+|-------|-------------|
 {agent_table}
 
 ## Skills
 
-| Skill | Slash Command |
-|-------|---------------|
+| Skill | Description |
+|-------|-------------|
 {skill_table}
 
-## What's Included
+## Typical Workflow
 
-- **6 specialized agents** for scientific analysis workflows: planning,
-  data QC, code review, rigor auditing, report writing, and documentation
-  ingestion.
-- **7 skills** providing on-demand expertise: scientific rigor enforcement,
-  analysis planning, data QC checklists, rigor review, report templates,
-  code review, and library documentation ingestion.
-- **Built-in scientific rigor principles** inlined into every agent —
-  data integrity, objective analysis, sanity checks, transparent reporting,
-  uncertainty quantification, and reproducibility.
+```
+You: @sciagent-coordinator I have calcium imaging data in traces.csv.
+     Find responsive neurons and characterize their response profiles.
 
-## Source
+Coordinator → Analysis Planner → Data QC → Coder → Rigor Reviewer → Report Writer
+```
 
-This plugin is generated from the [SciAgent](https://github.com/smestern/sciagent)
-framework templates.
+Each agent hands off to the next, enforcing rigor at every step. The final
+output is a structured report with figures, statistics, and reproducibility
+metadata.
+
+## Customization
+
+SciAgent works out of the box for general scientific analysis. To specialize
+for your research domain (e.g., electrophysiology, genomics, ecology), use
+the `/configure-domain` skill which discovers relevant Python packages and
+tailors agent behavior to your field.
+
+## Framework
+
+This plugin is generated from the [SciAgent framework](https://github.com/smestern/sciagent),
+which also provides a Python SDK, CLI, and full-stack web interface for
+building custom scientific analysis agents.
 
 ## License
 
@@ -665,7 +714,8 @@ def main() -> None:
 
     try:
         plugin_json = _build_plugin_json(
-            output, version, project_meta, agent_names, skill_names, args.force,
+            output, version, project_meta, agent_names, skill_names,
+            name_prefix=name_prefix, force=args.force,
         )
         agent_files = _build_agents(
             output, replacements, include_prompts=not args.no_prompts,

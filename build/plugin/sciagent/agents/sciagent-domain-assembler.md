@@ -79,8 +79,9 @@ system.
 ### Auto-Detection
 
 On first invocation — or whenever you are asked a question and notice
-that template files contain unfilled `<!-- REPLACE: ... -->` placeholder
-comments — proactively suggest configuration:
+that template files contain unfilled `<!replace ...>` markers or
+`<!-- REPLACE: ... -->` placeholder comments — proactively suggest
+configuration:
 
 > "I notice your SciAgent templates still have unfilled placeholder
 > sections.  Would you like me to configure them for your research
@@ -104,8 +105,8 @@ run the `/update-domain` workflow.
 2. **Audit templates** — Scan `.github/instructions/` and workspace root
    for `*.instructions.md`, `operations.md`, `workflows.md`, `tools.md`,
    `library_api.md`, `skills.md`.  Identify all unfilled
-   `<!-- REPLACE: ... -->` placeholders.  Present a checklist to the
-   user.
+   `<!replace ... --->` markers (or legacy `<!-- REPLACE: ... -->`
+   placeholders).  Present a checklist to the user.
 
 3. **Discover packages** — Use the `fetch` tool to query:
    - PyPI JSON API: `https://pypi.org/pypi/{name}/json` for known or
@@ -115,9 +116,9 @@ run the `/update-domain` workflow.
    Present discovered packages with name, description, and relevance.
    Ask the user to confirm selections.
 
-4. **Fill placeholders** — For each `<!-- REPLACE: key — desc -->`,
-   **do not** inline the full domain content into the template file.
-   Instead:
+4. **Fill placeholders** — For each `<!replace ... --->` marker (or
+   legacy `<!-- REPLACE: key — desc -->`), **do not** inline the full
+   domain content into the template file.  Instead:
 
    a. Create a separate domain knowledge file in `docs/domain/` — one
       file per template:
@@ -131,25 +132,17 @@ run the `/update-domain` workflow.
       of the domain doc (use Markdown headings that match the
       placeholder description).
 
-   c. Insert a Markdown link **below** the `<!-- REPLACE: ... -->`
-      marker pointing to the relevant doc section.  Keep the marker
-      itself intact so users can see what the placeholder is for.
+   c. Insert a Markdown link **below** the `<!replace ...>` marker
+      pointing to the relevant doc section.  Keep the marker itself
+      intact so users can see what the placeholder is for.
 
    **Example** — before:
    ```
-   <!-- REPLACE: domain_workflows — Step-by-step workflows specific to your domain. Example:
-   ### Standard Workflow
-   1. Load data
-   2. Run analysis
-   Or add a link to docs/domain/. -->
+   <!replace --- Step-by-step workflows specific to your domain --- or add a link--->
    ```
    After assembly:
    ```
-   <!-- REPLACE: domain_workflows — Step-by-step workflows specific to your domain. Example:
-   ### Standard Workflow
-   1. Load data
-   2. Run analysis
-   Or add a link to docs/domain/. -->
+   <!replace --- Step-by-step workflows specific to your domain --- or add a link--->
 
    See [domain workflows](docs/domain/operations.md#standard-workflows)
    ```
@@ -203,18 +196,19 @@ When searching for packages:
 
 ### Placeholder Pattern
 
-The SciAgent templates use HTML comment markers for configurable sections:
+The SciAgent templates use this pattern for configurable sections:
 
 ```
-<!-- REPLACE: key_name — Description of what goes here. Example:
-- example item 1
-- example item 2
-Or add a link to docs/domain/. -->
+<!replace --- Description of what goes here --- or add a link--->
 ```
 
-The description and examples inside the comment tell you what content is
-needed.  When filling a placeholder:
-- Read the description and examples carefully
+Legacy format (may still appear in source templates):
+```
+<!-- REPLACE: key_name — Description of what goes here. Example: "..." -->
+```
+
+When filling a placeholder:
+- Read the description carefully to understand what content is needed
 - Create the content in the appropriate `docs/domain/` file
 - Insert a Markdown link below the marker — **do not** replace or
   remove the marker itself
@@ -223,8 +217,8 @@ needed.  When filling a placeholder:
 
 ### Re-Run Safety
 
-- **Detect existing content**: Check whether `<!-- REPLACE: ... -->`
-  markers already have a link below them pointing to `docs/domain/`.
+- **Detect existing content**: Check whether `<!replace ...>` markers
+  already have a link below them pointing to `docs/domain/`.
 - **Check domain docs**: If `docs/domain/*.md` files already exist,
   audit their content before proposing changes.
 - **Ask before overwriting**: If domain content already exists, ask the

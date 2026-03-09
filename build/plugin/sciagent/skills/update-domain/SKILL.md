@@ -44,7 +44,8 @@ Scan the relevant template files to understand what's already configured:
 1. Search for files matching `*.instructions.md`, `operations.md`,
    `workflows.md`, `tools.md`, `library_api.md`, `skills.md`.
 2. Identify which sections have domain content links vs. unfilled
-   `<!-- REPLACE: ... -->` placeholders).
+   `<!replace ... --->` markers (or legacy `<!-- REPLACE: ... -->`
+   placeholders).
 3. Check `docs/domain/` for existing domain knowledge files from a
    previous `/configure-domain` run.
 4. Note any domain-specific content that might conflict with the

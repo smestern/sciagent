@@ -78,34 +78,7 @@ When a user provides a file:
 3. Ask for clarification if the data's purpose is unclear
 ```
 
-<!-- REPLACE: standard_workflows — Step-by-step workflows specific to your domain. Describe the main analysis paths a user would follow. Example:
-
-### Workflow A: Quality Control
-```
-1. Load data and inspect metadata
-2. Run quality control checks
-3. Flag problematic samples
-4. Report QC summary
-5. Proceed only if quality is acceptable (or user confirms)
-```
-
-### Workflow B: Primary Analysis
-```
-1. Identify data type / experimental condition
-2. Select appropriate analysis method
-3. Extract features / measurements
-4. Validate results against expected ranges
-5. Generate summary with visualisations
-```
-
-### Workflow C: Comparative Analysis
-```
-1. Load multiple datasets
-2. Ensure comparable conditions
-3. Run matched analyses
-4. Compute statistics across groups
-5. Report with effect sizes and confidence intervals
-``` Or add a link to docs/domain/. -->
+<!replace --- Step-by-step workflows specific to your domain. Describe the main analysis paths a user would follow --- or add a link--->
 
 ---
 
@@ -113,14 +86,7 @@ When a user provides a file:
 
 ### Default Parameters
 
-<!-- REPLACE: analysis_parameters — A table of default analysis parameters for your domain. Example:
-
-| Parameter | Default | Context |
-|-----------|---------|---------|
-| detection_threshold | 0.5 | Signal detection sensitivity |
-| baseline_window | 100 ms | Window for baseline measurement |
-| smoothing_sigma | 2.0 | Gaussian smoothing kernel width |
-| min_sample_size | 3 | Minimum N for statistical tests | Or add a link to docs/domain/. -->
+<!replace --- A table of default analysis parameters for your domain --- or add a link--->
 
 | Parameter | Default | Context |
 |-----------|---------|---------|
@@ -128,17 +94,7 @@ When a user provides a file:
 
 ### When to Adjust Parameters
 
-<!-- REPLACE: parameter_adjustment_guidance — Guidance on when and how to adjust default parameters. Example:
-
-**Lower detection_threshold (0.2–0.4)**:
-- Weak signals
-- Noisy recordings
-- Exploratory analysis
-
-**Higher detection_threshold (0.7–1.0)**:
-- Clean data
-- Conservative analysis
-- Publication-quality filtering Or add a link to docs/domain/. -->
+<!replace --- Guidance on when and how to adjust default parameters --- or add a link--->
 
 ---
 
@@ -168,22 +124,7 @@ If analysis fails:
 
 ### Edge Cases
 
-<!-- REPLACE: edge_cases — Common edge cases in your domain and how to handle them. Example:
-
-**No events detected**:
-- Report count = 0
-- Check if this is expected for the experimental condition
-- Suggest adjusting detection parameters if traces look like they contain events
-
-**Fit failures**:
-- Report fit failed with reason
-- Provide raw measurements if possible
-- Suggest alternative models
-
-**Inconsistent results across samples**:
-- Report per-sample results
-- Provide summary statistics
-- Flag inconsistencies for user review Or add a link to docs/domain/. -->
+<!replace --- Common edge cases in your domain and how to handle them --- or add a link--->
 
 ---
 
@@ -191,15 +132,7 @@ If analysis fails:
 
 ### Numerical Precision
 
-<!-- REPLACE: reporting_precision_table — A table specifying how precisely each measurement type should be reported. Example:
-
-| Measurement | Precision | Units |
-|-------------|-----------|-------|
-| Temperature | 1 decimal | °C |
-| Concentration | 2 significant figures | µM |
-| Time | 3 decimals | s |
-| Ratios | 2 decimals | — |
-| Percentages | 1 decimal | % | Or add a link to docs/domain/. -->
+<!replace --- A table specifying how precisely each measurement type should be reported --- or add a link--->
 
 | Measurement | Precision | Units |
 |-------------|-----------|-------|
@@ -277,9 +210,9 @@ When analysis methods or defaults change:
 
 ## Domain Setup Detection
 
-If you encounter `<!-- REPLACE: ... -->` placeholder comments in any
-SciAgent instruction or template file, this means the domain-specific
-content has not been configured yet.  Suggest that the user run
-`/configure-domain` to set up their research domain, or `/update-domain`
-to add incremental changes.  Domain knowledge will be created in
-`docs/domain/` with links from the template files.
+If you encounter `<!replace ...>` markers or `<!-- REPLACE: ... -->`
+placeholder comments in any SciAgent instruction or template file, this
+means the domain-specific content has not been configured yet.  Suggest
+that the user run `/configure-domain` to set up their research domain,
+or `/update-domain` to add incremental changes.  Domain knowledge will
+be created in `docs/domain/` with links from the template files.

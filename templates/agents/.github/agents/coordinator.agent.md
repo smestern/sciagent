@@ -38,7 +38,7 @@ handoffs:
     prompt: "Configure SciAgent for the research domain described above."
     send: false
   - label: "Start Implementation"
-    agent: sciagent-coder
+    agent: coder
     prompt: "Implement the plan outlined above."
     send: true
 ---

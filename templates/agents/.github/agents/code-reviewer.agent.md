@@ -13,7 +13,7 @@ handoffs:
     prompt: "Based on the code review above, plan the changes needed to address the identified issues."
     send: false
   - label: "Implement Fixes"
-    agent: sciagent-coder
+    agent: coder
     prompt: "Implement the code changes recommended in the review above."
     send: true
 ---
