@@ -28,6 +28,13 @@ setup(
             "**/*.md",
             "**/*.yaml",
             "**/*.yml",
+            # Dot-prefixed dirs are excluded by ** globs — list explicitly
+            "agents/.github/**/*.md",
+            "agents/.github/**/*.yaml",
+            "agents/.github/**/*.yml",
+            "agents/.claude/**/*.md",
+            "agents/.claude/**/*.yaml",
+            "agents/.claude/**/*.yml",
         ],
     },
 )
