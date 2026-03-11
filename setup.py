@@ -20,6 +20,8 @@ setup(
             "static/css/*.css",
             "static/js/*.js",
             "templates/*.html",
+            "static/*.png",
+            "static/*.svg",
         ],
         "sciagent.templates": [
             "*.md",
