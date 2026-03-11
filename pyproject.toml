@@ -76,17 +76,8 @@ sciagent-web = "sciagent.web.app:main"
 Homepage = "https://github.com/smestern/sciagent"
 Repository = "https://github.com/smestern/sciagent"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-"sciagent.prompts" = ["*.md"]
-"sciagent.web" = [
-    "static/css/*.css",
-    "static/js/*.js",
-    "templates/*.html",
-]
-
+# Package discovery & package-data are in setup.py so that the top-level
+# templates/ directory can be mapped to sciagent.templates.
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

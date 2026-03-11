@@ -255,7 +255,18 @@ shipped in ``templates/skills/``."""
 
 def _find_templates_skills_dir() -> Optional[Path]:
     """Locate the ``templates/skills/`` directory shipped with sciagent."""
-    # Walk upward from this file to find the repo/package root
+    import importlib.resources as _res
+
+    # Preferred: use the installed sciagent.templates package
+    try:
+        ref = _res.files("sciagent.templates").joinpath("skills")
+        resolved = Path(str(ref))
+        if resolved.is_dir():
+            return resolved
+    except Exception:
+        pass
+
+    # Fallback: walk upward from this file (editable / dev installs)
     here = Path(__file__).resolve().parent
     for ancestor in [
         here, here.parent,
@@ -265,15 +276,6 @@ def _find_templates_skills_dir() -> Optional[Path]:
         candidate = ancestor / "templates" / "skills"
         if candidate.is_dir():
             return candidate
-    # Fallback: installed package — look relative to package data
-    import importlib.resources as _res
-
-    try:
-        ref = _res.files("sciagent").joinpath("../../templates/skills")
-        if Path(str(ref)).is_dir():
-            return Path(str(ref))
-    except Exception:
-        pass
     return None
 
 
