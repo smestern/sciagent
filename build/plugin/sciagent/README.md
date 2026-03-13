@@ -1,12 +1,12 @@
 # SciAgent — Scientific Analysis Agents for GitHub Copilot
 
-> **9 specialized agents** and **9 skills** that bring scientific rigor
+> **6 specialized agents** and **7 skills** that bring scientific rigor
 > to data analysis in VS Code. Plan experiments, check data quality, write
 > reproducible code, audit results, and generate publication-ready reports —
 > all with built-in guardrails against p-hacking, data fabrication, and
 > irreproducible workflows.
 
-**Version**: 1.2.0 | **License**: MIT | **Author**: [smestern](https://github.com/smestern)
+**Version**: 0.5.0 | **License**: MIT | **Author**: [smestern](https://github.com/smestern)
 
 ## Why SciAgent?
 
@@ -47,29 +47,24 @@ Clone this repo and add to your VS Code settings:
 
 | Agent | Description |
 |-------|-------------|
-| `@sciagent-analysis-planner` | Designs step-by-step analysis plans before any code runs |
-| `@sciagent-code-reviewer` | Reviews scripts for correctness, reproducibility, and best practices |
 | `@sciagent-coder` | Implements analysis code with built-in rigor enforcement |
 | `@sciagent-coordinator` | Routes tasks to the right specialist agent |
-| `@sciagent-data-qc` | Checks data quality — missing values, outliers, distributions, integrity |
 | `@sciagent-docs-ingestor` | Ingests Python library docs into structured API references |
 | `@sciagent-domain-assembler` | Configures SciAgent for your specific research domain |
 | `@sciagent-report-writer` | Generates publication-quality reports with uncertainty quantification |
-| `@sciagent-rigor-reviewer` | Audits analysis for statistical validity and reproducibility |
+| `@sciagent-reviewer` | Reviews code and results for correctness, reproducibility, and scientific rigor |
 
 ## Skills
 
 | Skill | Description |
 |-------|-------------|
 | `/analysis-planner` | On-demand analysis planner |
-| `/code-reviewer` | On-demand code reviewer |
 | `/configure-domain` | On-demand configure domain |
 | `/data-qc` | On-demand data qc |
 | `/docs-ingestor` | On-demand docs ingestor |
 | `/report-writer` | On-demand report writer |
-| `/rigor-reviewer` | On-demand rigor reviewer |
+| `/review` | On-demand review |
 | `/scientific-rigor` | On-demand scientific rigor |
-| `/update-domain` | On-demand update domain |
 
 ## Typical Workflow
 

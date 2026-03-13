@@ -13,10 +13,6 @@ tools:
   - web/fetch
   - terminal
 handoffs:
-  - label: "Plan Analysis"
-    agent: sciagent-analysis-planner
-    prompt: "Library documentation has been ingested. Plan an analysis using this library and the data available in the workspace."
-    send: false
 ---
 
 ## Library Documentation Ingestor

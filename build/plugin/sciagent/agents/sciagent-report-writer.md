@@ -11,7 +11,7 @@ tools:
   - web/fetch
 handoffs:
   - label: "Review Rigor"
-    agent: sciagent-rigor-reviewer
+    agent: sciagent-reviewer
     prompt: "Review the report above for scientific rigor — check statistical validity, data integrity, and reporting completeness."
     send: false
 ---
