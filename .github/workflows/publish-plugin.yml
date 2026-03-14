@@ -39,6 +39,7 @@ jobs:
         run: |
           python scripts/build_plugin.py \
             --force \
+            --profile compact \
             --version "${{ steps.version.outputs.version }}" \
             -o build/plugin/sciagent
 
