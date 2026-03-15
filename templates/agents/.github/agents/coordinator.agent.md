@@ -74,7 +74,7 @@ Follow the [shared scientific rigor principles](.github/instructions/sciagent-ri
 | Write a report | **report-writer** | Analysis and review are done, results need documentation |
 | Learn a new library | **docs-ingestor** | User needs to use an unfamiliar Python package |
 | Set up for a domain | **domain-assembler** | First-time setup or domain reconfiguration needed |
-| Execute / implement | **sciagent-coder** | A plan or set of changes is ready to be implemented |
+| Execute / implement | **coder** | A plan or set of changes is ready to be implemented |
 
 4. **Provide context** — When handing off, summarize what you've learned
    about the user's task so the specialist has full context.

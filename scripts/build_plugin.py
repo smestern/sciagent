@@ -114,26 +114,23 @@ RIGOR_LINK_PATTERN = re.compile(
 # Which prompt modules to append to each agent.
 # Keys are agent stems (without extension), values are prompt filenames.
 AGENT_PROMPT_MAP: dict[str, list[str]] = {
-    "coordinator": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
-    "analysis-planner": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
+    "coordinator": ["communication_style.md", "clarification.md"],
+    "analysis-planner": ["communication_style.md", "clarification.md"],
     "data-qc": [
-        "scientific_rigor.md",
         "communication_style.md",
         "code_execution.md",
         "incremental_execution.md",
         "clarification.md",
     ],
-    "rigor-reviewer": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
+    "rigor-reviewer": ["communication_style.md", "clarification.md"],
     "report-writer": [
-        "scientific_rigor.md",
         "communication_style.md",
         "reproducible_script.md",
         "clarification.md",
     ],
-    "code-reviewer": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
-    "docs-ingestor": ["scientific_rigor.md", "communication_style.md", "clarification.md"],
+    "code-reviewer": ["communication_style.md", "clarification.md"],
+    "docs-ingestor": ["communication_style.md", "clarification.md"],
     "coder": [
-        "scientific_rigor.md",
         "communication_style.md",
         "code_execution.md",
         "incremental_execution.md",
@@ -405,6 +402,7 @@ def _merge_agent_bodies(
     argument_hint = spec.get("argument_hint", "")
 
     body_parts: list[str] = []
+    rigor_inlined = False
     for src_name in sources:
         src_file = AGENTS_SRC / f"{src_name}.agent.md"
         if not src_file.exists():
@@ -414,12 +412,20 @@ def _merge_agent_bodies(
         raw = _apply_replacements(raw, replacements)
         _, body = _split_frontmatter(raw)
 
-        # Inline rigor instructions
+        # Inline rigor instructions — only the first source gets the full
+        # text; subsequent sources get a short back-reference to avoid
+        # duplicating the same ~50-line policy block.
         if rigor_text:
-            replacement_block = (
-                "### Shared Scientific Rigor Principles\n\n" + rigor_text
-            )
-            body = RIGOR_LINK_PATTERN.sub(replacement_block, body)
+            if not rigor_inlined:
+                replacement_block = (
+                    "### Shared Scientific Rigor Principles\n\n" + rigor_text
+                )
+                body = RIGOR_LINK_PATTERN.sub(replacement_block, body)
+                rigor_inlined = True
+            else:
+                body = RIGOR_LINK_PATTERN.sub(
+                    "See *Shared Scientific Rigor Principles* above.", body,
+                )
 
         body_parts.append(body.strip())
 
@@ -623,6 +629,103 @@ def _apply_body_rewrites(
         if changed:
             output = f"---\n{fm_text}\n---\n\n{body}"
             agent_file.write_text(output, encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Routing-table rewriter (coordinator body)
+# ---------------------------------------------------------------------------
+
+# Matches a markdown table row with a bold agent name in the second column:
+#   | <need> | **<agent-stem>** | <when> |
+_ROUTING_ROW_RE = re.compile(
+    r'^\|\s*(?P<need>[^|]+?)\s*\|\s*\*\*(?P<agent>[^*]+)\*\*\s*\|\s*(?P<when>[^|]+?)\s*\|$'
+)
+
+
+def _rewrite_routing_table(
+    agent_files: list[Path],
+    profile: dict[str, Any],
+    name_prefix: str,
+) -> None:
+    """Rewrite the coordinator's routing table to match built agent names.
+
+    Applies three transformations to table rows:
+    1. **Exclude** — rows for excluded agents are dropped.
+    2. **Merge** — rows whose agent was consumed by a merge are renamed;
+       when two source rows map to the same merged name the rows are
+       combined into one (Need descriptions joined with " & ").
+    3. **Prefix** — surviving agent names get the build prefix.
+    """
+    exclude_agents = set(profile.get("exclude_agents", []))
+    merge_agents: dict[str, Any] = profile.get("merge_agents", {})
+
+    # Build source-agent → merged-name lookup
+    source_to_merged: dict[str, str] = {}
+    for merged_name, spec in merge_agents.items():
+        for src in spec["sources"]:
+            source_to_merged[src] = merged_name
+
+    # Identify the coordinator file
+    coord_stem = _prefixed("coordinator", name_prefix)
+    coord_file: Path | None = None
+    for f in agent_files:
+        if f.stem == coord_stem:
+            coord_file = f
+            break
+    if coord_file is None:
+        return
+
+    content = coord_file.read_text(encoding="utf-8")
+    fm_text, body = _split_frontmatter(content)
+    if not body:
+        return
+
+    lines = body.split("\n")
+    new_lines: list[str] = []
+    # Track merged rows so we can combine duplicates
+    # key = final display name, value = index into new_lines
+    seen_merged: dict[str, int] = {}
+
+    for line in lines:
+        m = _ROUTING_ROW_RE.match(line)
+        if not m:
+            new_lines.append(line)
+            continue
+
+        agent_stem = m.group("agent").strip()
+        need = m.group("need").strip()
+        when = m.group("when").strip()
+
+        # Drop excluded agents
+        if agent_stem in exclude_agents:
+            continue
+
+        # Rename merged agents
+        if agent_stem in source_to_merged:
+            agent_stem = source_to_merged[agent_stem]
+
+        # Apply prefix
+        display_name = _prefixed(agent_stem, name_prefix)
+
+        # Combine rows that map to the same final name
+        if display_name in seen_merged:
+            idx = seen_merged[display_name]
+            prev = _ROUTING_ROW_RE.match(new_lines[idx])
+            if prev:
+                combined_need = f"{prev.group('need').strip()} & {need}"
+                combined_when = f"{prev.group('when').strip()}; {when.lower()}"
+                new_lines[idx] = (
+                    f"| {combined_need} | **{display_name}** | {combined_when} |"
+                )
+            continue
+
+        row = f"| {need} | **{display_name}** | {when} |"
+        seen_merged[display_name] = len(new_lines)
+        new_lines.append(row)
+
+    new_body = "\n".join(new_lines)
+    output_text = f"---\n{fm_text}\n---\n\n{new_body}"
+    coord_file.write_text(output_text, encoding="utf-8")
 
 
 def _build_plugin_json(
@@ -1294,6 +1397,7 @@ def main() -> None:
             _rewrite_handoffs(agent_files, handoff_rewrites, name_prefix)
         if body_rewrites:
             _apply_body_rewrites(agent_files, body_rewrites, name_prefix)
+        _rewrite_routing_table(agent_files, profile, name_prefix)
 
         template_files: list[Path] = []
         if args.format == "compact-marketplace":

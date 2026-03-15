@@ -47,12 +47,12 @@ Clone this repo and add to your VS Code settings:
 
 | Agent | Description |
 |-------|-------------|
-| `@sciagent-coder` | Implements analysis code with built-in rigor enforcement |
-| `@sciagent-coordinator` | Routes tasks to the right specialist agent |
-| `@sciagent-docs-ingestor` | Ingests Python library docs into structured API references |
-| `@sciagent-domain-assembler` | Configures SciAgent for your specific research domain |
-| `@sciagent-report-writer` | Generates publication-quality reports with uncertainty quantification |
-| `@sciagent-reviewer` | Reviews code and results for correctness, reproducibility, and scientific rigor |
+| `@sci-coder` | Implements analysis code with built-in rigor enforcement |
+| `@sci-coordinator` | Routes tasks to the right specialist agent |
+| `@sci-docs-ingestor` | Ingests Python library docs into structured API references |
+| `@sci-domain-assembler` | Configures SciAgent for your specific research domain |
+| `@sci-report-writer` | Generates publication-quality reports with uncertainty quantification |
+| `@sci-reviewer` | Reviews code and results for correctness, reproducibility, and scientific rigor |
 
 ## Skills
 
