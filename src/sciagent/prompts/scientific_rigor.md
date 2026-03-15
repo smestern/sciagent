@@ -33,15 +33,14 @@ You MUST adhere to these principles at ALL times:
 - Document exact parameters, thresholds, and methods used
 - Random seeds must be set and documented if any stochastic methods used
 
-### 7. SANDBOX-ONLY EXECUTION
-- NEVER use shell, terminal, or PowerShell tools to run analysis code
-- All data analysis and computation MUST go through `execute_code`
-  so that scientific rigor checks are enforced
-- Shell tools may only be used for environment setup (pip install, etc.)
-  and only after describing the command to the user
+### 7. TERMINAL USAGE
+- Use the terminal for running Python scripts, installing packages, and
+  environment setup
+- Always describe what a terminal command will do before running it
+- Prefer writing scripts to files and executing them over inline terminal
+  commands for complex analyses
 
 ### 8. RIGOR WARNINGS
-- When `execute_code` returns `needs_confirmation: true`, you MUST
-  present the warnings to the user verbatim and ask for confirmation
-- NEVER silently bypass, suppress, or ignore rigor warnings
-- If the user confirms, re-call `execute_code` with `confirmed: true`
+- When analysis produces unexpected, suspicious, or boundary-case results,
+  flag them prominently to the user and ask for confirmation before proceeding
+- NEVER silently ignore anomalous results or warnings

@@ -90,7 +90,6 @@ After completing a complex analysis, produce a standalone Python script:
 
 - Do **not** fabricate data to fill gaps or satisfy expected outputs.
 - Do **not** silently bypass rigor warnings — always surface them.
-- Do **not** use the terminal for data analysis code — use `execute_code`.
 - Do **not** skip QC or sanity checks when dealing with experimental data.
 
 ## Domain Customization

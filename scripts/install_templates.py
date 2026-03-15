@@ -38,6 +38,7 @@ from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = REPO_ROOT / "templates"
+PROMPTS_DIR = TEMPLATES_DIR / "prompts"
 
 
 @dataclass(frozen=True)
@@ -300,6 +301,74 @@ def _install_workspace_hybrid(
     return written
 
 
+def _install_workspace_compact_marketplace(
+    workspace_root: Path,
+    replacements: dict[str, str],
+    force: bool,
+) -> list[Path]:
+    """Consolidate all templates + prompts into one ``sciagent-templates.md``.
+
+    Produces a single file next to AGENTS.md so platforms that don't support
+    separate template folders can still ship the full SciAgent reference.
+    """
+    # Ordered sections mirroring build_plugin._COMPACT_SECTIONS
+    _SECTIONS: list[tuple[str, str, list[str]]] = [
+        ("Part 1: Behavioral Guidelines", "", []),
+        ("Scientific Rigor Principles", "prompts", ["scientific_rigor.md"]),
+        ("Analysis Workflow", "prompts", ["code_execution.md"]),
+        ("Incremental Execution Principle", "prompts", ["incremental_execution.md"]),
+        ("Reproducible Script Generation", "prompts", ["reproducible_script.md"]),
+        ("Clarification & Follow-Up", "prompts", ["clarification.md"]),
+        ("Communication Style", "prompts", ["communication_style.md"]),
+        ("Thinking Out Loud", "prompts", ["thinking_out_loud.md"]),
+        ("Output Directory", "prompts", ["output_dir.md"]),
+        ("Part 2: Configuration Templates", "", []),
+        ("Operations", "root", ["operations.md"]),
+        ("Workflows", "root", ["workflows.md"]),
+        ("Tools Reference", "root", ["tools.md"]),
+        ("Library API Reference", "root", ["library_api.md"]),
+        ("Skills Overview", "root", ["skills.md"]),
+        ("Part 3: Reference Documentation", "", []),
+        ("Template Router", "root", ["AGENTS.md"]),
+        ("Built-in Agents", "root", ["builtin_agents.md"]),
+        ("Agent Configuration YAML Example", "root", ["agent_config.example.yaml"]),
+    ]
+
+    parts: list[str] = []
+    section_num = 0
+
+    for title, source_kind, filenames in _SECTIONS:
+        if not filenames:
+            parts.append(f"\n---\n\n# {title}\n")
+            continue
+
+        section_num += 1
+        section_bodies: list[str] = []
+        for fname in filenames:
+            src = PROMPTS_DIR / fname if source_kind == "prompts" else TEMPLATES_DIR / fname
+            if not src.exists():
+                continue
+            content = src.read_text(encoding="utf-8")
+            content = _apply_replacements(content, replacements)
+            content = _humanize_unfilled_placeholders(content)
+            section_bodies.append(content.strip())
+
+        if section_bodies:
+            parts.append(f"\n## §{section_num} {title}\n\n" + "\n\n".join(section_bodies))
+
+    consolidated = (
+        "# SciAgent Templates — Consolidated Reference\n\n"
+        "> This file bundles all SciAgent template content into a single\n"
+        "> document for platforms that do not support separate template folders.\n"
+        + "\n".join(parts)
+        + "\n"
+    )
+
+    dest = workspace_root / "sciagent-templates.md"
+    _write_text(dest, consolidated, force=force)
+    return [dest]
+
+
 def _install_workspace_mono(
     workspace_root: Path,
     replacements: dict[str, str],
@@ -414,9 +483,13 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--layout",
-        choices=["hybrid", "mono"],
+        choices=["hybrid", "mono", "compact-marketplace"],
         default="hybrid",
-        help="Install modular instructions + AGENTS router (hybrid) or one merged AGENTS/instruction file (mono).",
+        help=(
+            "Install modular instructions + AGENTS router (hybrid), "
+            "one merged AGENTS/instruction file (mono), "
+            "or a single consolidated sciagent-templates.md (compact-marketplace)."
+        ),
     )
     parser.add_argument(
         "--target",
@@ -488,7 +561,9 @@ def _run_dry(args: argparse.Namespace, replacements: dict[str, str]) -> None:
 
     if args.target == "workspace":
         root = Path(args.output).resolve()
-        if args.layout == "hybrid":
+        if args.layout == "compact-marketplace":
+            print(f"  - write: {root / 'sciagent-templates.md'}")
+        elif args.layout == "hybrid":
             print(f"  - write: {root / 'AGENTS.md'}")
             print(f"  - write: {root / '.github' / 'copilot-instructions.md'}")
             for spec in TEMPLATE_SPECS:
@@ -530,7 +605,13 @@ def main() -> None:
     try:
         if args.target == "workspace":
             workspace_root = Path(args.output).resolve()
-            if args.layout == "hybrid":
+            if args.layout == "compact-marketplace":
+                written = _install_workspace_compact_marketplace(
+                    workspace_root=workspace_root,
+                    replacements=replacements,
+                    force=args.force,
+                )
+            elif args.layout == "hybrid":
                 written = _install_workspace_hybrid(
                     workspace_root=workspace_root,
                     replacements=replacements,

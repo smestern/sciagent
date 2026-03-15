@@ -389,11 +389,13 @@ def _merge_agent_bodies(
     include_prompts: bool,
     prompt_cache: dict[str, str],
     name_prefix: str,
+    fullstack_overlay: str = "",
 ) -> str:
     """Merge multiple agent templates into a single agent file.
 
     Reads each source agent, concatenates their bodies with section dividers,
-    and builds unified frontmatter from the merge spec.
+    and builds unified frontmatter from the merge spec.  When *fullstack_overlay*
+    is non-empty, it is appended after prompt modules.
     """
     sources = spec["sources"]
     description = spec["description"]
@@ -434,6 +436,10 @@ def _merge_agent_bodies(
                     appendices.append(prompt_cache[prompt_name])
         if appendices:
             merged_body = merged_body.rstrip() + "\n\n---\n\n" + "\n\n---\n\n".join(appendices) + "\n"
+
+    # Append fullstack tool overlay when requested
+    if fullstack_overlay:
+        merged_body = merged_body.rstrip() + "\n\n---\n\n" + fullstack_overlay + "\n"
 
     # Build frontmatter
     prefixed_name = _prefixed(merged_name, name_prefix)
@@ -678,11 +684,15 @@ def _build_agents(
     name_prefix: str,
     force: bool,
     profile: dict[str, Any] | None = None,
+    fullstack: bool = False,
 ) -> list[Path]:
     """Compile agent .agent.md files → agents/<name>.md with inlined instructions.
 
     When *profile* is provided, excluded agents are skipped, consumed agents
     (used as merge sources) are skipped, and merged agents are emitted.
+
+    When *fullstack* is True, the fullstack tool overlay (execute_code,
+    save_reproducible_script, OUTPUT_DIR, etc.) is appended to each agent.
     """
     if profile is None:
         profile = PROFILES["full"]
@@ -698,6 +708,15 @@ def _build_agents(
     rigor_path = INSTRUCTIONS_SRC / "sciagent-rigor.instructions.md"
     if rigor_path.exists():
         rigor_text = rigor_path.read_text(encoding="utf-8").strip()
+
+    # Load fullstack overlay if requested
+    fullstack_overlay = ""
+    if fullstack:
+        overlay_path = TEMPLATES_DIR / "prompts" / "overlays" / "fullstack_tools.md"
+        if overlay_path.exists():
+            fullstack_overlay = overlay_path.read_text(encoding="utf-8").strip()
+        else:
+            print(f"WARNING: --fullstack set but overlay not found: {overlay_path}", file=sys.stderr)
 
     # Pre-load prompt modules
     prompt_cache: dict[str, str] = {}
@@ -719,6 +738,7 @@ def _build_agents(
         merged_content = _merge_agent_bodies(
             spec, merged_name, replacements, rigor_text,
             include_prompts, prompt_cache, name_prefix,
+            fullstack_overlay=fullstack_overlay,
         )
         prefixed_stem = _prefixed(merged_name, name_prefix)
         dest = output / "agents" / f"{prefixed_stem}.md"
@@ -753,6 +773,10 @@ def _build_agents(
                     appendices.append(prompt_cache[prompt_name])
             if appendices:
                 body = body.rstrip() + "\n\n---\n\n" + "\n\n---\n\n".join(appendices) + "\n"
+
+        # Append fullstack tool overlay when requested
+        if fullstack_overlay:
+            body = body.rstrip() + "\n\n---\n\n" + fullstack_overlay + "\n"
 
         # Apply name prefix to frontmatter
         prefixed_stem = _prefixed(agent_stem, name_prefix)
@@ -894,6 +918,99 @@ def _copy_templates(
     return written
 
 
+# ---------------------------------------------------------------------------
+# Compact-marketplace consolidation
+# ---------------------------------------------------------------------------
+
+# Ordered map: (section title, source files).
+# Part 1 = prompt modules (behavioural guidelines),
+# Part 2 = configuration templates,
+# Part 3 = reference / router docs.
+_COMPACT_SECTIONS: list[tuple[str, str, list[str]]] = [
+    # --- Part 1: Behavioral Guidelines ---
+    ("Part 1: Behavioral Guidelines", "", []),
+    ("Scientific Rigor Principles", "prompts", ["scientific_rigor.md"]),
+    ("Analysis Workflow", "prompts", ["code_execution.md"]),
+    ("Incremental Execution Principle", "prompts", ["incremental_execution.md"]),
+    ("Reproducible Script Generation", "prompts", ["reproducible_script.md"]),
+    ("Clarification & Follow-Up", "prompts", ["clarification.md"]),
+    ("Communication Style", "prompts", ["communication_style.md"]),
+    ("Thinking Out Loud", "prompts", ["thinking_out_loud.md"]),
+    ("Output Directory", "prompts", ["output_dir.md"]),
+    # --- Part 2: Configuration Templates ---
+    ("Part 2: Configuration Templates", "", []),
+    ("Operations", "root", ["operations.md"]),
+    ("Workflows", "root", ["workflows.md"]),
+    ("Tools Reference", "root", ["tools.md"]),
+    ("Library API Reference", "root", ["library_api.md"]),
+    ("Skills Overview", "root", ["skills.md"]),
+    # --- Part 3: Reference Documentation ---
+    ("Part 3: Reference Documentation", "", []),
+    ("Template Router", "root", ["AGENTS.md"]),
+    ("Built-in Agents", "root", ["builtin_agents.md"]),
+    ("Agent Configuration YAML Example", "root", ["agent_config.example.yaml"]),
+]
+
+
+def _consolidate_templates(
+    output: Path,
+    replacements: dict[str, str],
+    force: bool,
+    skill_name: str = "configure-domain",
+    name_prefix: str = "",
+) -> list[Path]:
+    """Consolidate all template files into a single ``sciagent-templates.md``.
+
+    The file is placed inside the *configure-domain* skill directory so it
+    ships as a bundled skill asset — compatible with plugin marketplaces that
+    do not support tertiary template folders.
+
+    Returns the list of files written (just the one consolidated file).
+    """
+    parts: list[str] = []
+    section_num = 0
+
+    for title, source_kind, filenames in _COMPACT_SECTIONS:
+        # Part headers (no files — just a divider + heading)
+        if not filenames:
+            parts.append(f"\n---\n\n# {title}\n")
+            continue
+
+        section_num += 1
+        section_bodies: list[str] = []
+        for fname in filenames:
+            if source_kind == "prompts":
+                src = PROMPTS_SRC / fname
+            else:
+                src = TEMPLATES_DIR / fname
+            if not src.exists():
+                continue
+            content = src.read_text(encoding="utf-8")
+            # Strip any YAML frontmatter from prompts
+            _, body = _split_frontmatter(content)
+            body = body.strip() if body.strip() else content.strip()
+            body = _apply_replacements(body, replacements)
+            body = _humanize_unfilled_placeholders(body)
+            section_bodies.append(body)
+
+        if section_bodies:
+            parts.append(f"\n## §{section_num} {title}\n\n" + "\n\n".join(section_bodies))
+
+    consolidated = (
+        "# SciAgent Templates — Consolidated Reference\n\n"
+        "> This file bundles all SciAgent template content into a single\n"
+        "> document for platforms that do not support separate template folders.\n"
+        + "\n".join(parts)
+        + "\n"
+    )
+
+    # Determine destination skill folder
+    prefixed_skill = _prefixed(skill_name, name_prefix)
+    dest = output / "skills" / prefixed_skill / "sciagent-templates.md"
+    _write(dest, consolidated, force)
+    return [dest]
+
+
 def _build_readme(
     output: Path,
     version: str,
@@ -951,8 +1068,8 @@ in a loop isn't just a bug — it's a retracted paper. SciAgent embeds
 4. **Transparent Reporting** — report all results, even inconvenient ones
 5. **Uncertainty Quantification** — confidence intervals, SEM, N for everything
 6. **Reproducibility** — deterministic code, documented seeds, exact parameters
-7. **Safe Execution** — analysis runs through guardrailed tools, not raw shell
-8. **Rigor Warnings** — surface warnings to the user, never silently suppress
+7. **Terminal Usage** — describe commands before running; prefer scripts over inline
+8. **Rigor Warnings** — surface anomalous results to the user, never silently suppress
 
 ## Installation
 
@@ -1070,6 +1187,26 @@ def _parse_args() -> argparse.Namespace:
         default="full",
         help="Build profile controlling agent/skill consolidation (default: full).",
     )
+    parser.add_argument(
+        "--format",
+        choices=["standard", "compact-marketplace"],
+        default="standard",
+        dest="format",
+        help=(
+            "Output format. 'standard' (default) copies templates into templates/. "
+            "'compact-marketplace' consolidates all templates and prompt modules "
+            "into a single sciagent-templates.md bundled inside the "
+            "configure-domain skill directory (for awesome-copilot marketplace)."
+        ),
+    )
+    parser.add_argument(
+        "--fullstack",
+        action="store_true",
+        help=(
+            "Append fullstack tool overlay (execute_code, save_reproducible_script, "
+            "OUTPUT_DIR, etc.) into agent bodies.  Default output is platform-agnostic."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -1143,6 +1280,7 @@ def main() -> None:
         agent_files = _build_agents(
             output, replacements, include_prompts=not args.no_prompts,
             name_prefix=name_prefix, force=args.force, profile=profile,
+            fullstack=args.fullstack,
         )
         skill_files = _build_skills(
             output, replacements, args.force, profile=profile,
@@ -1156,7 +1294,14 @@ def main() -> None:
         if body_rewrites:
             _apply_body_rewrites(agent_files, body_rewrites, name_prefix)
 
-        template_files = _copy_templates(output, replacements, args.force)
+        template_files: list[Path] = []
+        if args.format == "compact-marketplace":
+            template_files = _consolidate_templates(
+                output, replacements, args.force,
+                name_prefix=name_prefix,
+            )
+        else:
+            template_files = _copy_templates(output, replacements, args.force)
         readme = _build_readme(output, version, agent_names, skill_names, name_prefix, args.force)
     except (FileNotFoundError, FileExistsError, RuntimeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

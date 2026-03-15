@@ -41,6 +41,21 @@ COMMUNICATION_STYLE_POLICY = _load("communication_style.md")
 # ── Incremental execution ──────────────────────────────────────────────
 INCREMENTAL_EXECUTION_POLICY = _load("incremental_execution.md")
 
+# ── Fullstack tool overlay ─────────────────────────────────────────────
+# Loaded from the templates directory (not symlinked into src/sciagent/prompts).
+# Contains execute_code, save_reproducible_script, OUTPUT_DIR, etc.
+_OVERLAY_PATH = Path(__file__).resolve().parent.parent.parent.parent / "templates" / "prompts" / "overlays" / "fullstack_tools.md"
+if not _OVERLAY_PATH.exists():
+    # Fallback: installed package layout (importlib.resources)
+    try:
+        import importlib.resources as _res
+        _overlay_ref = _res.files("sciagent").joinpath("templates", "prompts", "overlays", "fullstack_tools.md")
+        FULLSTACK_TOOLS_OVERLAY = _overlay_ref.read_text(encoding="utf-8") if _overlay_ref.is_file() else ""
+    except Exception:
+        FULLSTACK_TOOLS_OVERLAY = ""
+else:
+    FULLSTACK_TOOLS_OVERLAY = _OVERLAY_PATH.read_text(encoding="utf-8")
+
 
 def build_system_message(
     *sections: str,
@@ -51,6 +66,7 @@ def build_system_message(
     incremental_policy: bool = True,
     thinking_policy: bool = True,
     communication_policy: bool = True,
+    fullstack: bool = True,
 ) -> str:
     """Compose a system message from generic policies + domain sections.
 
@@ -65,6 +81,10 @@ def build_system_message(
     The ``base_principles``, ``code_policy``, etc. flags control whether
     the corresponding generic section is prepended automatically.
 
+    When ``fullstack`` is True (default), the fullstack tool overlay
+    (``execute_code``, ``save_reproducible_script``, ``OUTPUT_DIR``, etc.)
+    is appended.  Set to False for platform-agnostic output.
+
     Args:
         *sections: Domain-specific text blocks appended in order.
         base_principles: Include scientific rigor principles.
@@ -74,6 +94,7 @@ def build_system_message(
         incremental_policy: Include incremental execution principle.
         thinking_policy: Include "think out loud" instructions.
         communication_policy: Include communication style guide.
+        fullstack: Include fullstack tool overlay (execute_code, etc.).
 
     Returns:
         The assembled system message string.
@@ -96,4 +117,8 @@ def build_system_message(
         parts.append(COMMUNICATION_STYLE_POLICY)
 
     parts.extend(sections)
+
+    if fullstack and FULLSTACK_TOOLS_OVERLAY:
+        parts.append(FULLSTACK_TOOLS_OVERLAY)
+
     return "\n\n".join(parts)

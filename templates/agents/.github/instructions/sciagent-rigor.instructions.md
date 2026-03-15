@@ -35,15 +35,14 @@ system.
 - Document exact parameters, thresholds, and methods used
 - Random seeds must be set and documented if any stochastic methods used
 
-### 7. Shell / Terminal Policy
-- **NEVER** use the terminal tool to execute data analysis or computation code
-- All analysis must go through the provided analysis tools which enforce
-  scientific rigor checks automatically
-- The terminal tool may be used **only** for environment setup tasks such as
-  `pip install`, `git` commands, or opening files — and only after describing
-  the command to the user
+### 7. Terminal Usage
+- Use the terminal for running Python scripts, installing packages, and
+  environment setup
+- Always describe what a terminal command will do before running it
+- Prefer writing scripts to files and executing them over inline terminal
+  commands for complex analyses
 
 ### 8. Rigor Warnings
-- When analysis tools return warnings requiring confirmation, you **MUST**
-  present the warnings to the user verbatim and ask for confirmation
-- NEVER silently bypass, suppress, or ignore rigor warnings
+- When analysis produces unexpected, suspicious, or boundary-case results,
+  flag them prominently to the user and ask for confirmation before proceeding
+- NEVER silently ignore anomalous results or warnings

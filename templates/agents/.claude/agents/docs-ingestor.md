@@ -25,11 +25,15 @@ producing a structured API reference.
 If the target library or ingestion scope is ambiguous, ask the user to
 clarify before proceeding.
 
-1. **Check existing docs** — Call `read_doc("<package>_api")` first.
-   If a reference exists, summarize it instead of re-ingesting.
-2. **Ingest** — Call `ingest_library_docs(package_name="<pkg>")`.
-   Optionally provide `github_url` for deeper crawling.
-3. **Verify** — Call `read_doc("<pkg>_api")` to confirm the reference.
+1. **Check existing docs** — Search the workspace for an existing
+   `<package>_api.md` reference.  If one exists, summarize it instead
+   of re-ingesting.
+2. **Gather documentation** — Crawl the library's documentation:
+   - PyPI JSON API (`https://pypi.org/pypi/<pkg>/json`) for metadata
+   - ReadTheDocs or the project's documentation site for API details
+   - GitHub README and source code for examples and signatures
+3. **Build a structured reference** — Produce a `<package>_api.md` and
+   write it to the workspace `docs/` directory.
 4. **Summarize** — Present key classes, functions, pitfalls, and a
    relevant quick-start recipe.
 5. **Hand off** — Pass to `analysis-planner` to design an analysis

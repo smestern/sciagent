@@ -32,16 +32,19 @@ Follow the [shared scientific rigor principles](.github/instructions/sciagent-ri
 If the target library or ingestion scope is ambiguous, use
 `#tool:vscode/askQuestions` to clarify before proceeding.
 
-1. **Check existing docs** — Before ingesting, check whether a reference
-   already exists by calling `read_doc("<package>_api")`.  If it exists
-   and looks current, summarize key capabilities instead of re-ingesting.
+1. **Check existing docs** — Search the workspace for an existing
+   `<package>_api.md` reference.  If it exists and looks current,
+   summarize key capabilities instead of re-ingesting.
 
-2. **Ingest the library** — Call `ingest_library_docs(package_name="<pkg>")`
-   to crawl the library's documentation.  Optionally provide a `github_url`
-   for deeper source-code analysis.
+2. **Gather documentation** — Use the `fetch` tool to crawl the
+   library's documentation sources:
+   - PyPI JSON API (`https://pypi.org/pypi/<pkg>/json`) for metadata
+   - ReadTheDocs or the project's documentation site for API details
+   - GitHub README and source code for examples and signatures
 
-3. **Verify the output** — After ingestion, call `read_doc("<pkg>_api")`
-   to confirm the reference was created.  Scan it for completeness.
+3. **Build a structured reference** — From the gathered documentation,
+   produce a structured `<package>_api.md` file and write it to the
+   workspace `docs/` directory.
 
 4. **Summarize for the user** — Present a brief overview of:
    - What the library does
@@ -56,16 +59,15 @@ If the target library or ingestion scope is ambiguous, use
 
 ### What Gets Produced
 
-The `ingest_library_docs` tool crawls multiple sources (PyPI, ReadTheDocs,
-GitHub README, source code, docs folder) and uses an LLM to extract:
+A structured API reference (`<package>_api.md`) containing:
 
 - **Core Classes** — Constructors, methods, parameter tables, return types
 - **Key Functions** — Standalone functions with full signatures
 - **Common Pitfalls** — Gotchas, naming conflicts, unit mismatches
 - **Quick-Start Recipes** — Copy-paste code snippets for common tasks
 
-The result is saved as `<package>_api.md` in the docs directory and
-becomes available to all agents via `read_doc("<package>_api")`.
+The result is saved as `<package>_api.md` in the workspace `docs/`
+directory and becomes available to all agents.
 
 ### Installing Missing Libraries
 

@@ -341,12 +341,15 @@ class BaseScientificAgent:
         """Return the system message for the agent.
 
         The default implementation composes the generic scientific-rigor
-        principles with any ``config.instructions``.  Override to inject
-        domain-specific expertise.
+        principles with the fullstack tool overlay and any
+        ``config.instructions``.  Override to inject domain-specific
+        expertise.
         """
-        from .prompts.base_messages import BASE_SCIENTIFIC_PRINCIPLES
+        from .prompts.base_messages import BASE_SCIENTIFIC_PRINCIPLES, FULLSTACK_TOOLS_OVERLAY
 
         parts = [BASE_SCIENTIFIC_PRINCIPLES]
+        if FULLSTACK_TOOLS_OVERLAY:
+            parts.append(FULLSTACK_TOOLS_OVERLAY)
         if self.config.instructions:
             parts.append(self.config.instructions)
         return "\n\n".join(parts)

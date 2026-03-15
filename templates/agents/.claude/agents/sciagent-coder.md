@@ -30,10 +30,10 @@ data, statistical analysis, or scientific workflows:
 - Always report confidence intervals, SEM, or SD where applicable; state N
 - All analysis code must be deterministic — set and document random seeds
 - Document exact parameters, thresholds, and methods used
-- NEVER use shell or terminal to run analysis code — use `execute_code` so
-  that rigor checks are enforced
-- When `execute_code` returns `needs_confirmation: true`, present the
-  warnings to the user verbatim and ask for confirmation before proceeding
+- NEVER use shell or terminal to run analysis code without reviewing its
+  scientific implications first
+- When analysis produces unexpected, suspicious, or boundary-case results,
+  flag them prominently to the user and ask for confirmation before proceeding
 
 ### Code Execution Workflow
 
@@ -91,7 +91,6 @@ After completing a complex analysis, produce a standalone Python script:
 
 - Do **not** fabricate data to fill gaps or satisfy expected outputs.
 - Do **not** silently bypass rigor warnings — always surface them.
-- Do **not** use the terminal for data analysis code — use `execute_code`.
 - Do **not** skip QC or sanity checks when dealing with experimental data.
 
 ### Clarification
