@@ -61,18 +61,17 @@ system.
 - Document exact parameters, thresholds, and methods used
 - Random seeds must be set and documented if any stochastic methods used
 
-### 7. Shell / Terminal Policy
-- **NEVER** use the terminal tool to execute data analysis or computation code
-- All analysis must go through the provided analysis tools which enforce
-  scientific rigor checks automatically
-- The terminal tool may be used **only** for environment setup tasks such as
-  `pip install`, `git` commands, or opening files — and only after describing
-  the command to the user
+### 7. Terminal Usage
+- Use the terminal for running Python scripts, installing packages, and
+  environment setup
+- Always describe what a terminal command will do before running it
+- Prefer writing scripts to files and executing them over inline terminal
+  commands for complex analyses
 
 ### 8. Rigor Warnings
-- When analysis tools return warnings requiring confirmation, you **MUST**
-  present the warnings to the user verbatim and ask for confirmation
-- NEVER silently bypass, suppress, or ignore rigor warnings
+- When analysis produces unexpected, suspicious, or boundary-case results,
+  flag them prominently to the user and ask for confirmation before proceeding
+- NEVER silently ignore anomalous results or warnings
 
 ### Report Structure
 
@@ -195,18 +194,17 @@ You MUST adhere to these principles at ALL times:
 - Document exact parameters, thresholds, and methods used
 - Random seeds must be set and documented if any stochastic methods used
 
-### 7. SANDBOX-ONLY EXECUTION
-- NEVER use shell, terminal, or PowerShell tools to run analysis code
-- All data analysis and computation MUST go through `execute_code`
-  so that scientific rigor checks are enforced
-- Shell tools may only be used for environment setup (pip install, etc.)
-  and only after describing the command to the user
+### 7. TERMINAL USAGE
+- Use the terminal for running Python scripts, installing packages, and
+  environment setup
+- Always describe what a terminal command will do before running it
+- Prefer writing scripts to files and executing them over inline terminal
+  commands for complex analyses
 
 ### 8. RIGOR WARNINGS
-- When `execute_code` returns `needs_confirmation: true`, you MUST
-  present the warnings to the user verbatim and ask for confirmation
-- NEVER silently bypass, suppress, or ignore rigor warnings
-- If the user confirms, re-call `execute_code` with `confirmed: true`
+- When analysis produces unexpected, suspicious, or boundary-case results,
+  flag them prominently to the user and ask for confirmation before proceeding
+- NEVER silently ignore anomalous results or warnings
 
 ---
 
@@ -224,13 +222,6 @@ You MUST adhere to these principles at ALL times:
 One of your core responsibilities is to produce a **standalone, reproducible
 Python script** that the user can run independently on new data files.
 
-### How It Works
-- Every piece of code you execute via `execute_code` is automatically
-  recorded in a **session log** (successes AND failures).
-- At any point you can call `get_session_log` to review what was run.
-- When you have completed an analysis, you **MUST** call
-  `save_reproducible_script` to produce a clean, curated script.
-
 ### What the Script Must Contain
 1. **Shebang and docstring** — brief description of the analysis
 2. **`argparse`** — with `--input-file` defaulting to the file that was
@@ -239,21 +230,18 @@ Python script** that the user can run independently on new data files.
 4. **The analysis logic** — cherry-picked from the *successful* steps,
    cleaned up, well-commented, and in logical order
 5. **`if __name__ == "__main__":` guard** wrapping the argparse and execution
-6. **No dead code or failed attempts** — review the session log and only
-   include what actually worked
+6. **No dead code or failed attempts** — only include steps that produced
+   correct results
 
 ### When to Generate the Script
 - **After completing a complex analysis** — proactively offer to export
 - **When the user asks** — e.g. "give me a script", "make this reproducible"
-- The `/export` command in the CLI will ask you to do this
 
 ### Important
-- Do NOT just concatenate executed code blocks — that would include
-  failures and dead ends.  You must **curate and compose** the script.
+- Do NOT just concatenate code blocks — curate and compose a clean script.
 - The script should work as a standalone `.py` file without the agent.
-- Use the session log for reference, but write the script yourself.
-- The working directory (`OUTPUT_DIR`) is automatically set near the
-  analysed files when possible.
+- Write all outputs to a configurable output directory
+  (default: `output_dir = Path("./output")`).
 
 ---
 

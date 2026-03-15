@@ -23,7 +23,12 @@ comments — proactively suggest configuration:
 > "I notice your SciAgent templates still have unfilled placeholder
 > sections.  Would you like me to configure them for your research
 > domain?  Just describe your field and I'll handle the rest."
+If `docs/domains/manifest.yaml` exists and lists multiple domains,
+mention domain switching:
 
+> “You have N domains configured (active: `<slug>`).  Would you like
+> to switch domains (`/switch-domain`), update the current one
+> (`/update-domain`), or add a new domain (`/configure-domain`)?”
 If most placeholders are unfilled, run the full configuration workflow.
 If only a few remain, run the incremental update workflow.
 
@@ -52,10 +57,12 @@ If only a few remain, run the incremental update workflow.
    legacy `<!-- REPLACE: key — desc -->`), **do not** inline the full
    domain content into the template file.  Instead:
 
-   a. Create a domain knowledge file in `docs/domain/` — one per
-      template (e.g. `docs/domain/operations.md`,
-      `docs/domain/workflows.md`, `docs/domain/library-api.md`,
-      `docs/domain/tools.md`, `docs/domain/skills.md`).
+   a. Create a domain knowledge file in `docs/domains/<slug>/` — one
+      per template (e.g. `docs/domains/<slug>/operations.md`,
+      `docs/domains/<slug>/workflows.md`,
+      `docs/domains/<slug>/library-api.md`,
+      `docs/domains/<slug>/tools.md`,
+      `docs/domains/<slug>/skills.md`).
    b. Write the domain content under a Markdown heading matching the
       placeholder description.
    c. Insert a Markdown link **below** the marker in the template
@@ -65,7 +72,7 @@ If only a few remain, run the incremental update workflow.
    ```
    <!replace --- Step-by-step workflows --- or add a link--->
 
-   See [domain workflows](docs/domain/operations.md#standard-workflows)
+   See [domain workflows](docs/domains/intracellular-ephys/operations.md#standard-workflows)
    ```
 
    Process files in order: operations.md, workflows.md,
@@ -75,10 +82,30 @@ If only a few remain, run the incremental update workflow.
    workflows, or skills beyond what the placeholders cover.
 
 6. **Lite docs** — Fetch PyPI metadata and GitHub READMEs for confirmed
-   packages.  Write condensed API references to `docs/`.
+   packages.  Write condensed API references to
+   `docs/domains/<slug>/`.  Also create per-package skill content at
+   `docs/domains/<slug>/skills/<package>/SKILL.md` and copy it into
+   the workspace's active `skills/` directory.
 
-7. **Verify** — Use `Grep` to re-scan for remaining placeholders.
+7. **Update manifest** — Create or update
+   `docs/domains/manifest.yaml`: add the new domain entry with
+   display name, packages, file formats, and description.  Set
+   `active: <slug>`.  Preserve existing domain entries.
+
+8. **Verify** — Use `Grep` to re-scan for remaining placeholders.
    Summarize changes.
+
+### Workflow: Switch Domain
+
+1. Read `docs/domains/manifest.yaml` to list available domains
+2. Preview the diff (packages added/removed, skills being swapped)
+3. Rewrite template links from `docs/domains/<old>/` →
+   `docs/domains/<new>/`
+4. Swap domain-expertise and per-package skill files
+5. Update `active` in manifest
+6. Verify all links point to the new domain
+
+See `/switch-domain` skill for the full procedure.
 
 ### Workflow: Incremental Update
 
@@ -101,17 +128,21 @@ Legacy format:
 ```
 
 Insert a Markdown link below the marker pointing to the appropriate
-`docs/domain/` file and section.  Do **not** remove or replace the
-marker itself.
+`docs/domains/<slug>/` file and section.  Do **not** remove or replace
+the marker itself.
 
 ### Re-Run Safety
 
+- Detect manifest — check `docs/domains/manifest.yaml` for existing
+  domains; ask “Create a new domain or update existing `<active>`?”
 - Detect already-filled sections — check for existing links to
-  `docs/domain/` below markers
-- Check `docs/domain/*.md` files for existing domain content
+  `docs/domains/` below markers
+- Check domain docs for existing content before proposing changes
 - Ask before overwriting existing domain content
 - Default to skipping filled sections
 - Never silently overwrite user-edited content
+- If legacy `docs/domain/` exists without manifest, offer migration
+  via `/switch-domain`
 
 ### What You Must NOT Do
 

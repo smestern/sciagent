@@ -229,9 +229,11 @@ generate domain-specific agents automatically from a conversation.
 
 **Description**: Configures SciAgent for your research domain by
 interviewing you, discovering relevant scientific packages via PyPI and
-GitHub, and creating domain knowledge files in `docs/domain/` with
-links from the template instruction files.  No wizard dependency needed —
-uses only VS Code's built-in `fetch` and `editFiles` tools.
+GitHub, and creating domain knowledge files in `docs/domains/<slug>/`
+with links from the template instruction files.  Supports multiple
+domains per workspace with hot-swapping via `/switch-domain`.  No wizard
+dependency needed — uses only VS Code's built-in `fetch` and `editFiles`
+tools.
 
 **Tools**: `codebase`, `editFiles`, `search`, `fetch`
 
@@ -240,14 +242,15 @@ uses only VS Code's built-in `fetch` and `editFiles` tools.
   `<!-- REPLACE: ... -->` placeholders) and suggest setup
 - Conversational domain interview (data types, packages, workflows, goals)
 - Lightweight package discovery via PyPI JSON API and GitHub READMEs
-- Create separate domain knowledge files in `docs/domain/` and link from templates
+- Create separate domain knowledge files in `docs/domains/<slug>/` and link from templates
 - Append custom guardrails, workflows, and skills beyond placeholders
-- Create condensed package API references in `docs/`
+- Create condensed package API references in `docs/domains/<slug>/`
 - Incremental updates without re-running the full setup
 
-**Skills**: Exposes two user-invokable skills:
+**Skills**: Exposes three user-invokable skills:
 - `/configure-domain` — Full first-time setup (interview → discover → fill → verify)
 - `/update-domain` — Incremental updates (add packages, refine workflows)
+- `/switch-domain` — Switch between configured domains (hot-swap docs, skills, links)
 
 **Handoff**: → `docs-ingestor` ("Deep-crawl library docs for the
 packages identified during assembly")

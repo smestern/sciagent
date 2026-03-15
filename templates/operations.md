@@ -287,4 +287,6 @@ placeholder comments in any SciAgent instruction or template file, this
 means the domain-specific content has not been configured yet.  Suggest
 that the user run `/configure-domain` to set up their research domain,
 or `/update-domain` to add incremental changes.  Domain knowledge will
-be created in `docs/domain/` with links from the template files.
+be created in `docs/domains/<slug>/` with links from the template files.
+If multiple domains are already configured, suggest `/switch-domain`
+to swap between them.

@@ -31,7 +31,13 @@ If template files still contain `<!replace ...>` markers or
 `<!-- REPLACE: ... -->` placeholder comments, run `/configure-domain`
 to set up your domain-specific content, or invoke `@domain-assembler`
 for guided self-assembly.  Domain knowledge will be placed in
-`docs/domain/` with links from the template files.
+`docs/domains/<slug>/` with links from the template files.
+
+SciAgent supports **multiple configured domains**.  Use
+`/switch-domain` to swap between them (e.g. intracellular vs.
+extracellular electrophysiology), or `/update-domain` to refine the
+currently active domain.  Domain configuration is tracked in
+`docs/domains/manifest.yaml`.
 
 ## Usage Notes
 

@@ -6,7 +6,7 @@
 > all with built-in guardrails against p-hacking, data fabrication, and
 > irreproducible workflows.
 
-**Version**: 0.5.0 | **License**: MIT | **Author**: [smestern](https://github.com/smestern)
+**Version**: 0.7.0 | **License**: MIT | **Author**: [smestern](https://github.com/smestern)
 
 ## Why SciAgent?
 
@@ -20,8 +20,8 @@ in a loop isn't just a bug — it's a retracted paper. SciAgent embeds
 4. **Transparent Reporting** — report all results, even inconvenient ones
 5. **Uncertainty Quantification** — confidence intervals, SEM, N for everything
 6. **Reproducibility** — deterministic code, documented seeds, exact parameters
-7. **Safe Execution** — analysis runs through guardrailed tools, not raw shell
-8. **Rigor Warnings** — surface warnings to the user, never silently suppress
+7. **Terminal Usage** — describe commands before running; prefer scripts over inline
+8. **Rigor Warnings** — surface anomalous results to the user, never silently suppress
 
 ## Installation
 

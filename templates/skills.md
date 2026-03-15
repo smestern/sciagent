@@ -29,6 +29,7 @@ SciAgent ships 6 default skills in `templates/skills/`.  Copy them into
 | Docs Ingestor | `skills/docs-ingestor/` | Ingest documentation for any Python library to learn its API for scientific analysis | `/docs-ingestor` |
 | Configure Domain | `skills/configure-domain/` | First-time domain setup — interviews you, discovers packages, fills template placeholders | `/configure-domain` |
 | Update Domain | `skills/update-domain/` | Incrementally add packages, refine workflows, or extend domain content | `/update-domain` |
+| Switch Domain | `skills/switch-domain/` | Switch between configured research domains — hot-swaps docs, skills, and template links | `/switch-domain` |
 
 ---
 

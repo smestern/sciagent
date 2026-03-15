@@ -60,34 +60,36 @@ system.
 - Document exact parameters, thresholds, and methods used
 - Random seeds must be set and documented if any stochastic methods used
 
-### 7. Shell / Terminal Policy
-- **NEVER** use the terminal tool to execute data analysis or computation code
-- All analysis must go through the provided analysis tools which enforce
-  scientific rigor checks automatically
-- The terminal tool may be used **only** for environment setup tasks such as
-  `pip install`, `git` commands, or opening files — and only after describing
-  the command to the user
+### 7. Terminal Usage
+- Use the terminal for running Python scripts, installing packages, and
+  environment setup
+- Always describe what a terminal command will do before running it
+- Prefer writing scripts to files and executing them over inline terminal
+  commands for complex analyses
 
 ### 8. Rigor Warnings
-- When analysis tools return warnings requiring confirmation, you **MUST**
-  present the warnings to the user verbatim and ask for confirmation
-- NEVER silently bypass, suppress, or ignore rigor warnings
+- When analysis produces unexpected, suspicious, or boundary-case results,
+  flag them prominently to the user and ask for confirmation before proceeding
+- NEVER silently ignore anomalous results or warnings
 
 ### Workflow
 
 If the target library or ingestion scope is ambiguous, use
 `#tool:vscode/askQuestions` to clarify before proceeding.
 
-1. **Check existing docs** — Before ingesting, check whether a reference
-   already exists by calling `read_doc("<package>_api")`.  If it exists
-   and looks current, summarize key capabilities instead of re-ingesting.
+1. **Check existing docs** — Search the workspace for an existing
+   `<package>_api.md` reference.  If it exists and looks current,
+   summarize key capabilities instead of re-ingesting.
 
-2. **Ingest the library** — Call `ingest_library_docs(package_name="<pkg>")`
-   to crawl the library's documentation.  Optionally provide a `github_url`
-   for deeper source-code analysis.
+2. **Gather documentation** — Use the `fetch` tool to crawl the
+   library's documentation sources:
+   - PyPI JSON API (`https://pypi.org/pypi/<pkg>/json`) for metadata
+   - ReadTheDocs or the project's documentation site for API details
+   - GitHub README and source code for examples and signatures
 
-3. **Verify the output** — After ingestion, call `read_doc("<pkg>_api")`
-   to confirm the reference was created.  Scan it for completeness.
+3. **Build a structured reference** — From the gathered documentation,
+   produce a structured `<package>_api.md` file and write it to the
+   workspace `docs/` directory.
 
 4. **Summarize for the user** — Present a brief overview of:
    - What the library does
@@ -102,16 +104,15 @@ If the target library or ingestion scope is ambiguous, use
 
 ### What Gets Produced
 
-The `ingest_library_docs` tool crawls multiple sources (PyPI, ReadTheDocs,
-GitHub README, source code, docs folder) and uses an LLM to extract:
+A structured API reference (`<package>_api.md`) containing:
 
 - **Core Classes** — Constructors, methods, parameter tables, return types
 - **Key Functions** — Standalone functions with full signatures
 - **Common Pitfalls** — Gotchas, naming conflicts, unit mismatches
 - **Quick-Start Recipes** — Copy-paste code snippets for common tasks
 
-The result is saved as `<package>_api.md` in the docs directory and
-becomes available to all agents via `read_doc("<package>_api")`.
+The result is saved as `<package>_api.md` in the workspace `docs/`
+directory and becomes available to all agents.
 
 ### Installing Missing Libraries
 
@@ -179,18 +180,17 @@ You MUST adhere to these principles at ALL times:
 - Document exact parameters, thresholds, and methods used
 - Random seeds must be set and documented if any stochastic methods used
 
-### 7. SANDBOX-ONLY EXECUTION
-- NEVER use shell, terminal, or PowerShell tools to run analysis code
-- All data analysis and computation MUST go through `execute_code`
-  so that scientific rigor checks are enforced
-- Shell tools may only be used for environment setup (pip install, etc.)
-  and only after describing the command to the user
+### 7. TERMINAL USAGE
+- Use the terminal for running Python scripts, installing packages, and
+  environment setup
+- Always describe what a terminal command will do before running it
+- Prefer writing scripts to files and executing them over inline terminal
+  commands for complex analyses
 
 ### 8. RIGOR WARNINGS
-- When `execute_code` returns `needs_confirmation: true`, you MUST
-  present the warnings to the user verbatim and ask for confirmation
-- NEVER silently bypass, suppress, or ignore rigor warnings
-- If the user confirms, re-call `execute_code` with `confirmed: true`
+- When analysis produces unexpected, suspicious, or boundary-case results,
+  flag them prominently to the user and ask for confirmation before proceeding
+- NEVER silently ignore anomalous results or warnings
 
 ---
 

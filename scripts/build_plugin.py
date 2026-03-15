@@ -166,7 +166,7 @@ PROFILES: dict[str, dict[str, Any]] = {
     },
     "compact": {
         "exclude_agents": ["analysis-planner", "data-qc"],
-        "exclude_skills": ["update-domain"],
+        "exclude_skills": ["update-domain", "switch-domain"],
         "merge_agents": {
             "reviewer": {
                 "sources": ["code-reviewer", "rigor-reviewer"],
@@ -207,11 +207,12 @@ PROFILES: dict[str, dict[str, Any]] = {
                 },
             },
             "configure-domain": {
-                "sources": ["configure-domain", "update-domain"],
+                "sources": ["configure-domain", "update-domain", "switch-domain"],
                 "description": None,  # keep original description from first source
                 "section_titles": {
                     "configure-domain": None,  # keep as-is, no extra header
                     "update-domain": "Incremental Update Mode",
+                    "switch-domain": "Domain Switching Mode",
                 },
             },
         },
