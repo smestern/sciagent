@@ -5,4 +5,5 @@ src/sciagent.egg-info/*
 __pycache__/
 /build/
 build/**/*
-build/lib/sciagent/prompts/output_dir.md
+!build/plugin/
+!build/plugin/**

@@ -10,6 +10,8 @@ tools:
   - vscode/askQuestions
   - read
   - search
+  - edit
+  - editFiles
   - web/fetch
   - terminal
 handoffs:
