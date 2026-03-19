@@ -7,3 +7,7 @@ __pycache__/
 build/**/*
 !build/plugin/
 !build/plugin/**
+/dist/
+dist/**/*
+!dist/sciagent/
+!dist/sciagent/**

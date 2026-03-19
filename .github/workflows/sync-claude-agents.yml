@@ -1,0 +1,42 @@
+name: Sync Claude Agents
+
+on:
+  push:
+    branches:
+      - stable
+    paths:
+      - "templates/agents/.github/agents/**"
+      - "templates/agents/.github/instructions/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run sync script
+        run: python scripts/sync_claude_agents.py
+
+      - name: Check for changes
+        id: diff
+        run: |
+          git diff --quiet templates/agents/.claude/agents/ && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add templates/agents/.claude/agents/
+          git commit -m "chore: sync Claude agents from GitHub agents"
+          git push

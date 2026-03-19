@@ -1,0 +1,82 @@
+name: Build Plugin
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "templates/**"
+      - "scripts/build_plugin.py"
+      - "src/sciagent/prompts/**"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sciagent
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Read version from pyproject.toml
+        id: version
+        run: |
+          version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build plugin
+        run: |
+          python scripts/build_plugin.py \
+            -o dist/sciagent \
+            --profile compact \
+            --format compact-marketplace \
+            --force \
+            --name-prefix sci
+
+      - name: Commit dist to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist/sciagent/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: rebuild plugin dist v${{ steps.version.outputs.version }} [skip ci]"
+            git push
+          fi
+
+      - name: Checkout sciagent-plugin repo
+        uses: actions/checkout@v4
+        with:
+          repository: smestern/sciagent-plugin
+          token: ${{ secrets.PLUGIN_REPO_TOKEN }}
+          path: sciagent-plugin-repo
+
+      - name: Sync plugin contents
+        run: |
+          # Remove old contents (except .git)
+          find sciagent-plugin-repo -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          # Copy new build output
+          cp -r dist/sciagent/* sciagent-plugin-repo/
+          cp -r dist/sciagent/.github sciagent-plugin-repo/
+
+      - name: Commit and push to plugin repo
+        working-directory: sciagent-plugin-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Sync from sciagent main v${{ steps.version.outputs.version }}"
+          git push origin main
