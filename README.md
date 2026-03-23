@@ -1,6 +1,8 @@
 # <img src="logo.svg" height="32" alt="SciAgent"> SciAgent
 
-<img src="banner.png" width="50%">  
+<p align="center">
+   <img src="banner.png" style="max-width: 95%; margin-left: auto; margin-right: auto;" >  
+</p>
 
 **A generic framework for building AI-powered scientific data analysis agents.**
 
