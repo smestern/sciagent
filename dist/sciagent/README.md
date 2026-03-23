@@ -1,0 +1,97 @@
+# SciAgent — Scientific Analysis Agents for GitHub Copilot
+
+> **6 specialized agents** and **7 skills** that bring scientific rigor
+> to data analysis in VS Code. Plan experiments, check data quality, write
+> reproducible code, audit results, and generate publication-ready reports —
+> all with built-in guardrails against p-hacking, data fabrication, and
+> irreproducible workflows.
+
+**Version**: 0.8.0 | **License**: MIT | **Author**: [smestern](https://github.com/smestern)
+
+## Why SciAgent?
+
+Scientific coding is different from software engineering. A subtle off-by-one
+in a loop isn't just a bug — it's a retracted paper. SciAgent embeds
+**8 rigor principles** directly into every agent:
+
+1. **Data Integrity** — never fabricate or fill gaps with synthetic data
+2. **Objective Analysis** — reveal what data shows, not what you hope
+3. **Sanity Checks** — validate inputs, flag impossible values
+4. **Transparent Reporting** — report all results, even inconvenient ones
+5. **Uncertainty Quantification** — confidence intervals, SEM, N for everything
+6. **Reproducibility** — deterministic code, documented seeds, exact parameters
+7. **Terminal Usage** — describe commands before running; prefer scripts over inline
+8. **Rigor Warnings** — surface anomalous results to the user, never silently suppress
+
+## Installation
+
+### From Awesome Copilot Marketplace
+
+```bash
+copilot plugin marketplace add github/awesome-copilot
+copilot plugin install sciagent@awesome-copilot
+```
+
+### Manual (VS Code)
+
+Clone this repo and add to your VS Code settings:
+
+```jsonc
+// settings.json
+"chat.plugins.paths": {
+    "/path/to/sciagent-plugin": true
+}
+```
+
+## Agents
+
+| Agent | Description |
+|-------|-------------|
+| `@sci-coder` | Implements analysis code with built-in rigor enforcement |
+| `@sci-coordinator` | Routes tasks to the right specialist agent |
+| `@sci-docs-ingestor` | Ingests Python library docs into structured API references |
+| `@sci-domain-assembler` | Configures SciAgent for your specific research domain |
+| `@sci-report-writer` | Generates publication-quality reports with uncertainty quantification |
+| `@sci-reviewer` | Reviews code and results for correctness, reproducibility, and scientific rigor |
+
+## Skills
+
+| Skill | Description |
+|-------|-------------|
+| `/analysis-planner` | On-demand analysis planner |
+| `/configure-domain` | On-demand configure domain |
+| `/data-qc` | On-demand data qc |
+| `/docs-ingestor` | On-demand docs ingestor |
+| `/report-writer` | On-demand report writer |
+| `/review` | On-demand review |
+| `/scientific-rigor` | On-demand scientific rigor |
+
+## Typical Workflow
+
+```
+You: @sciagent-coordinator I have calcium imaging data in traces.csv.
+     Find responsive neurons and characterize their response profiles.
+
+Coordinator → Analysis Planner → Data QC → Coder → Rigor Reviewer → Report Writer
+```
+
+Each agent hands off to the next, enforcing rigor at every step. The final
+output is a structured report with figures, statistics, and reproducibility
+metadata.
+
+## Customization
+
+SciAgent works out of the box for general scientific analysis. To specialize
+for your research domain (e.g., electrophysiology, genomics, ecology), use
+the `/configure-domain` skill which discovers relevant Python packages and
+tailors agent behavior to your field.
+
+## Framework
+
+This plugin is generated from the [SciAgent framework](https://github.com/smestern/sciagent),
+which also provides a Python SDK, CLI, and full-stack web interface for
+building custom scientific analysis agents.
+
+## License
+
+MIT
