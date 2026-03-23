@@ -216,12 +216,26 @@ PROFILES: dict[str, dict[str, Any]] = {
         "handoff_rewrites": {
             "code-reviewer": "reviewer",
             "rigor-reviewer": "reviewer",
-            "analysis-planner": None,
-            "data-qc": None,
+            "analysis-planner": {
+                "agent": "coder",
+                "prompt": (
+                    "Use the /analysis-planner skill to create a step-by-step "
+                    "analysis plan for the task described above. Do not write "
+                    "implementation code — plan only."
+                ),
+            },
+            "data-qc": {
+                "agent": "coder",
+                "prompt": (
+                    "Use the /data-qc skill to run quality control checks on "
+                    "the data identified above. Focus on QC only — do not "
+                    "proceed to analysis."
+                ),
+            },
         },
         "body_rewrites": {
-            "@analysis-planner": "the `/analysis-planner` skill",
-            "@data-qc": "the `/data-qc` skill",
+            "@analysis-planner": "the `/analysis-planner` skill (invoke with `/analysis-planner`)",
+            "@data-qc": "the `/data-qc` skill (invoke with `/data-qc`)",
             "@code-reviewer": "@reviewer",
             "@rigor-reviewer": "@reviewer",
         },
@@ -521,14 +535,20 @@ def _rewrite_handoffs(
         return
 
     # Build prefixed lookup: the built files have prefixed agent names
-    prefixed_rewrites: dict[str, str | None] = {}
+    prefixed_rewrites: dict[str, str | dict | None] = {}
     for old, new in rewrites.items():
         old_key = _prefixed(old, name_prefix) if name_prefix else old
-        if new is not None:
-            new_val = _prefixed(new, name_prefix) if name_prefix else new
+        if new is None:
+            prefixed_rewrites[old_key] = None
+        elif isinstance(new, dict):
+            # Skill-demoted rewrite: dict with "agent" and optional "prompt"
+            prefixed_agent = _prefixed(new["agent"], name_prefix) if name_prefix else new["agent"]
+            prefixed_rewrites[old_key] = {
+                "agent": prefixed_agent,
+                "prompt": new.get("prompt"),
+            }
         else:
-            new_val = None
-        prefixed_rewrites[old_key] = new_val
+            prefixed_rewrites[old_key] = _prefixed(new, name_prefix) if name_prefix else new
 
     for agent_file in agent_files:
         content = agent_file.read_text(encoding="utf-8")
@@ -540,9 +560,17 @@ def _rewrite_handoffs(
         lines = fm_text.split("\n")
         new_lines: list[str] = []
         skip_until_next_entry = False
+        pending_prompt_rewrite: str | None = None
         i = 0
         while i < len(lines):
             line = lines[i]
+
+            # If a previous dict-rewrite set a prompt, apply it here
+            if pending_prompt_rewrite is not None:
+                prompt_match = re.match(r'^(\s+prompt:\s*)(.+)$', line)
+                if prompt_match:
+                    line = f'{prompt_match.group(1)}"{pending_prompt_rewrite}"'
+                    pending_prompt_rewrite = None
 
             # Detect handoff agent reference
             agent_match = re.match(r'^(\s+agent:\s*)(.+)$', line)
@@ -560,8 +588,17 @@ def _rewrite_handoffs(
                         while i < len(lines) and re.match(r'^\s+(prompt|send):', lines[i]):
                             i += 1
                         continue
+                    elif isinstance(new_val, dict):
+                        # Skill-demoted rewrite: change agent and optionally prompt.
+                        # Unlike simple renames, skill-demoted handoffs are always
+                        # kept even when another handoff already targets the same
+                        # agent — each has a unique label and prompt.
+                        rewrite_agent = new_val["agent"]
+                        line = f"{agent_match.group(1)}{rewrite_agent}"
+                        if new_val.get("prompt"):
+                            pending_prompt_rewrite = new_val["prompt"]
                     else:
-                        # Check for duplicate: is this agent already in earlier handoffs?
+                        # Simple rename: check for duplicate
                         already_exists = any(
                             re.match(rf'^\s+agent:\s*{re.escape(new_val)}\s*$', nl)
                             for nl in new_lines
@@ -646,16 +683,21 @@ def _rewrite_routing_table(
     agent_files: list[Path],
     profile: dict[str, Any],
     name_prefix: str,
+    skill_names: list[str] | None = None,
 ) -> None:
     """Rewrite the coordinator's routing table to match built agent names.
 
-    Applies three transformations to table rows:
+    Applies four transformations to table rows:
     1. **Exclude** — rows for excluded agents are dropped.
-    2. **Merge** — rows whose agent was consumed by a merge are renamed;
+    2. **Skill-demote** — rows for excluded agents that still have a
+       matching skill are kept, with the Agent column rewritten to
+       reference the ``/skill-name`` slash command.
+    3. **Merge** — rows whose agent was consumed by a merge are renamed;
        when two source rows map to the same merged name the rows are
        combined into one (Need descriptions joined with " & ").
-    3. **Prefix** — surviving agent names get the build prefix.
+    4. **Prefix** — surviving agent names get the build prefix.
     """
+    skill_set = set(skill_names) if skill_names else set()
     exclude_agents = set(profile.get("exclude_agents", []))
     merge_agents: dict[str, Any] = profile.get("merge_agents", {})
 
@@ -696,8 +738,13 @@ def _rewrite_routing_table(
         need = m.group("need").strip()
         when = m.group("when").strip()
 
-        # Drop excluded agents
+        # Drop excluded agents — unless a matching skill exists
         if agent_stem in exclude_agents:
+            if agent_stem in skill_set:
+                # Skill-demoted: rewrite row to reference the skill
+                skill_ref = f"`/{agent_stem}` skill"
+                row = f"| {need} | {skill_ref} | {when} — invoke with `/{agent_stem}` |"
+                new_lines.append(row)
             continue
 
         # Rename merged agents
@@ -1397,7 +1444,7 @@ def main() -> None:
             _rewrite_handoffs(agent_files, handoff_rewrites, name_prefix)
         if body_rewrites:
             _apply_body_rewrites(agent_files, body_rewrites, name_prefix)
-        _rewrite_routing_table(agent_files, profile, name_prefix)
+        _rewrite_routing_table(agent_files, profile, name_prefix, skill_names)
 
         template_files: list[Path] = []
         if args.format == "compact-marketplace":

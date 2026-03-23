@@ -1,8 +1,10 @@
 # <img src="logo.svg" height="32" alt="SciAgent"> SciAgent
 
+<img src="banner.png" width="50%">  
+
 **A generic framework for building AI-powered scientific data analysis agents.**
 
-SciAgent provides the infrastructure — chat UI, CLI, code sandbox, guardrails, docs, MCP server — so you can focus on your domain-specific tools and knowledge.
+SciAgent provides the infrastructure so you can focus on your domain-specific tools and knowledge.
 
 The idea here is to build more human-in-the-loop scientific coding tools. Landing somewhere in between the basic LLM chat interface, and the end-to-end AI for science tools. The goal of this project is not to do the science for you, but to help you write strong, rigorous, and reproducible research code. Essentially an LLM wrapper but with a few extra tools to make sure the LLM doesn't go off the rails.
 
@@ -15,7 +17,21 @@ The idea here is to build more human-in-the-loop scientific coding tools. Landin
 
 Check out [PatchAgent](https://github.com/smestern/patchAgent) for a real-world example in neurophysiology.
 
-Built on the [GitHub Copilot SDK](https://github.com/features/copilot).
+Built on the [GitHub Copilot SDK](https://github.com/features/copilot).  
+
+---
+
+## Guardrails
+
+SciAgent enforces scientific rigor through a 5-layer system:
+
+1. **System prompt principles** — embedded scientific best practices
+2. **Tool priority hierarchy** — load real data before analysis
+3. **Code scanner** — regex patterns block synthetic data generation, result fabrication
+4. **Data validator** — checks for NaN, Inf, zero variance, suspicious smoothness
+5. **Bounds checker** — domain-specific value range warnings
+
+All layers are configurable and extensible. See [Architecture](docs/architecture.md) for the full pipeline diagram.
 
 ---
 
@@ -147,19 +163,6 @@ sciagent wizard -m fullstack
 
 **[Full setup guide →](docs/getting-started-fullstack.md)**
 
----
-
-## Guardrails
-
-SciAgent enforces scientific rigor through a 5-layer system:
-
-1. **System prompt principles** — embedded scientific best practices
-2. **Tool priority hierarchy** — load real data before analysis
-3. **Code scanner** — regex patterns block synthetic data generation, result fabrication
-4. **Data validator** — checks for NaN, Inf, zero variance, suspicious smoothness
-5. **Bounds checker** — domain-specific value range warnings
-
-All layers are configurable and extensible. See [Architecture](docs/architecture.md) for the full pipeline diagram.
 
 ---
 
