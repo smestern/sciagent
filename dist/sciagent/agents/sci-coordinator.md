@@ -10,11 +10,11 @@ tools:
   - web/fetch
 handoffs:
   - label: "Plan Analysis"
-    agent: sci-coder
+    agent: sci-coordinator
     prompt: "Use the /analysis-planner skill to create a step-by-step analysis plan for the task described above. Do not write implementation code — plan only."
     send: false
   - label: "Check Data Quality"
-    agent: sci-coder
+    agent: sci-coordinator
     prompt: "Use the /data-qc skill to run quality control checks on the data identified above. Focus on QC only — do not proceed to analysis."
     send: false
   - label: "Review Code"
