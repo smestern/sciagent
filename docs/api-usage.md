@@ -273,7 +273,8 @@ server.run()  # stdio transport
 
 ## Worked Example
 
-See [`examples/csv_analyst/`](../examples/csv_analyst/) for a minimal working agent (~50 lines) that demonstrates all the patterns above. The [csv_analyst README](../examples/csv_analyst/README.md) has full instructions.
+<!-- TODO: add examples/csv_analyst/ worked example -->
+A minimal working agent (~50 lines) demonstrating all the patterns above is planned for a future release.
 
 ---
 

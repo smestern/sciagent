@@ -1,4 +1,13 @@
 
+# Example: `/configure-domain` Wizard Output
+
+> **What is this?** This is a transcript of the `/configure-domain` skill running in VS Code Copilot Chat. The skill interviews you about your research domain, discovers relevant Python packages, and generates domain-specific skills and documentation.
+>
+> For more on domain configuration, see [Domain Examples](../domains/) or the [configure-domain skill](../../templates/skills/configure-domain/SKILL.md).
+
+---
+
+## Transcript
 
 I'll start by gathering context on the workspace state — checking for existing domain configurations, scanning templates for placeholders, and reading the rigor instructions.    
 

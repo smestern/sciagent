@@ -171,26 +171,9 @@ config = AgentConfig(
 
 ## Worked Example: CSV Analyst
 
-The repository includes a minimal working example in [`examples/csv_analyst/`](../examples/csv_analyst/):
-
-```bash
-# From the repo root
-pip install -e ".[cli,web]"
-pip install pandas seaborn
-
-# CLI mode
-python -m examples.csv_analyst
-
-# Web UI
-python -m examples.csv_analyst --web
-```
-
-This ~50-line agent demonstrates:
-- `AgentConfig` with branding, bounds, and suggestion chips
-- A `CSVAnalyst(BaseScientificAgent)` subclass with a CSV loader tool
-- CLI and web entry points
-
-See the [csv_analyst README](../examples/csv_analyst/README.md) for details.
+<!-- TODO: add examples/csv_analyst/ worked example -->
+A minimal working example demonstrating `AgentConfig`, a `BaseScientificAgent` subclass
+with a CSV loader tool, and CLI/web entry points is planned for a future release.
 
 ---
 
@@ -246,6 +229,7 @@ The code scanner may be flagging legitimate patterns. Check `config.py` → `for
 
 ## Next Steps
 
+- [Getting Started: Plugin](getting-started-plugin.md) — install the prebuilt VS Code plugin (no Python needed)
 - [API / Programmatic Usage](api-usage.md) — build agents without the wizard
 - [Architecture](architecture.md) — how the framework fits together
 - [Showcase: PatchAgent](showcase.md) — real-world example in neurophysiology

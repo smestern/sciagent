@@ -1,6 +1,6 @@
 # Using SciAgent Agents and Skills in VS Code & Claude Code
 
-> **New here?** Start with [Getting Started: Copilot / Claude Code](getting-started-copilot.md) for a step-by-step setup walkthrough. This page is the detailed reference.
+> **New here?** Start with [Getting Started: Plugin](getting-started-plugin.md) for the prebuilt plugin, or [Getting Started: Wizard](getting-started-copilot.md) for custom domain agents. This page is the detailed reference.
 
 This guide explains how to use sciagent's default agents and skills — and
 your own custom ones — as **VS Code GitHub Copilot custom agents**,
@@ -50,7 +50,16 @@ both are active, the skill's instructions augment the agent's persona.
 
 ## Quick Start: Using the Default Agents
 
-SciAgent ships 5 default agents in the [`templates/agents/`](../templates/agents/) directory.
+SciAgent provides agents in two forms:
+
+| Source | Agents | Skills | How to install |
+|--------|--------|--------|----------------|
+| **Prebuilt plugin** (`dist/sciagent/`) | 6 (`sci-` prefixed) | 7 | Add plugin path to VS Code settings — see [Plugin Guide](getting-started-plugin.md) |
+| **Templates** (`templates/agents/`) | 9 | 15 | Copy into workspace `.github/` — see below |
+
+The prebuilt plugin is the fastest path. The templates give you the full set of agents and skills for manual customization.
+
+SciAgent ships 9 agents in the [`templates/agents/`](../templates/agents/) directory.
 To use them:
 
 ### VS Code Copilot
@@ -88,7 +97,7 @@ cp -r templates/agents/.github/ templates/agents/.claude/ /path/to/your/workspac
 
 ## Quick Start: Using the Default Skills
 
-SciAgent ships 6 default skills in the [`templates/skills/`](../templates/skills/) directory.
+SciAgent ships 15 skills in the [`templates/skills/`](../templates/skills/) directory — 11 core workflow skills plus 4 domain-specific library skills.
 To use them:
 
 ```bash
@@ -122,6 +131,23 @@ any active agent with rigor principles.
 
 ## Default Agent Roster
 
+### Plugin agents (prebuilt, `sci-` prefixed)
+
+These 6 agents ship with the prebuilt plugin in `dist/sciagent/`:
+
+| Agent | Role | Tools | Mode |
+|-------|------|-------|------|
+| **sci-coordinator** | Route tasks to the right specialist | codebase, search | Read-only |
+| **sci-coder** | Implement analysis code with rigor | codebase, terminal, editFiles, search | Full |
+| **sci-reviewer** | Audit code and results for rigor | codebase, search, fetch | Read-only |
+| **sci-report-writer** | Generate structured reports | codebase, editFiles, search, fetch | Write |
+| **sci-docs-ingestor** | Ingest Python library documentation | codebase, terminal, editFiles, search, fetch | Full |
+| **sci-domain-assembler** | Configure SciAgent for your domain | codebase, terminal, editFiles, search, fetch | Full |
+
+### Template agents (full set)
+
+The [`templates/agents/`](../templates/agents/) directory contains 9 agents — the 6 above plus 3 additional workflow agents:
+
 | Agent | Role | Tools | Mode |
 |-------|------|-------|------|
 | **analysis-planner** | Design analysis roadmap | codebase, search, fetch | Read-only |
@@ -129,6 +155,10 @@ any active agent with rigor principles.
 | **rigor-reviewer** | Audit rigor of results | codebase, search, fetch | Read-only |
 | **report-writer** | Generate structured reports | codebase, editFiles, search, fetch | Write |
 | **code-reviewer** | Review scripts | codebase, search | Read-only |
+| **coordinator** | Route tasks to specialists | codebase, search | Read-only |
+| **coder** | Implement analysis code | codebase, terminal, editFiles, search | Full |
+| **docs-ingestor** | Ingest library documentation | codebase, terminal, editFiles, search, fetch | Full |
+| **domain-assembler** | Configure for your domain | codebase, terminal, editFiles, search, fetch | Full |
 
 ### Handoff Workflow
 
@@ -164,14 +194,32 @@ switches to the target agent with the prompt pre-filled.
 
 ## Default Skill Roster
 
+### Plugin skills (7, shipped with prebuilt plugin)
+
 | Skill | Slash Command | Description | Auto-loads? |
 |-------|---------------|-------------|-------------|
 | **scientific-rigor** | *(hidden)* | Mandatory rigor principles: data integrity, objectivity, sanity checks, uncertainty, reproducibility | Yes — always |
 | **analysis-planner** | `/analysis-planner` | Step-by-step analysis planning methodology with incremental validation | No |
 | **data-qc** | `/data-qc` | Systematic 6-point data quality checklist with severity-rated reporting | No |
-| **rigor-reviewer** | `/rigor-reviewer` | 8-point scientific rigor audit checklist | No |
 | **report-writer** | `/report-writer` | Publication-quality report generation template and guidelines | No |
-| **code-reviewer** | `/code-reviewer` | 7-point code review checklist for scientific scripts | No |
+| **review** | `/review` | Code + scientific rigor audit in one pass | No |
+| **configure-domain** | `/configure-domain` | First-time domain setup (interview + package discovery) | No |
+| **docs-ingestor** | `/docs-ingestor` | Ingest documentation for any Python library | No |
+
+### Template skills (15, full set in `templates/skills/`)
+
+Includes all 7 plugin skills plus:
+
+| Skill | Slash Command | Description |
+|-------|---------------|-------------|
+| **rigor-reviewer** | `/rigor-reviewer` | 8-point scientific rigor audit checklist |
+| **code-reviewer** | `/code-reviewer` | 7-point code review checklist for scientific scripts |
+| **update-domain** | `/update-domain` | Incrementally add packages or refine workflows |
+| **switch-domain** | `/switch-domain` | Switch between configured research domains |
+| **domain-expertise** | *(auto-loads)* | Domain-specific knowledge base |
+| **efel** | *(auto-loads)* | eFEL electrophysiology feature extraction |
+| **elephant** | *(auto-loads)* | Elephant electrophysiology analysis toolbox |
+| **neo** | *(auto-loads)* | Neo electrophysiology data I/O |
 
 ### How Skills Load
 
@@ -259,7 +307,7 @@ my_project/
 
 ```
 --format vscode|claude|both    Which format(s) to generate (default: both)
---include-defaults             Also copy the 5 default agents (+ 6 skills with --skills)
+--include-defaults             Also copy the 5 workflow agents (+ matching skills with --skills)
 --skills                       Also generate SKILL.md files
 ```
 
@@ -283,7 +331,7 @@ agent_to_copilot_files(config, output_dir="./my_project")
 agent_to_copilot_files(config, output_dir="./my_project", skills=True)
 ```
 
-To also copy the 6 default skills:
+To also copy the default skills:
 
 ```python
 from sciagent.agents.converter import copy_default_skills

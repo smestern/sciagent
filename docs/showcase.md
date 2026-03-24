@@ -121,6 +121,15 @@ The script is immediately runnable on new datasets with minimal configuration ch
 
 ---
 
+## Further Reading
+
+- [Getting Started: Prebuilt Plugin](getting-started-plugin.md) — install SciAgent in VS Code in minutes
+- [Getting Started: Wizard-Generated Agents](getting-started-copilot.md) — build a custom agent for your domain
+- [Domain Examples](domains/) — intracellular and extracellular electrophysiology domain configs
+- [Architecture](architecture.md) — how the framework, templates, and build pipeline fit together
+
+---
+
 ## Try It Yourself
 
 ```bash

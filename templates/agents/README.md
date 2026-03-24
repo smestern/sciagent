@@ -31,7 +31,7 @@ mkdir -p /path/to/your/workspace/.github/skills
 cp -r templates/skills/*  /path/to/your/workspace/.github/skills/
 ```
 
-See [`templates/skills/`](../skills/) for the 6 default skills, or
+See [`templates/skills/`](../skills/) for the 15 default skills, or
 [docs/copilot-agents.md](../../docs/copilot-agents.md) for the full guide
 on using agents and skills together.
 
@@ -63,4 +63,4 @@ terminology, common analysis patterns, etc.).
 
 ## Documentation
 
-See [docs/copilot-agents.md](../docs/copilot-agents.md) for the full guide.
+See [docs/copilot-agents.md](../../docs/copilot-agents.md) for the full guide.

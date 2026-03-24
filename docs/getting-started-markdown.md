@@ -228,6 +228,7 @@ The prompt fragments in [`templates/prompts/`](../templates/prompts/) can be com
 
 ## Next Steps
 
+- [Getting Started: Plugin](getting-started-plugin.md) — install the prebuilt VS Code plugin (no Python needed)
+- [Getting Started: Wizard](getting-started-copilot.md) — generate custom domain agents for VS Code / Claude Code
 - [Getting Started: Fullstack](getting-started-fullstack.md) — if you want a runnable Python agent instead
-- [Getting Started: Copilot / Claude Code](getting-started-copilot.md) — if you want IDE integration
 - [Templates README](../templates/README.md) — full guide to the template system

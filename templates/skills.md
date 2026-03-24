@@ -15,8 +15,10 @@ a specific type of analysis task.
 
 ## Default Skills
 
-SciAgent ships 6 default skills in `templates/skills/`.  Copy them into
+SciAgent ships 15 skills in `templates/skills/`.  Copy them into
 `.github/skills/` in your workspace to activate them.
+
+### Core Workflow Skills
 
 | Skill | Location | Description | Slash Command |
 |-------|----------|-------------|---------------|
@@ -30,6 +32,16 @@ SciAgent ships 6 default skills in `templates/skills/`.  Copy them into
 | Configure Domain | `skills/configure-domain/` | First-time domain setup — interviews you, discovers packages, fills template placeholders | `/configure-domain` |
 | Update Domain | `skills/update-domain/` | Incrementally add packages, refine workflows, or extend domain content | `/update-domain` |
 | Switch Domain | `skills/switch-domain/` | Switch between configured research domains — hot-swaps docs, skills, and template links | `/switch-domain` |
+
+### Domain-Specific Library Skills
+
+| Skill | Location | Description | Slash Command |
+|-------|----------|-------------|---------------|
+| Domain Expertise | `skills/domain-expertise/` | Domain-specific knowledge, terminology, and best practices reference | `/domain-expertise` |
+| eFEL | `skills/efel/` | Electrophysiology Feature Extraction Library — spike detection and AP feature analysis | `/efel` |
+| Elephant | `skills/elephant/` | Electrophysiology Analysis Toolkit — spike train statistics, spectral analysis, kernels | `/elephant` |
+| Neo | `skills/neo/` | Neural Ensemble Objects — multi-format electrophysiology I/O (ABF, NWB, Spike2, etc.) | `/neo` |
+| pyABF | `skills/pyabf/` | Axon Binary Format file loading, sweep iteration, and metadata extraction | `/pyabf` |
 
 ---
 

@@ -1,7 +1,7 @@
-# <img src="logo.svg" height="32" alt="SciAgent"> SciAgent
+# <img src="docs/images/logo.svg" height="32" alt="SciAgent"> SciAgent
 
 <p align="center">
-   <img src="banner.png" style="max-width: 95%; margin-left: auto; margin-right: auto;" >  
+   <img src="docs/images/banner.png" style="max-width: 95%; margin-left: auto; margin-right: auto;" >  
 </p>
 
 **A generic framework for building AI-powered scientific data analysis agents.**
@@ -39,7 +39,11 @@ All layers are configurable and extensible. See [Architecture](docs/architecture
 
 ## Quick Start — VS Code Plugin (recommended)
 
-The fastest way to get SciAgent running. The prebuilt plugin in [`dist/sciagent/`](dist/sciagent/) ships **6 agents** and **7 skills** — no Python install required.
+The fastest way to get SciAgent running. The prebuilt plugin ships **6 agents** and **7 skills** — no Python install required.
+
+> **Where is the plugin?**
+> - **GitHub releases / CI** → [`dist/sciagent/`](dist/sciagent/) (built by GitHub Actions)
+> - **Local build** → `build/plugin/sciagent/` (run `python scripts/build_plugin.py`)
 
 **1. Clone or download this repo**
 
@@ -54,6 +58,7 @@ Open VS Code Settings (JSON) and add:
 ```jsonc
 // settings.json
 "chat.plugins.paths": {
+    // Use the dist/ path from a release, or build/plugin/ for local builds
     "/path/to/sciagent/dist/sciagent/.github/plugin": true
 }
 ```
@@ -92,7 +97,7 @@ You: @sci-coordinator I have calcium imaging data in traces.csv.
 Coordinator → Data QC → Coder → Rigor Reviewer → Report Writer
 ```
 
-See [`dist/sciagent/README.md`](dist/sciagent/README.md) for the full plugin guide.
+**[Full plugin guide →](docs/getting-started-plugin.md)** · See also [`dist/sciagent/README.md`](dist/sciagent/README.md) for the bundled plugin reference.
 
 ---
 
@@ -168,23 +173,30 @@ sciagent wizard -m fullstack
 
 ---
 
-**How to use this repo**
+## How to Use This Repo
 
-The way I envision users utilizing this repo is in one of three ways. 
+| Path | Best for | What you do |
+|------|----------|-------------|
+| **A. Prebuilt Plugin** | Quick start, no Python needed | Clone → add plugin path to VS Code settings → go |
+| **B. Self-Assembly Wizard** | Custom domain agents | `pip install sciagent[all]` + `sciagent-wizard` → run wizard → copy output into workspace |
+| **C. Markdown Templates** | Any LLM (ChatGPT, Gemini, etc.) | Download [`templates/`](templates/) → edit → paste into your LLM |
+| **D. Fullstack Agent** | Python SDK with CLI & web UI | `pip install sciagent[all]` → subclass `BaseScientificAgent` → build custom tools |
 
-1. **Markdown templates for specifying agents** - At its core, this repo contains Markdown templates to assist with building your agent. These templates are meant to be downloaded and customized for your domain specific use. The folder [/templates/](github.com/smestern/sciagent/templates/) contains templates for building and defining the agent, and prompts meant to constrain the agent to scientific rigor.
-2. **Fullstack custom agent cli/web app** - This is a fullstack agent framework built on the [copilot-sdk](https://github.com/github/copilot-sdk). Essentially this aims to use your custom domain tools in three ways: 
-   1. Direct tool use by the Agent so it can do things like, direct inspect data, get metadata and plan work
-   2. A custom code execution environment with preloaded packages and tools.
-   3. Producing reproducible scripts for reuse with other data.
-   4. The agent also has the ability to ingest the docs of new packages and modify its own codebase, to give itself more power.
-3. **A self-assembling wizard** - ***VERY WIP*** Built for novice coders. Describe your research domain to the self-assembly wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent in your chosen format. **The wizard now lives in its own package** ([sciagent-wizard](https://github.com/smestern/sciagent-wizard)) so framework users aren't affected by wizard-only releases.
+### More detail
 
-Ideally, I was hoping to host a public version of the wizard for open use - however, I can't afford the hosting / llm api fees as a grad student. If you are a company that would be willing to help out, please contact me.
+1. **Prebuilt plugin (Path A)** — The fastest path. The plugin in `dist/sciagent/` (or `build/plugin/sciagent/` for local builds) ships 6 agents and 7 skills, ready to use. See [Plugin Guide](docs/getting-started-plugin.md).
 
-## Alternate
+2. **Self-assembly wizard (Path B)** — Describe your research domain to the wizard and it discovers relevant packages, fetches their documentation, and generates a ready-to-use agent project in your chosen format. The wizard lives in its own package ([sciagent-wizard](https://github.com/smestern/sciagent-wizard)) so framework users aren't affected by wizard-only releases. See [Wizard Guide](docs/getting-started-copilot.md).
 
-You may be interested in [DAAF](https://github.com/DAAF-Contribution-Community/daaf), the Data Analyst Augmentation Framework, by Brian Heseung Kim! A framework with much of the same goals and ideas, better oriented for Claude code. Claude code support here is minimal as I use VS code as my daily driver.
+3. **Markdown templates (Path C)** — At its core, this repo contains Markdown templates to assist with building your agent. Download and customize [templates/](templates/) for your domain. See [Markdown Guide](docs/getting-started-markdown.md).
+
+4. **Fullstack agent (Path D)** — A full agent framework built on the [Copilot SDK](https://github.com/github/copilot-sdk) with sandboxed code execution, domain tools, and the ability to ingest new package docs. See [Fullstack Guide](docs/getting-started-fullstack.md).
+
+Ideally, I was hoping to host a public version of the wizard for open use — however, I can't afford the hosting / LLM API fees as a grad student. If you are a company willing to help out, please contact me.
+
+## See Also
+
+You may be interested in [DAAF](https://github.com/DAAF-Contribution-Community/daaf), the Data Analyst Augmentation Framework, by Brian Heseung Kim! A framework with much of the same goals and ideas, better oriented for Claude Code. Claude Code support here is minimal as I use VS Code as my daily driver.
 
 ---
 
@@ -193,14 +205,16 @@ You may be interested in [DAAF](https://github.com/DAAF-Contribution-Community/d
 | # | Page | Description |
 |---|------|-------------|
 | 0 | **README** | This document — overview, quick start, and links |
-| 1 | [Copilot Agents & Skills Reference](docs/copilot-agents.md) | Agent/skill file formats, roster, handoff workflow |
-| 2 | [Getting Started: Copilot / Claude Code](docs/getting-started-copilot.md) | Generate VS Code & Claude Code config files |
-| 3 | [Getting Started: Markdown](docs/getting-started-markdown.md) | Generate platform-agnostic spec files for any LLM |
+| 1 | [Getting Started: Plugin](docs/getting-started-plugin.md) | Install the prebuilt VS Code plugin (no Python needed) |
+| 2 | [Getting Started: Wizard](docs/getting-started-copilot.md) | Generate custom domain agents via the self-assembly wizard |
+| 3 | [Getting Started: Markdown](docs/getting-started-markdown.md) | Platform-agnostic spec files for any LLM |
 | 4 | [Getting Started: Fullstack](docs/getting-started-fullstack.md) | Build a runnable Python agent with CLI & web UI |
-| 5 | [Installation](docs/installation.md) | Prerequisites, install variants, CLI commands, dev setup |
-| 6 | [API / Programmatic Usage](docs/api-usage.md) | `AgentConfig`, `BaseScientificAgent`, tools, guardrails API |
-| 7 | [Architecture](docs/architecture.md) | System diagram, module reference, guardrails pipeline |
-| 8 | [Showcase: PatchAgent](docs/showcase.md) | Real-world walkthrough in neurophysiology |
+| 5 | [Copilot Agents & Skills Reference](docs/copilot-agents.md) | Agent/skill file formats, roster, handoff workflow |
+| 6 | [Installation](docs/installation.md) | Prerequisites, install variants, CLI commands, dev setup |
+| 7 | [API / Programmatic Usage](docs/api-usage.md) | `AgentConfig`, `BaseScientificAgent`, tools, guardrails API |
+| 8 | [Architecture](docs/architecture.md) | System diagram, module reference, guardrails pipeline |
+| 9 | [Domain Examples](docs/domains/) | Pre-configured domain setups (intracellular-ephys, extracellular-ephys) |
+| 10 | [Showcase: PatchAgent](docs/showcase.md) | Real-world walkthrough in neurophysiology |
 
 ---
 
@@ -228,11 +242,12 @@ The wizard (`sciagent-wizard`) is the first plugin built on this system. See [`s
 
 ---
 
-## See Also
+## Links
 
 - [sciagent-wizard](https://github.com/smestern/sciagent-wizard) — self-assembly wizard for building domain agents (plugin)
 - [PatchAgent](https://github.com/smestern/patchAgent) — a full SciAgent implementation for electrophysiology (see [Showcase](docs/showcase.md))
 - [Templates README](templates/README.md) — blank templates for manual agent specification
+- [Domain Examples](docs/domains/) — pre-configured domain setups with skills and docs
 
 ---
 

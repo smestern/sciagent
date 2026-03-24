@@ -2,6 +2,8 @@
 
 SciAgent requires **Python 3.9+** and runs on Windows, macOS, and Linux.
 
+> **Just want the plugin?** The prebuilt VS Code plugin requires no Python installation. See [Getting Started: Plugin](getting-started-plugin.md).
+
 ---
 
 ## Prerequisites
@@ -25,6 +27,8 @@ source .venv/bin/activate
 ---
 
 ## Install from PyPI
+
+> **Note:** SciAgent is not yet on PyPI. Install from GitHub (see below) or use the prebuilt plugin which requires no pip install at all.
 
 SciAgent uses **extras** to keep the base install lightweight. Choose the variant that matches your use case:
 
@@ -106,9 +110,10 @@ SciAgent installs several command-line entry points:
 
 ## Next Steps
 
-- **New to sciagent?** Pick your output stream:
+- **New to sciagent?** Pick your path:
+  - [Getting Started: Plugin](getting-started-plugin.md) — prebuilt VS Code plugin, no Python needed
+  - [Getting Started: Wizard](getting-started-copilot.md) — generate custom domain agents via the wizard
   - [Getting Started: Fullstack](getting-started-fullstack.md) — a runnable Python agent with CLI & web UI
-  - [Getting Started: Copilot / Claude Code](getting-started-copilot.md) — VS Code & Claude Code config files
   - [Getting Started: Markdown](getting-started-markdown.md) — platform-agnostic spec files for any LLM
 - **Want to code it by hand?** See [API / Programmatic Usage](api-usage.md)
 - **Curious about the internals?** See [Architecture](architecture.md)

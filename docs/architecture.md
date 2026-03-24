@@ -108,14 +108,50 @@ User describes domain
 └────────┬────────────┘
          ▼
 ┌─────────────────────┐
-│ Code Generator      │  Produces one of 3 output modes:
-│                     │  • Fullstack Python submodule
+│ Code Generator      │  Produces one of 4 output modes:
+│                     │  • VS Code Copilot Plugin
 │                     │  • Copilot / Claude Code config files
 │                     │  • Platform-agnostic Markdown specs
+│                     │  • Fullstack Python submodule
 └────────┬────────────┘
          ▼
     Ready-to-use agent
 ```
+
+---
+
+## Build Pipeline
+
+The plugin build process transforms source templates into a distributable VS Code plugin:
+
+```
+templates/                          Source of truth
+│
+├─ agents/.github/agents/*.agent.md   Agent definitions
+├─ agents/.claude/agents/*.md         Claude Code agents
+├─ skills/*/SKILL.md                  Skill definitions
+└─ prompts/*.md                       Prompt fragments
+        │
+        ▼
+  scripts/build_plugin.py           Build script
+  • Inlines rigor instructions per agent
+  • Appends prompt modules (AGENT_PROMPT_MAP)
+  • Compiles skills
+  • Generates plugin.json manifest
+        │
+        ▼
+  build/plugin/sciagent/            Local build output
+  │
+  ├─ agents/sci-*.md                 6 compiled agents (sci- prefixed)
+  ├─ skills/*/SKILL.md               7 compiled skills
+  ├─ .github/plugin/plugin.json      Plugin manifest
+  └─ README.md                       Plugin documentation
+        │
+        ▼ (GitHub Actions CI)
+  dist/sciagent/                    Release artifact
+```
+
+Run locally: `python scripts/build_plugin.py -o build/plugin/sciagent [--force]`
 
 ---
 
@@ -146,12 +182,27 @@ sciagent/
 │   ├── prompts/                # System prompt fragments
 │   ├── tools/                  # Sandbox, fitting, registry
 │   └── web/                    # Quart web UI
-├── src/sciagent_wizard/        # Self-assembly wizard
+├── src/sciagent_wizard/        # Self-assembly wizard (separate package)
 │   ├── generators/             # Code generators for each output mode
 │   ├── sources/                # Package discovery (PyPI, bio.tools, etc.)
 │   ├── docs_ingestor/          # Documentation fetcher
 │   └── prompts/                # Wizard conversation prompts
-├── templates/                  # Blank templates & default agents/skills
+├── templates/                  # Source of truth for plugin builds
+│   ├── agents/                 # 9 agent definitions (.agent.md + .claude)
+│   ├── skills/                 # 15 skill definitions (SKILL.md)
+│   └── prompts/                # Reusable prompt modules
+├── scripts/                    # Build & install scripts
+│   ├── build_plugin.py         # templates/ → build/plugin/ → dist/
+│   ├── install_templates.py    # templates/ → workspace .instructions.md
+│   ├── convert_to_agents.py    # AgentConfig → .agent.md conversion
+│   └── link_prompts.py         # Symlink prompts across packages
+├── docs/                       # Documentation
+│   ├── domains/                # Pre-configured domain setups
+│   │   ├── manifest.yaml       # Domain index
+│   │   ├── intracellular-ephys/# Patch-clamp electrophysiology
+│   │   └── extracellular-ephys/# Extracellular recording
+│   └── examples/               # Wizard output examples
+├── build/plugin/sciagent/       # Local plugin build output
 ├── examples/                   # Worked examples (csv_analyst)
 └── tests/                      # Test suite
 ```
@@ -160,6 +211,8 @@ sciagent/
 
 ## Further Reading
 
+- [Getting Started: Plugin](getting-started-plugin.md) — install the prebuilt plugin
 - [API / Programmatic Usage](api-usage.md) — build agents in code
 - [Copilot Agents & Skills Reference](copilot-agents.md) — agent/skill file format details
+- [Domain Examples](domains/) — pre-configured domain setups
 - [Installation](installation.md) — setup instructions
