@@ -44,6 +44,7 @@ _TOOL_MAP: dict[str, list[str]] = {
     "fetch": ["Fetch"],
     "terminal": ["Terminal"],
     "codebase": ["Read", "Grep", "Glob"],
+    "todo": [],
 }
 
 

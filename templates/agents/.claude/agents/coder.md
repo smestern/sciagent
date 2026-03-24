@@ -66,6 +66,29 @@ system.
   flag them prominently to the user and ask for confirmation before proceeding
 - NEVER silently ignore anomalous results or warnings
 
+### Task Tracking
+
+Use the todo list to plan and track progress through multi-step work.
+This gives the user visibility into your plan and current status.
+
+**When to use:**
+- The task has three or more distinct steps
+- The request is ambiguous or requires upfront planning
+- The user provides multiple tasks or a numbered list
+
+**When NOT to use:**
+- Simple, single-step tasks
+- Purely conversational or informational requests
+- Supporting operations like searching or reading files
+
+**Rules:**
+- Mark each task `in-progress` when you begin it, `completed` immediately
+  after finishing — do not batch completions
+- Always pair a todo list update with actual work in the same turn —
+  never issue a standalone todo update without progressing a task
+- Break complex work into specific, actionable items that can be
+  verified independently
+
 ### Code Execution Workflow
 
 When implementing analysis tasks, follow this sequence:
