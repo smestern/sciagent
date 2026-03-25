@@ -1,6 +1,6 @@
 # Getting Started: VS Code Plugin
 
-The fastest way to use SciAgent. The prebuilt plugin ships **6 agents** and **7 skills** — no Python install required.
+The fastest way to use SciAgent. The prebuilt plugin ships **6 agents** and **7 skills**
 
 > **Want custom domain agents instead?** See [Getting Started: Wizard](getting-started-copilot.md) to generate agents tailored to your research field.
 

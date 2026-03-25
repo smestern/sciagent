@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build a GitHub Copilot agent plugin from SciAgent templates.
+"""Build a GitHub Copilot or Claude Code agent plugin from SciAgent templates.
 
 Compiles the existing templates (agents, skills, prompts, instructions) into
-the agent plugin directory format that VS Code can discover and install.
+the agent plugin directory format that VS Code or Claude Code can discover.
 
-Output structure::
+Copilot output structure::
 
     <output>/
     ├── .github/plugin/plugin.json
@@ -22,9 +22,22 @@ Output structure::
     │   └── docs-ingestor/SKILL.md
     └── README.md
 
+Claude Code output structure::
+
+    <output>-claude/
+    ├── .claude-plugin/plugin.json
+    ├── agents/
+    │   ├── analysis-planner.md
+    │   └── ...
+    ├── skills/
+    │   └── ...
+    └── README.md
+
 Usage::
 
-    python scripts/build_plugin.py                          # default build
+    python scripts/build_plugin.py                          # default (copilot)
+    python scripts/build_plugin.py --platform claude         # Claude Code only
+    python scripts/build_plugin.py --platform both --force   # both platforms
     python scripts/build_plugin.py -o build/plugin/sciagent  # custom output
     python scripts/build_plugin.py --dry-run                 # preview only
     python scripts/build_plugin.py --version 1.0.0 --force   # set version, overwrite
@@ -35,6 +48,10 @@ Install locally in VS Code::
     "chat.plugins.paths": {
         "/path/to/build/plugin/sciagent": true
     }
+
+Install locally in Claude Code::
+
+    claude --plugin-dir /path/to/build/plugin/sciagent-claude
 """
 
 from __future__ import annotations
@@ -56,6 +73,7 @@ PROMPTS_SRC = TEMPLATES_DIR / "prompts"
 INSTRUCTIONS_SRC = TEMPLATES_DIR / "agents" / ".github" / "instructions"
 
 DEFAULT_OUTPUT = REPO_ROOT / "build" / "plugin" / "sciagent"
+DEFAULT_CLAUDE_OUTPUT = REPO_ROOT / "build" / "plugin" / "sciagent-claude"
 
 REPLACE_PATTERN = re.compile(
     r"<!--\s*REPLACE:\s*([a-zA-Z0-9_]+)\s*[—-].*?-->",
@@ -138,6 +156,54 @@ AGENT_PROMPT_MAP: dict[str, list[str]] = {
         "clarification.md",
     ],
 }
+
+
+# ---------------------------------------------------------------------------
+# Claude Code — tool mapping
+# ---------------------------------------------------------------------------
+
+# Canonical tool ordering for Claude Code agents
+_CLAUDE_TOOL_ORDER = ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "Fetch", "Terminal"]
+
+# GitHub Copilot tool name → list of Claude Code tool tokens
+_CLAUDE_TOOL_MAP: dict[str, list[str]] = {
+    "vscode": [],
+    "vscode/askQuestions": [],
+    "read": ["Read"],
+    "search": ["Grep", "Glob"],
+    "edit": ["Write", "Edit"],
+    "editFiles": ["Write", "Edit"],
+    "execute": ["Bash"],
+    "web/fetch": ["Fetch"],
+    "fetch": ["Fetch"],
+    "terminal": ["Terminal"],
+    "codebase": ["Read", "Grep", "Glob"],
+    "todo": [],
+}
+
+# YAML frontmatter fields to strip from Claude agent/skill output
+_CLAUDE_STRIP_AGENT_FIELDS = {"argument-hint", "handoffs"}
+_CLAUDE_STRIP_SKILL_FIELDS = {"argument-hint", "user-invokable"}
+
+
+def _map_claude_tools(github_tools: list[str]) -> str:
+    """Convert a GitHub Copilot tool list to Claude Code comma-separated tools string."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for tool in github_tools:
+        for mapped in _CLAUDE_TOOL_MAP.get(tool, [tool.title()]):
+            if mapped not in seen:
+                seen.add(mapped)
+                ordered.append(mapped)
+
+    def sort_key(t: str) -> int:
+        try:
+            return _CLAUDE_TOOL_ORDER.index(t)
+        except ValueError:
+            return len(_CLAUDE_TOOL_ORDER)
+
+    ordered.sort(key=sort_key)
+    return ", ".join(ordered)
 
 
 # ---------------------------------------------------------------------------
@@ -1019,6 +1085,493 @@ def _build_skills(
     return written
 
 
+# ---------------------------------------------------------------------------
+# Claude Code — agent / skill / manifest builders
+# ---------------------------------------------------------------------------
+
+
+def _claude_transform_frontmatter(fm_text: str, name_prefix: str) -> str:
+    """Rewrite Copilot YAML frontmatter to Claude Code format.
+
+    * Extracts ``name``, ``description`` and ``tools`` (list).
+    * Drops ``argument-hint``, ``handoffs``, and all other Copilot-only fields.
+    * Converts tools list via ``_map_claude_tools()``.
+    * Applies *name_prefix*.
+    """
+    lines = fm_text.split("\n")
+    fields: dict[str, str] = {}
+    tools: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        # Simple scalar fields
+        for key in ("name", "argument-hint"):
+            if line.startswith(f"{key}:"):
+                fields[key] = line.split(":", 1)[1].strip()
+                i += 1
+                break
+        else:
+            if line.startswith("description:"):
+                value = line.split(":", 1)[1].strip()
+                if value.startswith(">") or value == "":
+                    parts = []
+                    i += 1
+                    while i < len(lines) and (lines[i].startswith("  ") or lines[i].strip() == ""):
+                        parts.append(lines[i].strip())
+                        i += 1
+                    fields["description"] = " ".join(p for p in parts if p)
+                else:
+                    fields["description"] = value
+                    i += 1
+            elif line.startswith("tools:"):
+                i += 1
+                while i < len(lines) and lines[i].strip().startswith("- "):
+                    tools.append(lines[i].strip().lstrip("- ").strip())
+                    i += 1
+            elif line.startswith("handoffs:"):
+                # Skip entire handoffs block
+                i += 1
+                while i < len(lines) and (lines[i].startswith("  ") or lines[i].strip().startswith("- ")):
+                    i += 1
+            else:
+                i += 1
+
+    agent_stem = fields.get("name", "")
+    prefixed_name = _prefixed(agent_stem, name_prefix)
+    claude_tools = _map_claude_tools(tools)
+
+    out_lines = [f"name: {prefixed_name}"]
+    desc = fields.get("description", "")
+    if len(desc) > 72:
+        import textwrap
+        out_lines.append("description: >-")
+        for w in textwrap.wrap(desc, width=70):
+            out_lines.append(f"  {w}")
+    else:
+        out_lines.append(f"description: {desc}")
+    if claude_tools:
+        out_lines.append(f"tools: {claude_tools}")
+    return "\n".join(out_lines)
+
+
+def _claude_transform_body(body: str, rigor_content: str) -> str:
+    """Apply Claude-specific body transformations."""
+    # Inline rigor content
+    rigor_link_pattern = (
+        r"Follow the \[shared scientific rigor principles\]"
+        r"\([^)]+sciagent-rigor\.instructions\.md\)\."
+    )
+    if rigor_content:
+        # Strip leading ## heading from rigor content (we add our own)
+        rigor_lines = rigor_content.strip().split("\n")
+        if rigor_lines and rigor_lines[0].startswith("## "):
+            rigor_content_clean = "\n".join(rigor_lines[1:]).strip()
+        else:
+            rigor_content_clean = rigor_content.strip()
+        rigor_section = f"### Scientific Rigor (Shared)\n\n{rigor_content_clean}"
+        body = re.sub(rigor_link_pattern, rigor_section, body)
+
+    # Replace #tool:vscode/askQuestions → "Ask the user"
+    body = re.sub(r"`#tool:vscode/askQuestions`", "Ask the user", body)
+    body = re.sub(r"#tool:vscode/askQuestions", "Ask the user", body)
+    return body
+
+
+def _build_claude_agents(
+    output: Path,
+    replacements: dict[str, str],
+    include_prompts: bool,
+    name_prefix: str,
+    force: bool,
+    profile: dict[str, Any] | None = None,
+    fullstack: bool = False,
+) -> list[Path]:
+    """Build Claude Code agent markdown files from the GitHub agent sources.
+
+    Mirrors ``_build_agents()`` but produces Claude-compatible frontmatter:
+    no ``argument-hint``, no ``handoffs``, tools as comma-separated string,
+    no ``model`` field.
+    """
+    if profile is None:
+        profile = PROFILES["full"]
+
+    exclude_agents = set(profile.get("exclude_agents", []))
+    merge_agents = profile.get("merge_agents", {})
+
+    consumed: set[str] = set()
+    for spec in merge_agents.values():
+        consumed.update(spec["sources"])
+
+    rigor_text = ""
+    rigor_path = INSTRUCTIONS_SRC / "sciagent-rigor.instructions.md"
+    if rigor_path.exists():
+        rigor_text = rigor_path.read_text(encoding="utf-8").strip()
+
+    fullstack_overlay = ""
+    if fullstack:
+        overlay_path = TEMPLATES_DIR / "prompts" / "overlays" / "fullstack_tools.md"
+        if overlay_path.exists():
+            fullstack_overlay = overlay_path.read_text(encoding="utf-8").strip()
+        else:
+            print(f"WARNING: --fullstack set but overlay not found: {overlay_path}", file=sys.stderr)
+
+    # Pre-load prompt modules
+    prompt_cache: dict[str, str] = {}
+    if include_prompts and PROMPTS_SRC.exists():
+        for p in PROMPTS_SRC.iterdir():
+            if p.suffix == ".md" and p.is_file():
+                content = p.read_text(encoding="utf-8").strip()
+                _, body = _split_frontmatter(content)
+                prompt_cache[p.name] = body.strip() if body.strip() else content
+
+    written: list[Path] = []
+    if not AGENTS_SRC.exists():
+        print(f"WARNING: agents source not found: {AGENTS_SRC}", file=sys.stderr)
+        return written
+
+    # Emit merged agents first
+    for merged_name, spec in sorted(merge_agents.items()):
+        merged_content = _merge_claude_agent_bodies(
+            spec, merged_name, replacements, rigor_text,
+            include_prompts, prompt_cache, name_prefix,
+            fullstack_overlay=fullstack_overlay,
+        )
+        prefixed_stem = _prefixed(merged_name, name_prefix)
+        dest = output / "agents" / f"{prefixed_stem}.md"
+        _write(dest, merged_content, force)
+        written.append(dest)
+
+    # Emit individual agents
+    for src_file in sorted(AGENTS_SRC.glob("*.agent.md")):
+        raw = src_file.read_text(encoding="utf-8")
+        raw = _apply_replacements(raw, replacements)
+        fm_text, body = _split_frontmatter(raw)
+        agent_stem = src_file.stem.replace(".agent", "")
+
+        if agent_stem in exclude_agents or agent_stem in consumed:
+            continue
+
+        # Transform frontmatter for Claude
+        claude_fm = _claude_transform_frontmatter(fm_text, name_prefix)
+
+        # Transform body
+        body = _claude_transform_body(body, rigor_text)
+
+        # Append prompt modules
+        if include_prompts and agent_stem in AGENT_PROMPT_MAP:
+            appendices: list[str] = []
+            for prompt_name in AGENT_PROMPT_MAP[agent_stem]:
+                if prompt_name in prompt_cache:
+                    appendices.append(prompt_cache[prompt_name])
+            if appendices:
+                body = body.rstrip() + "\n\n---\n\n" + "\n\n---\n\n".join(appendices) + "\n"
+
+        # Append fullstack overlay
+        if fullstack_overlay:
+            body = body.rstrip() + "\n\n---\n\n" + fullstack_overlay + "\n"
+
+        output_content = f"---\n{claude_fm}\n---\n\n{body}"
+        prefixed_stem = _prefixed(agent_stem, name_prefix)
+        dest = output / "agents" / f"{prefixed_stem}.md"
+        _write(dest, output_content, force)
+        written.append(dest)
+
+    return written
+
+
+def _merge_claude_agent_bodies(
+    spec: dict[str, Any],
+    merged_name: str,
+    replacements: dict[str, str],
+    rigor_text: str,
+    include_prompts: bool,
+    prompt_cache: dict[str, str],
+    name_prefix: str,
+    fullstack_overlay: str = "",
+) -> str:
+    """Merge multiple agent templates into a single Claude Code agent file.
+
+    Like ``_merge_agent_bodies()`` but produces Claude-compatible frontmatter.
+    """
+    sources = spec["sources"]
+    description = spec["description"]
+    tools = spec.get("tools", [])
+
+    body_parts: list[str] = []
+    rigor_inlined = False
+    for src_name in sources:
+        src_file = AGENTS_SRC / f"{src_name}.agent.md"
+        if not src_file.exists():
+            print(f"WARNING: merge source not found: {src_file}", file=sys.stderr)
+            continue
+        raw = src_file.read_text(encoding="utf-8")
+        raw = _apply_replacements(raw, replacements)
+        _, body = _split_frontmatter(raw)
+
+        body = _claude_transform_body(body, rigor_text if not rigor_inlined else "")
+        if rigor_text and not rigor_inlined:
+            rigor_inlined = True
+        elif rigor_text:
+            body = RIGOR_LINK_PATTERN.sub(
+                "See *Shared Scientific Rigor Principles* above.", body,
+            )
+        body_parts.append(body.strip())
+
+    merged_body = "\n\n---\n\n".join(body_parts)
+
+    # Append prompt modules
+    if include_prompts:
+        seen_prompts: set[str] = set()
+        appendices: list[str] = []
+        for src_name in sources:
+            for prompt_name in AGENT_PROMPT_MAP.get(src_name, []):
+                if prompt_name not in seen_prompts and prompt_name in prompt_cache:
+                    seen_prompts.add(prompt_name)
+                    appendices.append(prompt_cache[prompt_name])
+        if appendices:
+            merged_body = merged_body.rstrip() + "\n\n---\n\n" + "\n\n---\n\n".join(appendices) + "\n"
+
+    if fullstack_overlay:
+        merged_body = merged_body.rstrip() + "\n\n---\n\n" + fullstack_overlay + "\n"
+
+    # Build Claude frontmatter
+    prefixed_name = _prefixed(merged_name, name_prefix)
+    claude_tools = _map_claude_tools(tools)
+    fm_lines = [
+        f"name: {prefixed_name}",
+        f"description: {description}",
+    ]
+    if claude_tools:
+        fm_lines.append(f"tools: {claude_tools}")
+    fm_text = "\n".join(fm_lines)
+    return f"---\n{fm_text}\n---\n\n{merged_body}"
+
+
+def _build_claude_plugin_json(
+    output: Path,
+    version: str,
+    project_meta: dict[str, Any],
+    agent_names: list[str],
+    skill_names: list[str],
+    name_prefix: str,
+    force: bool,
+) -> Path:
+    """Generate ``.claude-plugin/plugin.json`` for a Claude Code plugin."""
+    description = project_meta.get(
+        "description",
+        "Scientific analysis agents with built-in rigor enforcement — "
+        "planning, data QC, code review, reporting, and reproducibility.",
+    )
+    authors = project_meta.get("authors", [])
+    author_name = authors[0].get("name", "SciAgent") if authors else "SciAgent"
+
+    plugin = {
+        "name": "sciagent",
+        "description": description,
+        "version": version,
+        "author": {"name": author_name},
+        "repository": "https://github.com/smestern/sciagent",
+        "license": "MIT",
+        "keywords": [
+            "scientific-analysis",
+            "data-analysis",
+            "rigor",
+            "reproducibility",
+            "data-qc",
+            "code-review",
+            "report-writing",
+        ],
+        "agents": [
+            f"./agents/{_prefixed(name, name_prefix)}.md"
+            for name in agent_names
+        ],
+        "skills": [f"./skills/{name}" for name in skill_names],
+    }
+
+    path = output / ".claude-plugin" / "plugin.json"
+    _write(path, json.dumps(plugin, indent=2) + "\n", force)
+    return path
+
+
+def _build_claude_skills(
+    output: Path,
+    replacements: dict[str, str],
+    force: bool,
+    profile: dict[str, Any] | None = None,
+) -> list[Path]:
+    """Build Claude Code skill directories, stripping Copilot-only frontmatter fields.
+
+    Mirrors ``_build_skills()`` but removes ``argument-hint`` and
+    ``user-invokable`` from SKILL.md frontmatter.
+    """
+    if profile is None:
+        profile = PROFILES["full"]
+
+    exclude_skills = set(profile.get("exclude_skills", []))
+    merge_skills = profile.get("merge_skills", {})
+
+    consumed: set[str] = set()
+    for spec in merge_skills.values():
+        consumed.update(spec["sources"])
+
+    written: list[Path] = []
+    if not SKILLS_SRC.exists():
+        print(f"WARNING: skills source not found: {SKILLS_SRC}", file=sys.stderr)
+        return written
+
+    # Emit merged skills first
+    for merged_name, spec in sorted(merge_skills.items()):
+        merged_content = _merge_skill_bodies(spec, merged_name, replacements)
+        merged_content = _strip_claude_skill_fields(merged_content)
+        dest = output / "skills" / merged_name / "SKILL.md"
+        _write(dest, merged_content, force)
+        written.append(dest)
+
+    # Emit individual skills
+    for skill_dir in sorted(SKILLS_SRC.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        skill_md = skill_dir / "SKILL.md"
+        if not skill_md.exists():
+            continue
+        name = skill_dir.name
+        if name in exclude_skills or name in consumed:
+            continue
+
+        content = skill_md.read_text(encoding="utf-8")
+        content = _apply_replacements(content, replacements)
+        content = _humanize_unfilled_placeholders(content)
+        content = _strip_claude_skill_fields(content)
+
+        dest = output / "skills" / name / "SKILL.md"
+        _write(dest, content, force)
+        written.append(dest)
+
+    return written
+
+
+def _strip_claude_skill_fields(content: str) -> str:
+    """Remove Copilot-only frontmatter fields from a SKILL.md file."""
+    fm_text, body = _split_frontmatter(content)
+    if not fm_text:
+        return content
+
+    lines = fm_text.split("\n")
+    new_lines = [
+        line for line in lines
+        if not any(line.startswith(f"{field}:") for field in _CLAUDE_STRIP_SKILL_FIELDS)
+    ]
+    if len(new_lines) == len(lines):
+        return content  # nothing changed
+    new_fm = "\n".join(new_lines)
+    return f"---\n{new_fm}\n---\n\n{body}"
+
+
+def _build_claude_readme(
+    output: Path,
+    version: str,
+    agent_names: list[str],
+    skill_names: list[str],
+    name_prefix: str,
+    force: bool,
+) -> Path:
+    """Generate a README.md tailored for the Claude Code plugin."""
+    agent_descriptions = {
+        "analysis-planner": "Designs step-by-step analysis plans before any code runs",
+        "code-reviewer": "Reviews scripts for correctness, reproducibility, and best practices",
+        "coder": "Implements analysis code with built-in rigor enforcement",
+        "coordinator": "Routes tasks to the right specialist agent",
+        "data-qc": "Checks data quality — missing values, outliers, distributions, integrity",
+        "docs-ingestor": "Ingests Python library docs into structured API references",
+        "domain-assembler": "Configures SciAgent for your specific research domain",
+        "report-writer": "Generates publication-quality reports with uncertainty quantification",
+        "reviewer": "Reviews code and results for correctness, reproducibility, and scientific rigor",
+        "rigor-reviewer": "Audits analysis for statistical validity and reproducibility",
+    }
+    agent_table = "\n".join(
+        f"| `{_prefixed(name, name_prefix)}` | {agent_descriptions.get(name, '')} |"
+        for name in agent_names
+    )
+    skill_descriptions = {
+        "scientific-rigor": "Mandatory rigor principles — data integrity, objectivity, uncertainty, reproducibility",
+        "analysis-planner": "Step-by-step analysis planning with incremental validation",
+        "data-qc": "Systematic data quality control checklist with severity-rated reporting",
+        "rigor-reviewer": "8-point scientific rigor audit checklist",
+        "report-writer": "Publication-quality report generation with uncertainty quantification",
+        "code-reviewer": "7-point code review checklist for scientific scripts",
+        "docs-ingestor": "Ingest Python library docs into structured API references",
+        "configure-domain": "First-time domain setup — interviews you, discovers packages, fills templates",
+        "update-domain": "Incrementally add packages, refine workflows, or extend domain content",
+        "switch-domain": "Switch between configured research domains",
+    }
+    skill_table = "\n".join(
+        f"| `/sciagent:{name}` | {skill_descriptions.get(name, name.replace('-', ' ').title())} |"
+        for name in skill_names
+    )
+
+    n_agents = len(agent_names)
+    n_skills = len(skill_names)
+
+    readme = f"""\
+# SciAgent — Scientific Analysis Agents for Claude Code
+
+> **{n_agents} specialized agents** and **{n_skills} skills** that bring scientific rigor
+> to data analysis in Claude Code. Plan experiments, check data quality, write
+> reproducible code, audit results, and generate publication-ready reports —
+> all with built-in guardrails against p-hacking, data fabrication, and
+> irreproducible workflows.
+
+**Version**: {version} | **License**: MIT | **Author**: [smestern](https://github.com/smestern)
+
+## Installation
+
+### Local Testing
+
+```bash
+claude --plugin-dir /path/to/sciagent-claude
+```
+
+### Project Scope
+
+Add to your `.claude/settings.json`:
+
+```json
+{{
+  "enabledPlugins": ["sciagent"]
+}}
+```
+
+## Agents
+
+| Agent | Description |
+|-------|-------------|
+{agent_table}
+
+## Skills
+
+| Skill | Description |
+|-------|-------------|
+{skill_table}
+
+## Customization
+
+To specialize for your research domain (e.g., electrophysiology, genomics,
+ecology), use the `/sciagent:configure-domain` skill which discovers relevant
+Python packages and tailors agent behavior to your field.
+
+## Framework
+
+This plugin is generated from the [SciAgent framework](https://github.com/smestern/sciagent).
+
+## License
+
+MIT
+"""
+    path = output / "README.md"
+    _write(path, readme, force)
+    return path
+
+
 # Template files from the parent directory to bundle in the plugin.
 # Excludes __init__.py and directories (agents/, skills/, prompts/) which are
 # handled separately.
@@ -1319,12 +1872,26 @@ MIT
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build a GitHub Copilot agent plugin from SciAgent templates.",
+        description="Build a GitHub Copilot or Claude Code agent plugin from SciAgent templates.",
     )
     parser.add_argument(
         "-o", "--output",
         default=str(DEFAULT_OUTPUT),
-        help=f"Output directory (default: {DEFAULT_OUTPUT.relative_to(REPO_ROOT)})",
+        help=f"Output directory for Copilot plugin (default: {DEFAULT_OUTPUT.relative_to(REPO_ROOT)})",
+    )
+    parser.add_argument(
+        "--claude-output",
+        default=None,
+        help=(
+            "Output directory for Claude Code plugin. "
+            f"Default: <output>-claude (e.g. {DEFAULT_CLAUDE_OUTPUT.relative_to(REPO_ROOT)})"
+        ),
+    )
+    parser.add_argument(
+        "--platform",
+        choices=["copilot", "claude", "both"],
+        default="copilot",
+        help="Target platform: copilot (default), claude, or both.",
     )
     parser.add_argument(
         "--version",
@@ -1384,35 +1951,180 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _run_dry(output: Path, version: str, agent_names: list[str], skill_names: list[str], name_prefix: str) -> None:
-    print("[dry-run] SciAgent plugin build plan")
+def _run_dry(
+    output: Path,
+    version: str,
+    agent_names: list[str],
+    skill_names: list[str],
+    name_prefix: str,
+    platform: str = "copilot",
+) -> None:
+    print(f"[dry-run] SciAgent plugin build plan  (platform: {platform})")
     print(f"  output:  {output}")
     print(f"  version: {version}")
     if name_prefix:
         print(f"  prefix:  {name_prefix}")
     print()
     print("  Files to write:")
-    print(f"    {output / '.github' / 'plugin' / 'plugin.json'}")
+    if platform == "claude":
+        print(f"    {output / '.claude-plugin' / 'plugin.json'}")
+    else:
+        print(f"    {output / '.github' / 'plugin' / 'plugin.json'}")
     print(f"    {output / 'README.md'}")
     for name in agent_names:
         pname = _prefixed(name, name_prefix)
         print(f"    {output / 'agents' / (pname + '.md')}")
     for name in skill_names:
         print(f"    {output / 'skills' / name / 'SKILL.md'}")
-    print(f"    --- templates ---")
-    for name in TEMPLATE_EXTRAS:
-        if (TEMPLATES_DIR / name).exists():
-            print(f"    {output / 'templates' / name}")
-    if PROMPTS_SRC.exists():
-        for p in sorted(PROMPTS_SRC.iterdir()):
-            if p.suffix == ".md" and p.is_file():
-                print(f"    {output / 'templates' / 'prompts' / p.name}")
+    if platform != "claude":
+        print("    --- templates ---")
+        for name in TEMPLATE_EXTRAS:
+            if (TEMPLATES_DIR / name).exists():
+                print(f"    {output / 'templates' / name}")
+        if PROMPTS_SRC.exists():
+            for p in sorted(PROMPTS_SRC.iterdir()):
+                if p.suffix == ".md" and p.is_file():
+                    print(f"    {output / 'templates' / 'prompts' / p.name}")
+    else:
+        print("    --- consolidated templates ---")
+        print(f"    {output / 'skills' / 'configure-domain' / 'sciagent-templates.md'}")
     print()
     n_templates = sum(1 for n in TEMPLATE_EXTRAS if (TEMPLATES_DIR / n).exists())
     n_prompts = sum(1 for p in PROMPTS_SRC.iterdir() if p.suffix == ".md" and p.is_file()) if PROMPTS_SRC.exists() else 0
-    total = 2 + len(agent_names) + len(skill_names) + n_templates + n_prompts
-    print(f"  Total: 2 + {len(agent_names)} agents + {len(skill_names)} skills"
-          f" + {n_templates + n_prompts} templates = {total} files")
+    if platform == "claude":
+        total = 2 + len(agent_names) + len(skill_names) + 1  # +1 consolidated
+    else:
+        total = 2 + len(agent_names) + len(skill_names) + n_templates + n_prompts
+    print(f"  Total: {total} files")
+
+
+def _build_copilot(
+    args: argparse.Namespace,
+    output: Path,
+    version: str,
+    project_meta: dict[str, Any],
+    profile: dict[str, Any],
+    agent_names: list[str],
+    skill_names: list[str],
+    replacements: dict[str, str],
+) -> None:
+    """Run the Copilot (VS Code) build pipeline."""
+    name_prefix = args.name_prefix
+
+    if output.exists() and args.force:
+        shutil.rmtree(output)
+
+    plugin_json = _build_plugin_json(
+        output, version, project_meta, agent_names, skill_names,
+        name_prefix=name_prefix, force=args.force,
+    )
+    agent_files = _build_agents(
+        output, replacements, include_prompts=not args.no_prompts,
+        name_prefix=name_prefix, force=args.force, profile=profile,
+        fullstack=args.fullstack,
+    )
+    skill_files = _build_skills(
+        output, replacements, args.force, profile=profile,
+    )
+
+    # Post-process: rewrite handoffs and body text per profile
+    handoff_rewrites = profile.get("handoff_rewrites", {})
+    body_rewrites = profile.get("body_rewrites", {})
+    if handoff_rewrites:
+        _rewrite_handoffs(agent_files, handoff_rewrites, name_prefix)
+    if body_rewrites:
+        _apply_body_rewrites(agent_files, body_rewrites, name_prefix)
+    _rewrite_routing_table(agent_files, profile, name_prefix, skill_names)
+
+    template_files: list[Path] = []
+    if args.format == "compact-marketplace":
+        template_files = _consolidate_templates(
+            output, replacements, args.force,
+            name_prefix=name_prefix,
+        )
+    else:
+        template_files = _copy_templates(output, replacements, args.force)
+    readme = _build_readme(output, version, agent_names, skill_names, name_prefix, args.force)
+
+    print(f"\nCopilot plugin built → {output}")
+    print(f"  {plugin_json.relative_to(output)}")
+    print(f"  {readme.relative_to(output)}")
+    for f in agent_files:
+        print(f"  {f.relative_to(output)}")
+    for f in skill_files:
+        print(f"  {f.relative_to(output)}")
+    if template_files:
+        print("  --- templates ---")
+        for f in template_files:
+            print(f"  {f.relative_to(output)}")
+    total = 2 + len(agent_files) + len(skill_files) + len(template_files)
+    print(f"  Total: {total} files")
+    print(
+        f'\n  To install locally, add to VS Code settings.json:\n'
+        f'    "chat.plugins.paths": {{\n'
+        f'        "{output.as_posix()}": true\n'
+        f'    }}'
+    )
+
+
+def _build_claude(
+    args: argparse.Namespace,
+    output: Path,
+    version: str,
+    project_meta: dict[str, Any],
+    profile: dict[str, Any],
+    agent_names: list[str],
+    skill_names: list[str],
+    replacements: dict[str, str],
+) -> None:
+    """Run the Claude Code build pipeline."""
+    name_prefix = args.name_prefix
+
+    if output.exists() and args.force:
+        shutil.rmtree(output)
+
+    plugin_json = _build_claude_plugin_json(
+        output, version, project_meta, agent_names, skill_names,
+        name_prefix=name_prefix, force=args.force,
+    )
+    agent_files = _build_claude_agents(
+        output, replacements, include_prompts=not args.no_prompts,
+        name_prefix=name_prefix, force=args.force, profile=profile,
+        fullstack=args.fullstack,
+    )
+    skill_files = _build_claude_skills(
+        output, replacements, args.force, profile=profile,
+    )
+
+    # Post-process: body rewrites per profile (no handoff rewrites for Claude)
+    body_rewrites = profile.get("body_rewrites", {})
+    if body_rewrites:
+        _apply_body_rewrites(agent_files, body_rewrites, name_prefix)
+    _rewrite_routing_table(agent_files, profile, name_prefix, skill_names)
+
+    # Always consolidate templates into skill for Claude (no templates/ dir)
+    template_files = _consolidate_templates(
+        output, replacements, args.force,
+        name_prefix=name_prefix,
+    )
+    readme = _build_claude_readme(
+        output, version, agent_names, skill_names, name_prefix, args.force,
+    )
+
+    print(f"\nClaude Code plugin built → {output}")
+    print(f"  {plugin_json.relative_to(output)}")
+    print(f"  {readme.relative_to(output)}")
+    for f in agent_files:
+        print(f"  {f.relative_to(output)}")
+    for f in skill_files:
+        print(f"  {f.relative_to(output)}")
+    if template_files:
+        print("  --- consolidated templates ---")
+        for f in template_files:
+            print(f"  {f.relative_to(output)}")
+    total = 2 + len(agent_files) + len(skill_files) + len(template_files)
+    print(f"  Total: {total} files")
+    print(f"\n  To test locally:\n    claude --plugin-dir {output.as_posix()}")
 
 
 def main() -> None:
@@ -1425,83 +2137,48 @@ def main() -> None:
     project_meta = _read_pyproject()
     version = args.version or project_meta.get("version", "0.1.0")
     output = Path(args.output).resolve()
+    if args.claude_output:
+        claude_output = Path(args.claude_output).resolve()
+    elif args.platform == "claude":
+        claude_output = output          # --platform claude: use -o directly
+    else:
+        claude_output = Path(str(output) + "-claude")
 
     profile = PROFILES[args.profile]
     agent_names, skill_names = _collect_names(profile)
-
     name_prefix = args.name_prefix
+    platform = args.platform
 
     if args.profile != "full":
         print(f"[profile: {args.profile}] {len(agent_names)} agents, {len(skill_names)} skills")
 
     if args.dry_run:
-        _run_dry(output, version, agent_names, skill_names, name_prefix)
+        if platform in ("copilot", "both"):
+            _run_dry(output, version, agent_names, skill_names, name_prefix, platform="copilot")
+        if platform in ("claude", "both"):
+            if platform == "both":
+                print()  # blank line separator
+            _run_dry(claude_output, version, agent_names, skill_names, name_prefix, platform="claude")
         return
 
     replacements = _read_replacements(
         Path(args.replacements_file) if args.replacements_file else None
     )
 
-    # Clean output dir if --force
-    if output.exists() and args.force:
-        shutil.rmtree(output)
-
     try:
-        plugin_json = _build_plugin_json(
-            output, version, project_meta, agent_names, skill_names,
-            name_prefix=name_prefix, force=args.force,
-        )
-        agent_files = _build_agents(
-            output, replacements, include_prompts=not args.no_prompts,
-            name_prefix=name_prefix, force=args.force, profile=profile,
-            fullstack=args.fullstack,
-        )
-        skill_files = _build_skills(
-            output, replacements, args.force, profile=profile,
-        )
-
-        # Post-process: rewrite handoffs and body text per profile
-        handoff_rewrites = profile.get("handoff_rewrites", {})
-        body_rewrites = profile.get("body_rewrites", {})
-        if handoff_rewrites:
-            _rewrite_handoffs(agent_files, handoff_rewrites, name_prefix)
-        if body_rewrites:
-            _apply_body_rewrites(agent_files, body_rewrites, name_prefix)
-        _rewrite_routing_table(agent_files, profile, name_prefix, skill_names)
-
-        template_files: list[Path] = []
-        if args.format == "compact-marketplace":
-            template_files = _consolidate_templates(
-                output, replacements, args.force,
-                name_prefix=name_prefix,
+        if platform in ("copilot", "both"):
+            _build_copilot(
+                args, output, version, project_meta, profile,
+                agent_names, skill_names, replacements,
             )
-        else:
-            template_files = _copy_templates(output, replacements, args.force)
-        readme = _build_readme(output, version, agent_names, skill_names, name_prefix, args.force)
+        if platform in ("claude", "both"):
+            _build_claude(
+                args, claude_output, version, project_meta, profile,
+                agent_names, skill_names, replacements,
+            )
     except (FileNotFoundError, FileExistsError, RuntimeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         sys.exit(1)
-
-    print(f"SciAgent plugin built successfully → {output}")
-    print(f"\n  {plugin_json.relative_to(output)}")
-    print(f"  {readme.relative_to(output)}")
-    for f in agent_files:
-        print(f"  {f.relative_to(output)}")
-    for f in skill_files:
-        print(f"  {f.relative_to(output)}")
-    if template_files:
-        print("  --- templates ---")
-        for f in template_files:
-            print(f"  {f.relative_to(output)}")
-
-    total = 2 + len(agent_files) + len(skill_files) + len(template_files)
-    print(f"\nTotal: {total} files")
-    print(
-        f'\nTo install locally, add to VS Code settings.json:\n'
-        f'  "chat.plugins.paths": {{\n'
-        f'      "{output.as_posix()}": true\n'
-        f'  }}'
-    )
 
 
 if __name__ == "__main__":

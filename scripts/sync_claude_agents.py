@@ -150,7 +150,6 @@ def _build_frontmatter(fields: dict) -> str:
         lines.append(f"description: {desc}")
 
     lines.append(f"tools: {fields['claude_tools']}")
-    lines.append("model: sonnet")
     lines.append("---")
     return "\n".join(lines)
 

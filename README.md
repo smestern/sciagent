@@ -37,6 +37,23 @@ All layers are configurable and extensible. See [Architecture](docs/architecture
 
 ---
 
+### See it in action
+
+<!-- Each cell below is a placeholder — replace with real screenshots or transcript snippets -->
+
+| `/analysis-planner` | `@sci-reviewer` (rigor review) | `/configure-domain` |
+|:---------------------|:-------------------------------|:---------------------|
+| **Plans before coding** — designs a step-by-step pipeline with success criteria and risk flags before a single line of code runs. | **Catches what linters can't** — flags missing uncertainty quantification, silent data exclusions, and unreproducible random seeds. | **Discovers your stack** — interviews you about your domain, finds relevant packages on PyPI, and generates skills + docs automatically. |
+| <!-- TODO: paste transcript snippet or screenshot --> | ![alt text](image.png) | ![alt text](image-2.png) |
+| <!-- TODO: paste transcript snippet or screenshot --> | ![alt text](image-1.png) | ![alt text](image-3.png) |
+| [Full example →](docs/examples/analysis-planner-example.md) | [Full example →](docs/examples/rigor-review-example.md) | [Full example →](docs/examples/configure-domain-example.md) |
+
+> **More examples:** [docs/examples/](docs/examples/) — data QC, full wizard transcripts, and real-world walkthroughs.
+
+**[Full plugin guide →](docs/getting-started-plugin.md)** · See also [`dist/sciagent/README.md`](dist/sciagent/README.md) for the bundled plugin reference.
+
+---
+
 ## Quick Start — VS Code Plugin (recommended)
 
 The fastest way to get SciAgent running. The prebuilt plugin ships **6 agents** and **7 skills** — no Python install required.
@@ -97,9 +114,6 @@ You: @sci-coordinator I have calcium imaging data in traces.csv.
 Coordinator → Data QC → Coder → Rigor Reviewer → Report Writer
 ```
 
-**[Full plugin guide →](docs/getting-started-plugin.md)** · See also [`dist/sciagent/README.md`](dist/sciagent/README.md) for the bundled plugin reference.
-
----
 
 ## Quick Start — Custom Domain Agent (wizard)
 
@@ -214,7 +228,8 @@ You may be interested in [DAAF](https://github.com/DAAF-Contribution-Community/d
 | 7 | [API / Programmatic Usage](docs/api-usage.md) | `AgentConfig`, `BaseScientificAgent`, tools, guardrails API |
 | 8 | [Architecture](docs/architecture.md) | System diagram, module reference, guardrails pipeline |
 | 9 | [Domain Examples](docs/domains/) | Pre-configured domain setups (intracellular-ephys, extracellular-ephys) |
-| 10 | [Showcase: PatchAgent](docs/showcase.md) | Real-world walkthrough in neurophysiology |
+| 10 | [Feature Examples](docs/examples/) | Annotated transcripts — analysis planner, rigor review, configure domain, data QC |
+| 11 | [Showcase: PatchAgent](docs/showcase.md) | Real-world walkthrough in neurophysiology |
 
 ---
 

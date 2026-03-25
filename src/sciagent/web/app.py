@@ -564,8 +564,10 @@ async def _run_ws_session(
     finally:
         set_current_session(None)
         unregister_session(ws_id)
-        agents.pop(ws_id, None)
-        output_dirs.pop(ws_id, None)
+        # NOTE: Do NOT pop agents/output_dirs here — the user may
+        # still click the download link after the WebSocket closes.
+        # Both the deferred-cleanup timer and the download endpoint
+        # handle popping these dicts when appropriate.
         send_queue.put_nowait(None)
         for task in background_tasks:
             task.cancel()
@@ -1043,6 +1045,9 @@ def _maybe_forward_download_ready(
             if session_id else ""
         ),
     })
+    # Clear so the card is never sent twice (mirrors pending_question pattern).
+    if wizard_state is not None:
+        wizard_state.last_generate_result = None
 
 
 def _default_sample_dir() -> Path:
