@@ -22,8 +22,11 @@
 
 # *Example: Transcript*
 
-**User:**  
-Review the following code for rigour. I'm particularly concerned about data leakage.  
+
+<div style="text-align: right">  <b>User:</b>
+
+Review the following code for rigour. I'm particularly concerned about data leakage.</div>
+
 
 **Model:**  
 I've read the full notebook. Here is my review.
