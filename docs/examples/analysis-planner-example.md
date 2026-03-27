@@ -31,120 +31,77 @@
 
 ## Analysis Plan: F-I Curve Extraction from IC1 Protocol ABF Files
 
-### 1. Restatement of the Research Question
+### 1. Research Question (Restated)
 
-Extract frequency-input (F-I) curves from all patch-clamp ABF files whose pClamp protocol is named **"IC1"**. An IC1 protocol is a standard current-clamp step protocol: each sweep injects a different current amplitude (increasing steps), and the membrane voltage response is recorded. The F-I curve plots **firing frequency** (spikes/s) vs. **injected current** (pA) for each cell.
+> Scan the opto_patch_data directory tree for all ABF files using the **"IC1"** protocol, then extract the **frequency–input (F-I) curve** (spike frequency vs. injected current) from each file.
 
----
-
-### 2. Data Survey Summary
+### 2. Data Survey
 
 | Property | Value |
 |---|---|
-| Total ABF files | ~909 across opto_patch_data subdirectories |
-| File discovery pattern | `glob.glob("./opto_patch_data/**/*.abf", recursive=True)` |
-| Existing loader | loadABF.py — returns `(time, voltage, command)` arrays via pyABF |
-| Spike detection | `pyAPisolation.featureExtractor.analyze_spike_times` already used in analyze_justice_IC.py |
-| Protocol accessor | `pyabf.ABF(path).protocol` gives the protocol name string |
-| Units | Y-channel: mV (voltage), C-channel: pA (command current) |
+| Total ABF files | 909 |
+| **IC1 protocol files** | **151** (+ 1 with "2_ IC1_50hz") |
+| Sweep count | 11–15 depending on cell (varies by max current step) |
+| Sampling rate | 50,000 Hz (consistent) |
+| Sweep length | 5.0 s |
+| Y units | mV (membrane potential) |
+| C units | pA (injected current) |
 
-**Unknown (will be resolved in Step 1):** The exact protocol string — could be `"IC1"`, `"IC 1"`, `"ic1"`, etc. The first step will inventory all unique protocol names to confirm the exact match.
+**Protocol structure** (consistent across all files):
+1. **Holding** at 0 pA (0 – 0.278 s)
+2. **Hyperpolarizing pre-step** –20 pA (0.278 – 0.578 s, ~300 ms) — for input resistance measurement
+3. **Test current step** (0.578 – 1.278 s, **700 ms**) — varies per sweep: –10 to +120 pA in 10 pA increments
+4. **Return to holding** (1.278 – 5.0 s)
 
----
+**Variability noted**: Some files have only 11 or 13 sweeps (max step 80–100 pA instead of 120 pA). The epoch timings are consistent.
 
-### 3. Pipeline Design (Numbered Checklist)
+### 3. Pipeline Design
 
-#### Step 1 — Discover & Inventory Protocols
-- **Action**: Scan all ABF files, read `abf.protocol` from each, collect unique protocol names
-- **Tool/library**: `pyabf`, `glob`
-- **Expected output**: A printed list of unique protocol names with file counts
-- **Checkpoint**: Confirm "IC1" (or variant) appears; note total file count for that protocol
+| # | Step | Action | Tool/Library | Expected Output | Checkpoint |
+|---|---|---|---|---|---|
+| 1 | **Find IC1 files** | `glob` + `pyabf.ABF(loadData=False)` to filter by `abf.protocol == "IC1"` | `pyabf`, `glob` | List of ~151 file paths | Count matches known total |
+| 2 | **Load & parse** | For each file: load all sweeps with `pyabf`, extract time (`sweepX`), voltage (`sweepY`), command (`sweepC`) | `pyabf`, `numpy` | Arrays `(n_sweeps, n_samples)` | Shapes consistent; units = mV/pA |
+| 3 | **Extract epoch timing** | From command waveform: detect transitions in `sweepC` to find step onset/offset | `numpy` | `step_start`, `step_end` in seconds | Values ≈ 0.578 s and 1.278 s |
+| 4 | **Extract step current** | For each sweep: read the command level during the test epoch | `numpy` | Array of injected currents (pA) per sweep | Range from –20 to +120 pA, monotonic |
+| 5 | **Spike detection** | During the step epoch: use `scipy.signal.find_peaks` with threshold-based detection (threshold crossing > 0 mV, `height=0`, `distance` ≥ 2 ms = 100 samples) | `scipy.signal` | Array of spike times per sweep | Visual inspection of traces with detected spikes |
+| 6 | **Compute firing rate** | `n_spikes / step_duration` for each sweep | `numpy` | Spike frequency (Hz) per sweep | 0 Hz for subthreshold sweeps; plausible range 0–200 Hz |
+| 7 | **Build F-I table** | Compile `(file, sweep, current_pA, n_spikes, freq_Hz)` into a DataFrame | `pandas` | One row per sweep per file | No NaN in required columns |
+| 8 | **Save & plot** | Save CSV; plot per-cell F-I curves + population mean ± SEM | `matplotlib`, `pandas` | CSV file + PNG figure | Curves are monotonically non-decreasing |
 
-#### Step 2 — Load & Validate a Single IC1 File
-- **Action**: Pick the first IC1 file. Load with `pyabf.ABF()`. Inspect:
-  - Number of sweeps
-  - Sweep duration, sample rate
-  - Command waveform shape (should show current steps)
-  - Y-channel units (`sweepUnitsY` should be "mV")
-  - C-channel units (`sweepUnitsC` should be "pA")
-  - Determine current injection epoch (start/end) from the command waveform or epoch table
-- **Tool/library**: `pyabf`
-- **Expected output**: A summary printout + a quick plot of one sweep (voltage + command overlay)
-- **Checkpoint**: Current steps increase across sweeps; units are correct; injection window is identifiable
+### 4. Parameter Choices
 
-#### Step 3 — Spike Detection on One File
-- **Action**: For each sweep, detect action potentials in the current injection window. Count spikes. Compute frequency = count / injection_duration.
-- **Tool/library**: `scipy.signal.find_peaks` (simple, no extra dependency) or `pyAPisolation.featureExtractor.analyze_spike_times` (already in codebase)
-- **Parameters**:
-  - **Spike threshold**: Use a voltage threshold (e.g., 0 mV or dynamically set based on sweep baseline + N*SD). `find_peaks(height=0, distance=int(0.002*fs))` is a reasonable default for neurons (refractory ~2 ms).
-  - **Injection window**: Derived from command waveform epoch start/end
-- **Expected output**: Per-sweep: `(current_pA, spike_count, frequency_Hz)`
-- **Checkpoint**: Subthreshold sweeps show 0 spikes; frequency increases monotonically with current (mostly); no spurious spikes outside injection window
-
-#### Step 4 — Build F-I Curve for One Cell
-- **Action**: Plot frequency (Hz) vs. injected current (pA) for the single validated file
-- **Tool/library**: `matplotlib`
-- **Expected output**: A clean F-I curve plot
-- **Checkpoint**: Curve should be flat at 0 Hz for subthreshold currents, then rise. Rheobase should be a plausible value (typically 20–400 pA depending on cell type)
-
-#### Step 5 — Small Batch Test (2–3 additional IC1 files)
-- **Action**: Process 2–3 more IC1 files through the same pipeline. Compare results across cells.
-- **Checkpoint**: Each F-I curve is plausible; no crashes or edge cases
-
-#### Step 6 — Scale to All IC1 Files
-- **Action**: Loop over all IC1 files. For each:
-  1. Load ABF
-  2. Extract current steps from command waveform
-  3. Detect spikes per sweep
-  4. Compute F-I curve
-  5. Store results in a DataFrame
-- **Expected output**: A CSV / DataFrame with columns: `file_path, cell_id, current_pA, spike_count, frequency_Hz`
-- **Checkpoint**: All files processed without errors; no NaN/Inf values; distributions look reasonable
-
-#### Step 7 — Aggregate Visualization & Export
-- **Action**:
-  - Plot individual F-I curves (one line per cell)
-  - Plot mean ± SEM F-I curve across cells
-  - Save results CSV and figure(s)
-- **Tool/library**: `matplotlib`, `pandas`
-- **Expected output**: Summary F-I plot + CSV file
-- **Checkpoint**: Mean curve is smooth; error bars are reasonable; N is reported
-
----
-
-### 4. Key Parameters
-
-| Parameter | Default | Justification |
+| Parameter | Value | Justification |
 |---|---|---|
-| Protocol filter | `"IC1"` (case-insensitive) | User-specified; will confirm in Step 1 |
-| Spike height threshold | 0 mV | Standard for intracellular AP detection |
-| Min spike distance | 2 ms (`distance = int(0.002 * fs)`) | Absolute refractory period |
-| Injection window | Derived from `abf.sweepEpochs` | Epoch table gives exact start/end of step |
+| Spike detection threshold | 0 mV (`height=0`) | Standard for action potential detection in current clamp |
+| Minimum inter-spike interval | 2 ms (`distance=100` samples at 50 kHz) | Prevents double-counting; absolute refractory period ≈ 1–2 ms |
+| Step epoch | Detected from command waveform transitions | Robust to small protocol variations |
+| Step duration | `step_end - step_start` (~0.7 s) | Directly measured from the command waveform |
 
 ### 5. Risks & Mitigations
 
 | Risk | Mitigation |
 |---|---|
-| Protocol name mismatch (e.g., "IC 1", "ic_1") | Step 1 inventories all protocol names; use case-insensitive substring match |
-| Variable sweep counts / step sizes across files | Extract current per-sweep from command waveform rather than assuming a fixed step increment |
-| Corrupted or truncated ABF files | Wrap loading in try/except; log and skip failures |
-| Spike detection misses or false positives | Validate on single file first (Step 3); plot raw trace with detected peaks overlaid |
-| pyAPisolation not installed | Fall back to `scipy.signal.find_peaks` (no extra install needed) |
-| Sweeps with depolarization block (high current, reduced firing) | This is real biology — report it honestly, don't smooth it away |
+| Some files may have different sweep counts/step ranges | Dynamically detect from command waveform per file; don't hardcode |
+| Spike detection may fail on noisy/depolarization-blocked sweeps | Use `prominence` parameter as secondary filter; flag sweeps where max voltage is near 0 mV but no clear spikes detected |
+| Cells may spike during pre-step or holding (spontaneously active) | Only count spikes during the step epoch |
+| File read errors (Dropbox sync/corruption) | Try/except per file, skip and log errors |
+| "2_ IC1_50hz" protocol may have different structure | Include as optional; verify epoch structure matches IC1 |
 
 ### 6. Success Criteria
 
-- All IC1-protocol ABF files identified and processed
-- Per-cell F-I curves are sigmoidal / monotonically-increasing (until possible depol block)
-- Rheobase and max firing rate are within physiologically plausible ranges
-- Results are reproducible (deterministic code, no random components)
-- Output CSV has no missing values for successfully processed files
+- F-I curves are **monotonically non-decreasing** (higher current → equal or higher firing rate)
+- Subthreshold sweeps (low current) show 0 Hz
+- Peak firing rates are physiologically plausible (typically 5–200 Hz for most neuron types)
+- All 151 IC1 files processed or explicitly logged as errors
+- Output CSV contains one row per sweep per cell with: `file`, `sweep`, `current_pA`, `n_spikes`, `freq_Hz`
+
+### 7. Incremental Validation Plan
+
+1. **Validate on 1 file** → inspect traces, check spike detection visually, verify F-I curve shape
+2. **Batch of 3 files** from different dates → check consistency
+3. **Full dataset** → process all 151 files, save results
 
 ---
 
-### Recommended First Step
-
-**Start with Step 1 (protocol inventory)** to confirm the exact "IC1" string and the number of files. This is quick and will validate that the pipeline target is correct before writing any analysis code.
-
-To proceed, hand off to **sci-coder** with this plan. Would you like me to route to the coder agent now, or do you want to adjust any parameters first (e.g., spike detection method, threshold, specific output format)?
+Shall I proceed with implementation? I'll start with step 1 (validate on a single file) per the incremental execution principle.
 

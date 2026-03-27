@@ -44,8 +44,8 @@ All layers are configurable and extensible. See [Architecture](docs/architecture
 | `/analysis-planner` | `@sci-reviewer` (rigor review) | `/configure-domain` |
 |:---------------------|:-------------------------------|:---------------------|
 | **Plans before coding** — designs a step-by-step pipeline with success criteria and risk flags before a single line of code runs. | **Catches what linters can't** — flags missing uncertainty quantification, silent data exclusions, and unreproducible random seeds. | **Discovers your stack** — interviews you about your domain, finds relevant packages on PyPI, and generates skills + docs automatically. |
-| ![alt text](image-4.png)| ![alt text](image.png) | ![alt text](image-2.png) |
-| ![alt text](image-5.png) | ![alt text](image-1.png) | ![alt text](image-3.png) |
+| ![alt text](docs/images/image-4.png)| ![alt text](docs/images/image.png) | ![alt text](docs/images/image-2.png) |
+| ![alt text](docs/images/image-6.png) | ![alt text](docs/images/image-1.png) | ![alt text](docs/images/image-3.png) |
 | [Full example →](docs/examples/analysis-planner-example.md) | [Full example →](docs/examples/rigor-review-example.md) | [Full example →](docs/examples/configure-domain-example.md) |
 
 > **More examples:** [docs/examples/](docs/examples/) — data QC, full wizard transcripts, and real-world walkthroughs.
