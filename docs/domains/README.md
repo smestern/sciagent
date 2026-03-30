@@ -42,7 +42,7 @@ The skill interviews you, discovers relevant Python packages, fetches documentat
 ### Option B: Use the wizard
 
 ```bash
-sciagent wizard -m copilot_agent
+sciagent wizard -m copilot
 ```
 
 The wizard performs the same discovery and generation process interactively.

@@ -54,7 +54,7 @@ class _MiniState:
     example_files: list = field(default_factory=list)
     domain_prompt: str = ""
     project_dir: str = ""
-    output_mode: str = "copilot_agent"
+    output_mode: str = "copilot"
 
 
 def config_to_mini_state(

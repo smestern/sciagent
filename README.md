@@ -122,10 +122,10 @@ Want agents tailored to your specific research domain? The wizard interviews you
 ```bash
 pip install "sciagent[all] @ git+https://github.com/smestern/sciagent.git"
 pip install "sciagent-wizard @ git+https://github.com/smestern/sciagent-wizard.git"
-sciagent wizard -m copilot_agent     # generates VS Code + Claude Code agent files
+sciagent wizard -m copilot     # generates VS Code Copilot plugin + Claude Code agents
 ```
 
-Copy the generated `.github/agents/` and `.claude/agents/` folders into your project — VS Code picks them up automatically.
+Add the generated plugin to VS Code `settings.json` via `chat.plugins.paths` — agents and skills appear automatically.
 
 **[Full setup guide →](docs/getting-started-copilot.md)**
 
@@ -154,12 +154,12 @@ See [Installation](docs/installation.md) for prerequisites, dev setup, and verif
 
 SciAgent generates a domain-specific scientific agent in several formats. Pick the one that fits your workflow:
 
-### 1. Copilot / Claude Code — IDE config files (recommended)
+### 1. Copilot Plugin + Claude Code — IDE integration (recommended)
 
-Markdown-based agent definitions that plug directly into VS Code Copilot Chat or Claude Code. Start with the **prebuilt plugin** above for zero-config, or generate domain-customized agents via the wizard.
+Full VS Code Copilot plugin with `plugin.json`, compiled agents, skills, and Claude Code agents. Start with the **prebuilt plugin** above for zero-config, or generate domain-customized agents via the wizard.
 
 ```bash
-sciagent wizard -m copilot_agent
+sciagent wizard -m copilot
 ```
 
 **[Full setup guide →](docs/getting-started-copilot.md)** · **[Agents & Skills Reference →](docs/copilot-agents.md)**

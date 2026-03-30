@@ -181,10 +181,11 @@ hypercorn sciagent_wizard.web:create_app --reload --bind 0.0.0.0:5000
 
 | Mode | Entry | Produces |
 |------|-------|----------|
-| `COPILOT_PLUGIN` | `generate_copilot_plugin()` | **Primary.** `plugin.json` + compiled agents + skills from templates |
-| `COPILOT_AGENT` | `generate_copilot_project()` | `.github/agents/*.agent.md` + `.claude/agents/*.md` + instructions |
+| `COPILOT` | `generate_copilot_via_build()` | **Primary.** Calls `build_plugin.py` via subprocess → `plugin.json` + compiled agents + skills + Claude Code agents |
 | `MARKDOWN` | `generate_markdown_project()` | Platform-agnostic spec: system-prompt.md, tools-reference.md, guardrails.md |
 | `FULLSTACK` | `generate_fullstack_project()` | Python package: agent.py, config.py, tools.py, domain_prompt.py, requirements.txt |
+
+> Legacy enum values `COPILOT_AGENT` and `COPILOT_PLUGIN` are aliases for `COPILOT`.
 
 ---
 

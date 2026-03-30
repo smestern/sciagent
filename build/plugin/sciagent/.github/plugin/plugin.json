@@ -1,7 +1,7 @@
 {
   "name": "sciagent",
   "description": "A framework for building rigorous, human-in-the-loop scientific coding agents",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": {
     "name": "smestern"
   },
@@ -17,20 +17,26 @@
     "report-writing"
   ],
   "agents": [
-    "./agents/sci-coder.md",
-    "./agents/sci-coordinator.md",
-    "./agents/sci-docs-ingestor.md",
-    "./agents/sci-domain-assembler.md",
-    "./agents/sci-report-writer.md",
-    "./agents/sci-reviewer.md"
+    "./agents/sciagent-analysis-planner.md",
+    "./agents/sciagent-code-reviewer.md",
+    "./agents/sciagent-coder.md",
+    "./agents/sciagent-coordinator.md",
+    "./agents/sciagent-data-qc.md",
+    "./agents/sciagent-docs-ingestor.md",
+    "./agents/sciagent-domain-assembler.md",
+    "./agents/sciagent-report-writer.md",
+    "./agents/sciagent-rigor-reviewer.md"
   ],
   "skills": [
     "./skills/analysis-planner",
+    "./skills/code-reviewer",
     "./skills/configure-domain",
     "./skills/data-qc",
     "./skills/docs-ingestor",
     "./skills/report-writer",
-    "./skills/review",
-    "./skills/scientific-rigor"
+    "./skills/rigor-reviewer",
+    "./skills/scientific-rigor",
+    "./skills/switch-domain",
+    "./skills/update-domain"
   ]
 }

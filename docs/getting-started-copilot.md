@@ -35,7 +35,7 @@ The wizard is a **separate package** that registers itself as a SciAgent plugin.
 ## Step 2: Run the Wizard
 
 ```bash
-sciagent wizard -m copilot_agent
+sciagent wizard -m copilot
 ```
 
 Or choose **Copilot / Claude Code** during the wizard conversation:

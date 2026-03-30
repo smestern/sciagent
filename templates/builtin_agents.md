@@ -218,7 +218,7 @@ electrophysiology), add a new agent following the same pattern:
 3. **Claude agent**: Add a `.md` file to `.claude/agents/`
 4. **Wire handoffs**: Add `handoffs` entries in the YAML frontmatter
 
-Or use the self-assembly wizard (`sciagent wizard -m copilot_agent`) to
+Or use the self-assembly wizard (`sciagent wizard -m copilot`) to
 generate domain-specific agents automatically from a conversation.
 
 ---

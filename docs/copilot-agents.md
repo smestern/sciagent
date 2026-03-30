@@ -378,7 +378,7 @@ The self-assembly wizard already generates Copilot/Claude agent files as
 one of its output modes:
 
 ```bash
-sciagent wizard -m copilot_agent
+sciagent wizard -m copilot
 ```
 
 The wizard interviews you about your research domain, discovers relevant
