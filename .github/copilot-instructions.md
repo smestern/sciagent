@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**SciAgent** is a framework for building domain-specific scientific analysis agents that enforce scientific rigor. It runs on the GitHub Copilot SDK and produces agents delivered as VS Code plugins, Claude Code configs, or standalone Python packages.
+**SciAgent** is a framework for building domain-specific scientific analysis agents that enforce scientific rigor. It runs on the GitHub Copilot SDK and produces agents delivered primarily as VS Code plugins and Claude Code configs, with an optional fullstack Python package mode.
 
 **SciAgent-Wizard** is the backend service that powers SciAgent's self-assembly workflow — a conversational LLM agent that interviews researchers about their domain, discovers relevant Python packages from multiple sources, and generates complete agent projects.
 
@@ -59,9 +59,9 @@ src/sciagent_wizard/
 ├── web.py             # Quart blueprint — /wizard/ routes
 ├── public.py          # Quart blueprint — /public/ guided mode (rate-limited)
 ├── generators/        # Output pipeline dispatched by OutputMode
-│   ├── fullstack.py        # Complete Python submodule with agent + config + tools
-│   ├── copilot.py          # VS Code .agent.md + .instructions.md + plugin.json
+│   ├── copilot.py          # VS Code .agent.md + .instructions.md + plugin.json (primary)
 │   ├── markdown.py         # Platform-agnostic markdown spec
+│   ├── fullstack.py        # Complete Python submodule with agent + config + tools
 │   ├── agent_gen.py        # agent.py source generation
 │   ├── config_gen.py       # config.py source generation
 │   ├── prompt_gen.py       # domain_prompt.py DOMAIN_EXPERTISE constant
@@ -181,10 +181,10 @@ hypercorn sciagent_wizard.web:create_app --reload --bind 0.0.0.0:5000
 
 | Mode | Entry | Produces |
 |------|-------|----------|
-| `FULLSTACK` | `generate_fullstack_project()` | Python package: agent.py, config.py, tools.py, domain_prompt.py, requirements.txt |
+| `COPILOT_PLUGIN` | `generate_copilot_plugin()` | **Primary.** `plugin.json` + compiled agents + skills from templates |
 | `COPILOT_AGENT` | `generate_copilot_project()` | `.github/agents/*.agent.md` + `.claude/agents/*.md` + instructions |
-| `COPILOT_PLUGIN` | `generate_copilot_plugin()` | `plugin.json` + compiled agents + skills from templates |
 | `MARKDOWN` | `generate_markdown_project()` | Platform-agnostic spec: system-prompt.md, tools-reference.md, guardrails.md |
+| `FULLSTACK` | `generate_fullstack_project()` | Python package: agent.py, config.py, tools.py, domain_prompt.py, requirements.txt |
 
 ---
 
