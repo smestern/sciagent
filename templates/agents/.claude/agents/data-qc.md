@@ -4,7 +4,6 @@ description: >-
   Checks data quality before analysis — missing values, outliers,
   distributions, unit validation, and structural integrity.
 tools: Read, Write, Edit, Bash, Grep, Glob
-model: sonnet
 ---
 
 

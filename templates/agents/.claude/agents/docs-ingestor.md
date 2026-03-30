@@ -5,7 +5,6 @@ description: >-
   ReadTheDocs, and GitHub to produce a structured API reference. Use
   when you need to learn an unfamiliar library for scientific analysis.
 tools: Read, Write, Edit, Grep, Glob, Fetch, Terminal
-model: sonnet
 ---
 
 

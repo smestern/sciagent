@@ -5,7 +5,6 @@ description: >-
   scientific best practices — provides actionable feedback without
   modifying code.
 tools: Read, Grep, Glob
-model: sonnet
 ---
 
 

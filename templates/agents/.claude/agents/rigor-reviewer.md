@@ -4,7 +4,6 @@ description: >-
   Reviews analysis output for scientific rigor violations — statistical
   validity, data integrity, reproducibility, and reporting completeness.
 tools: Read, Grep, Glob, Fetch
-model: sonnet
 ---
 
 

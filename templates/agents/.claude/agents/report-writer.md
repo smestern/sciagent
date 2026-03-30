@@ -4,7 +4,6 @@ description: >-
   Generates structured scientific reports with figures, tables,
   uncertainty quantification, and reproducibility information.
 tools: Read, Write, Edit, Grep, Glob, Fetch
-model: sonnet
 ---
 
 

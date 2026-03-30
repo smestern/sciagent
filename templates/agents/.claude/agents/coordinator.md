@@ -4,7 +4,6 @@ description: >-
   Master entry point for scientific analysis — triages tasks and routes
   to specialized agents.
 tools: Read, Grep, Glob, Fetch
-model: sonnet
 ---
 
 

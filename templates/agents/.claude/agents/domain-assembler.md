@@ -6,7 +6,6 @@ description: >-
   files. Invoke directly or via /configure-domain, /update-domain, and
   /switch-domain skills.
 tools: Read, Write, Edit, Grep, Glob, Fetch
-model: sonnet
 ---
 
 

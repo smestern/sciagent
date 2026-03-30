@@ -5,7 +5,6 @@ description: >-
   implements analysis plans, writes scripts, and executes code while
   enforcing data integrity, reproducibility, and transparent reporting.
 tools: Read, Write, Edit, Bash, Grep, Glob
-model: sonnet
 ---
 
 

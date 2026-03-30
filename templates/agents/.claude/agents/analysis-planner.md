@@ -5,7 +5,6 @@ description: >-
   roadmap, specifies parameters, and anticipates risks without running
   any code.
 tools: Read, Grep, Glob, Fetch
-model: sonnet
 ---
 
 
