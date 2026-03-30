@@ -694,9 +694,15 @@ async def stream_response(
     )
     from copilot.generated.session_events import SessionEventType
 
-    MAX_RETRIES = 5
+    MAX_RETRIES = 8
     idle_event = asyncio.Event()
     transient_error: list[str] = []  # use list to allow mutation in closure
+
+    # Patterns that indicate a transient LLM / infra error worth retrying
+    _TRANSIENT_PATTERNS = (
+        "finish_reason", "Unknown error", "Failed to get response",
+        "retried", "model", "timeout", "overloaded",
+    )
 
     # Track tool names from START events — the SDK's
     # TOOL_EXECUTION_COMPLETE event often has tool_name=None.
@@ -783,8 +789,12 @@ async def stream_response(
 
         elif etype == SessionEventType.SESSION_ERROR:
             err = getattr(event.data, "message", None) or str(event.data)
-            # Flag transient LLM API errors for retry
-            if "finish_reason" in err and _retry < MAX_RETRIES:
+            # Flag transient LLM / infra errors for retry
+            _is_transient = (
+                _retry < MAX_RETRIES
+                and any(p.lower() in err.lower() for p in _TRANSIENT_PATTERNS)
+            )
+            if _is_transient:
                 logger.warning(
                     "Transient LLM error (will retry, attempt %d/%d): %s",
                     _retry + 1, MAX_RETRIES, err,
@@ -807,7 +817,7 @@ async def stream_response(
 
     # Retry on transient errors with exponential backoff
     if transient_error and _retry < MAX_RETRIES:
-        backoff = min(2 ** _retry, 30)  # 1, 2, 4, 8, 16 s (capped at 30)
+        backoff = min(2 ** _retry, 60)  # 1, 2, 4, 8, 16, 32, 60, 60 s
         send_queue.put_nowait({
             "type": "status",
             "text": f"Retrying in {backoff}s\u2026 (attempt {_retry + 1}/{MAX_RETRIES})",

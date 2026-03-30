@@ -47,17 +47,18 @@ from copilot.types import PermissionHandler
 
 
 def _model_error_handler(input_data, context):
-    """Hook that retries transient model-call errors with generous limits.
+    """Hook that retries all recoverable errors with generous limits.
 
     The default SDK behaviour retries 5 times with ~6 s total backoff,
-    which is too aggressive for slow or overloaded model endpoints.
-    We allow up to 8 retries and let the CLI compute its own backoff
-    on top of that.
+    which is too aggressive for slow or overloaded model endpoints
+    (especially on Railway where idle sessions trigger 'Unknown error').
+    We allow up to 12 retries for any recoverable error and let the
+    web / CLI layers compute their own backoff on top of that.
     """
-    if input_data.get("errorContext") == "model_call" and input_data.get("recoverable", True):
+    if input_data.get("recoverable", True):
         return {
             "errorHandling": "retry",
-            "retryCount": 8,
+            "retryCount": 12,
             "suppressOutput": True,
         }
     return None
