@@ -71,6 +71,7 @@ all = [
 [project.scripts]
 sciagent = "sciagent.cli:app"
 sciagent-web = "sciagent.web.app:main"
+sciagent-build = "sciagent.scripts.build_plugin:main"
 
 [project.urls]
 Homepage = "https://github.com/smestern/sciagent"

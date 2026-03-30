@@ -9,10 +9,11 @@ up automatically — no pre-install hook is needed.
 from setuptools import setup, find_packages
 
 setup(
-    packages=find_packages("src") + ["sciagent.templates"],
+    packages=find_packages("src") + ["sciagent.templates", "sciagent.scripts"],
     package_dir={
         "": "src",
         "sciagent.templates": "templates",
+        "sciagent.scripts": "scripts",
     },
     package_data={
         "sciagent.prompts": ["*.md"],
