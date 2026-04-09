@@ -1,7 +1,6 @@
 ---
 name: sci-docs-ingestor
-description: >-
-  Ingests documentation for any Python library — crawls PyPI, ReadTheDocs,
+description: Ingests documentation for any Python library — crawls PyPI, ReadTheDocs,
   and GitHub to produce a structured API reference. Use when you need to
   learn an unfamiliar library for scientific analysis.
 argument-hint: Package name to learn, e.g. scipy, neo, pyabf
