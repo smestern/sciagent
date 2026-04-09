@@ -108,6 +108,8 @@ When a user provides a file:
 ```
 -->
 
+See [computational-neuro standard workflows](docs/domains/computational-neuro/operations.md#standard-workflows)
+
 ---
 
 ## Analysis Parameters
@@ -123,6 +125,8 @@ When a user provides a file:
 | smoothing_sigma | 2.0 | Gaussian smoothing kernel width |
 | min_sample_size | 3 | Minimum N for statistical tests |
 -->
+
+See [computational-neuro analysis parameters](docs/domains/computational-neuro/operations.md#analysis-parameters)
 
 | Parameter | Default | Context |
 |-----------|---------|---------|
@@ -142,6 +146,8 @@ When a user provides a file:
 - Conservative analysis
 - Publication-quality filtering
 -->
+
+See [computational-neuro parameter adjustment guidance](docs/domains/computational-neuro/operations.md#when-to-adjust-parameters)
 
 ---
 
@@ -189,6 +195,8 @@ If analysis fails:
 - Flag inconsistencies for user review
 -->
 
+See [computational-neuro edge cases](docs/domains/computational-neuro/operations.md#edge-cases)
+
 ---
 
 ## Reporting Standards
@@ -205,6 +213,8 @@ If analysis fails:
 | Ratios | 2 decimals | — |
 | Percentages | 1 decimal | % |
 -->
+
+See [computational-neuro reporting precision](docs/domains/computational-neuro/operations.md#reporting-precision)
 
 | Measurement | Precision | Units |
 |-------------|-----------|-------|

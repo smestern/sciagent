@@ -37,3 +37,19 @@ domains:
       - neo
       - probeinterface
       - spikeinterface
+
+  - slug: computational-neuro
+    name: Computational Neuroscience (Biophysical Modeling)
+    description: >
+      Biologically constrained computational models of single neurons and networks.
+      Simulation with Brian2, state-space modeling with SSM (HMM/SLDS), and
+      simulation-based inference with SBI for parameter estimation.
+    packages:
+      - brian2
+      - ssm
+      - sbi
+    skills:
+      - domain-expertise
+      - brian2
+      - ssm
+      - sbi

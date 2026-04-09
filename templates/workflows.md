@@ -21,6 +21,8 @@ user) through a common analysis task from start to finish.
 | Export | Package results for publication | Collect → format → figures → export |
 -->
 
+See [computational-neuro workflow overview](docs/domains/computational-neuro/workflows.md#workflow-overview)
+
 | Workflow | Purpose | Key Steps |
 |----------|---------|-----------|
 | *workflow_name* | *purpose* | *key steps* |
@@ -31,7 +33,11 @@ user) through a common analysis task from start to finish.
 
 ## <!-- REPLACE: workflow_name — The workflow's name, e.g. "Initial Quality Control", "Standard Analysis", "Batch Processing" -->
 
+See [computational-neuro workflows](docs/domains/computational-neuro/workflows.md) for full workflow definitions.
+
 **Purpose**: <!-- REPLACE: workflow_purpose — A sentence describing when and why to use this workflow. Example: "Assess recording quality before committing to a full analysis run." -->
+
+See [computational-neuro workflow details](docs/domains/computational-neuro/workflows.md) for purpose and descriptions.
 
 **When to Use**:
 <!-- REPLACE: workflow_when_to_use — Conditions or trigger phrases for this workflow. Example:
@@ -39,6 +45,8 @@ user) through a common analysis task from start to finish.
 - User asks "check the quality" or "is this data usable?"
 - Before any substantive analysis
 -->
+
+See [computational-neuro workflows](docs/domains/computational-neuro/workflows.md) for when-to-use guidance.
 
 ### Steps
 
@@ -65,6 +73,8 @@ user) through a common analysis task from start to finish.
 ```
 -->
 
+See [computational-neuro workflow steps](docs/domains/computational-neuro/workflows.md) for detailed steps per workflow.
+
 ### Parameters
 
 <!-- REPLACE: workflow_parameters — Key parameters used in this workflow and their defaults. Example:
@@ -74,6 +84,8 @@ user) through a common analysis task from start to finish.
 | min_samples | 100 | Minimum number of data points required |
 -->
 
+See [computational-neuro workflow parameters](docs/domains/computational-neuro/workflows.md) for parameter tables.
+
 ### Expected Outputs
 
 <!-- REPLACE: workflow_outputs — What the user should expect at the end of this workflow. Example:
@@ -81,6 +93,8 @@ user) through a common analysis task from start to finish.
 - List of flagged issues with severity
 - Recommendation: proceed / exclude / review
 -->
+
+See [computational-neuro workflow outputs](docs/domains/computational-neuro/workflows.md) for expected outputs.
 
 ---
 

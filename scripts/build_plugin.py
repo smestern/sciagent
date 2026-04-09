@@ -179,10 +179,12 @@ _CLAUDE_TOOL_MAP: dict[str, list[str]] = {
     "terminal": ["Terminal"],
     "codebase": ["Read", "Grep", "Glob"],
     "todo": [],
+    "agent": [],
+    "vscode/memory": [],
 }
 
 # YAML frontmatter fields to strip from Claude agent/skill output
-_CLAUDE_STRIP_AGENT_FIELDS = {"argument-hint", "handoffs"}
+_CLAUDE_STRIP_AGENT_FIELDS = {"argument-hint", "handoffs", "agents"}
 _CLAUDE_STRIP_SKILL_FIELDS = {"argument-hint", "user-invokable"}
 
 
@@ -228,7 +230,7 @@ PROFILES: dict[str, dict[str, Any]] = {
         "body_rewrites": {},
     },
     "compact": {
-        "exclude_agents": ["analysis-planner", "data-qc"],
+        "exclude_agents": ["coordinator", "data-qc"],
         "exclude_skills": ["update-domain", "switch-domain"],
         "merge_agents": {
             "reviewer": {
@@ -282,25 +284,11 @@ PROFILES: dict[str, dict[str, Any]] = {
         "handoff_rewrites": {
             "code-reviewer": "reviewer",
             "rigor-reviewer": "reviewer",
-            "analysis-planner": {
-                "agent": "coordinator",
-                "prompt": (
-                    "Use the /analysis-planner skill to create a step-by-step "
-                    "analysis plan for the task described above. Do not write "
-                    "implementation code — plan only."
-                ),
-            },
-            "data-qc": {
-                "agent": "coordinator",
-                "prompt": (
-                    "Use the /data-qc skill to run quality control checks on "
-                    "the data identified above. Focus on QC only — do not "
-                    "proceed to analysis."
-                ),
-            },
+            "coordinator": "analysis-planner",
+            "data-qc": None,
         },
         "body_rewrites": {
-            "@analysis-planner": "the `/analysis-planner` skill (invoke with `/analysis-planner`)",
+            "@coordinator": "@analysis-planner",
             "@data-qc": "the `/data-qc` skill (invoke with `/data-qc`)",
             "@code-reviewer": "@reviewer",
             "@rigor-reviewer": "@reviewer",

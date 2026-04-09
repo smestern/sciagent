@@ -1,7 +1,13 @@
 # <!-- REPLACE: library_display_name — The display name of the primary domain library, e.g. "IPFX", "scanpy", "MNE-Python", "Biopython" --> API Reference
 
+See [computational-neuro library API reference](docs/domains/computational-neuro/library-api.md) for Brian2, SSM, and SBI.
+
 > **Source**: <!-- REPLACE: library_source_url — URL to the library's source repository. Example: "https://github.com/AllenInstitute/ipfx" -->
+
+Brian2: https://github.com/brian-team/brian2 | SSM: https://github.com/slinderman/ssm | SBI: https://github.com/sbi-dev/sbi
 > **Docs**: <!-- REPLACE: library_docs_url — URL to the library's official documentation. Example: "https://ipfx.readthedocs.io/en/latest/" -->
+
+Brian2: https://brian2.readthedocs.io/ | SBI: https://sbi-dev.github.io/sbi/
 > **Purpose**: This document provides the correct API surface for the
 > primary domain library that your agent wraps or exposes. It is the
 > authoritative reference for parameter names, types, defaults, and return
@@ -19,6 +25,8 @@
 3. [Common Pitfalls](#3-common-pitfalls)
 4. [Quick-Start Recipes](#4-quick-start-recipes)
 -->
+
+See [computational-neuro library table of contents](docs/domains/computational-neuro/library-api.md) for full reference.
 
 1. [Core Classes](#1-core-classes)
 2. [Key Functions](#2-key-functions)
@@ -64,6 +72,8 @@ Run the analysis pipeline.
 **Returns**: `ResultObject` with attributes `.values`, `.metadata`, `.quality`.
 -->
 
+See [computational-neuro core classes](docs/domains/computational-neuro/library-api.md#brian2) for Brian2, SSM, and SBI class references.
+
 *Document your primary library's core classes here.*
 
 ---
@@ -87,6 +97,8 @@ Detect events in a 1-D signal.
 `start_index`, `end_index`, `amplitude`, `duration`.
 -->
 
+See [computational-neuro key functions](docs/domains/computational-neuro/library-api.md#brian2) for function references.
+
 *Document your primary library's key functions here.*
 
 ---
@@ -109,6 +121,8 @@ Detect events in a 1-D signal.
 - Voltage must be in **mV**, current in **pA**
 - The library will not warn you if units are wrong — results will just be incorrect
 -->
+
+See [computational-neuro common pitfalls](docs/domains/computational-neuro/library-api.md#brian2-1) for per-library pitfall lists.
 
 *List common mistakes and gotchas specific to this library.*
 
@@ -153,6 +167,8 @@ for path in Path("data/").glob("*.dat"):
     results[path.stem] = analyzer.run(data)
 ```
 -->
+
+See [computational-neuro recipes](docs/domains/computational-neuro/library-api.md#quick-start-recipe-hh-neuron) for copy-paste code examples.
 
 *Provide copy-paste recipes for common analysis tasks.*
 

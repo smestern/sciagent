@@ -49,9 +49,15 @@ SciAgent ships 15 skills in `templates/skills/`.  Copy them into
 
 ## <!-- REPLACE: skill_name — The skill's display name, e.g. "Spike Analysis", "Quality Control" -->
 
+See [computational-neuro skills](docs/domains/computational-neuro/skills.md) for domain skill definitions (Brian2, SSM, SBI, Domain Expertise).
+
 **File**: <!-- REPLACE: skill_file_path — Path to the skill definition file, e.g. "skills/spike_analysis/SKILL.md" -->
 
+See `docs/domains/computational-neuro/skills/` for SKILL.md files.
+
 **Purpose**: <!-- REPLACE: skill_purpose — One sentence describing the skill's purpose. Example: "Detect and analyze action potentials in current-clamp recordings." -->
+
+See [computational-neuro skills](docs/domains/computational-neuro/skills.md) for purposes.
 
 **Key Capabilities**:
 <!-- REPLACE: skill_capabilities — A bullet list of specific capabilities. Example:
@@ -61,7 +67,11 @@ SciAgent ships 15 skills in `templates/skills/`.  Copy them into
 - Rate-response curve construction
 -->
 
+See [computational-neuro skills](docs/domains/computational-neuro/skills.md) for capabilities per skill.
+
 **Trigger Keywords**: <!-- REPLACE: skill_trigger_keywords — Comma-separated keywords or phrases that should activate this skill. Example: "spike, action potential, firing, threshold, rheobase, detection" -->
+
+See [computational-neuro skills](docs/domains/computational-neuro/skills.md) for trigger keywords.
 
 ---
 

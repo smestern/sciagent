@@ -19,6 +19,8 @@ function with defined inputs and outputs.
 - [Visualisation Tools](#visualisation-tools) — Plotting and figure generation
 -->
 
+See [computational-neuro tool categories](docs/domains/computational-neuro/tools.md#tool-categories) for simulation, inference, analysis, and I/O tools.
+
 - [I/O Tools](#io-tools) — File loading and data access
 - [Documentation & Learning](#documentation--learning) — Library ingestion and doc lookup
 
@@ -90,16 +92,24 @@ message if not found.
 
 ## <!-- REPLACE: tool_category_name — Category heading, e.g. "I/O Tools", "Analysis Tools", "QC Tools" -->
 
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for domain tool definitions.
+
 <!-- REPEAT: tool_section — One subsection per tool within this category. -->
 
 ### <!-- REPLACE: tool_name — The tool's function name, e.g. "load_file", "detect_events", "run_qc" -->
 
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for tool signatures and parameter tables.
+
 <!-- REPLACE: tool_short_description — A one-sentence description of what the tool does. Example: "Load a data file and return its contents as arrays." -->
+
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for descriptions.
 
 ```python
 <!-- REPLACE: tool_signature — The full function signature with type hints. Example:
 load_file(file_path: str, return_metadata: bool = False) -> Dict
 -->
+
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for signatures.
 ```
 
 **Parameters**:
@@ -110,6 +120,8 @@ load_file(file_path: str, return_metadata: bool = False) -> Dict
 | file_path | str | required | Path to the data file |
 | return_metadata | bool | False | Include file metadata in the response |
 -->
+
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for parameter tables.
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
@@ -125,6 +137,8 @@ load_file(file_path: str, return_metadata: bool = False) -> Dict
     "metadata": dict           # File metadata (if requested)
 }
 -->
+
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for return schemas.
 ```
 
 ---
