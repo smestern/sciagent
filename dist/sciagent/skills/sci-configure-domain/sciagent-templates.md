@@ -301,6 +301,8 @@ When a user provides a file:
 
 <!replace --- Step-by-step workflows specific to your domain. Describe the main analysis paths a user would follow --- or add a link--->
 
+See [computational-neuro standard workflows](docs/domains/computational-neuro/operations.md#standard-workflows)
+
 ---
 
 ## Analysis Parameters
@@ -309,6 +311,8 @@ When a user provides a file:
 
 <!replace --- A table of default analysis parameters for your domain --- or add a link--->
 
+See [computational-neuro analysis parameters](docs/domains/computational-neuro/operations.md#analysis-parameters)
+
 | Parameter | Default | Context |
 |-----------|---------|---------|
 | *param_name* | *value* | *when / why this parameter is used* |
@@ -316,6 +320,8 @@ When a user provides a file:
 ### When to Adjust Parameters
 
 <!replace --- Guidance on when and how to adjust default parameters --- or add a link--->
+
+See [computational-neuro parameter adjustment guidance](docs/domains/computational-neuro/operations.md#when-to-adjust-parameters)
 
 ---
 
@@ -347,6 +353,8 @@ If analysis fails:
 
 <!replace --- Common edge cases in your domain and how to handle them --- or add a link--->
 
+See [computational-neuro edge cases](docs/domains/computational-neuro/operations.md#edge-cases)
+
 ---
 
 ## Reporting Standards
@@ -354,6 +362,8 @@ If analysis fails:
 ### Numerical Precision
 
 <!replace --- A table specifying how precisely each measurement type should be reported --- or add a link--->
+
+See [computational-neuro reporting precision](docs/domains/computational-neuro/operations.md#reporting-precision)
 
 | Measurement | Precision | Units |
 |-------------|-----------|-------|
@@ -458,6 +468,8 @@ user) through a common analysis task from start to finish.
 
 <!replace --- A table summarising your workflows. Columns: Workflow, Purpose, Key Steps --- or add a link--->
 
+See [computational-neuro workflow overview](docs/domains/computational-neuro/workflows.md#workflow-overview)
+
 | Workflow | Purpose | Key Steps |
 |----------|---------|-----------|
 | *workflow_name* | *purpose* | *key steps* |
@@ -468,22 +480,34 @@ user) through a common analysis task from start to finish.
 
 ## <!replace --- The workflow's name, e.g. "Initial Quality Control", "Standard Analysis", "Batch Processing" --- or add a link--->
 
+See [computational-neuro workflows](docs/domains/computational-neuro/workflows.md) for full workflow definitions.
+
 **Purpose**: <!replace --- A sentence describing when and why to use this workflow --- or add a link--->
+
+See [computational-neuro workflow details](docs/domains/computational-neuro/workflows.md) for purpose and descriptions.
 
 **When to Use**:
 <!replace --- Conditions or trigger phrases for this workflow --- or add a link--->
+
+See [computational-neuro workflows](docs/domains/computational-neuro/workflows.md) for when-to-use guidance.
 
 ### Steps
 
 <!replace --- Numbered steps with sub-steps where needed. Be specific about which tools to call and what to check at each step --- or add a link--->
 
+See [computational-neuro workflow steps](docs/domains/computational-neuro/workflows.md) for detailed steps per workflow.
+
 ### Parameters
 
 <!replace --- Key parameters used in this workflow and their defaults --- or add a link--->
 
+See [computational-neuro workflow parameters](docs/domains/computational-neuro/workflows.md) for parameter tables.
+
 ### Expected Outputs
 
 <!replace --- What the user should expect at the end of this workflow --- or add a link--->
+
+See [computational-neuro workflow outputs](docs/domains/computational-neuro/workflows.md) for expected outputs.
 
 ---
 
@@ -538,6 +562,8 @@ function with defined inputs and outputs.
 ## Tool Categories
 
 <!replace --- A bulleted list linking to each tool category section --- or add a link--->
+
+See [computational-neuro tool categories](docs/domains/computational-neuro/tools.md#tool-categories) for simulation, inference, analysis, and I/O tools.
 
 - [I/O Tools](#io-tools) — File loading and data access
 - [Documentation & Learning](#documentation--learning) — Library ingestion and doc lookup
@@ -610,21 +636,31 @@ message if not found.
 
 ## <!replace --- Category heading, e.g. "I/O Tools", "Analysis Tools", "QC Tools" --- or add a link--->
 
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for domain tool definitions.
+
 <!-- REPEAT: tool_section — One subsection per tool within this category. -->
 
 ### <!replace --- The tool's function name, e.g. "load_file", "detect_events", "run_qc" --- or add a link--->
 
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for tool signatures and parameter tables.
+
 <!replace --- A one-sentence description of what the tool does --- or add a link--->
+
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for descriptions.
 
 ```python
 <!-- REPLACE: tool_signature — The full function signature with type hints. Example:
 load_file(file_path: str, return_metadata: bool = False) -> Dict
 -->
+
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for signatures.
 ```
 
 **Parameters**:
 
 <!replace --- A Markdown table of parameters. Columns: Name, Type, Default, Description --- or add a link--->
+
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for parameter tables.
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
@@ -640,6 +676,8 @@ load_file(file_path: str, return_metadata: bool = False) -> Dict
     "metadata": dict           # File metadata (if requested)
 }
 -->
+
+See [computational-neuro tools](docs/domains/computational-neuro/tools.md) for return schemas.
 ```
 
 ---
@@ -687,8 +725,14 @@ async def my_tool(param1: str, param2: float = 1.0) -> str:
 
 # <!replace --- The display name of the primary domain library, e.g. "IPFX", "scanpy", "MNE-Python", "Biopython" --- or add a link---> API Reference
 
+See [computational-neuro library API reference](docs/domains/computational-neuro/library-api.md) for Brian2, SSM, and SBI.
+
 > **Source**: <!replace --- URL to the library's source repository --- or add a link--->
+
+Brian2: https://github.com/brian-team/brian2 | SSM: https://github.com/slinderman/ssm | SBI: https://github.com/sbi-dev/sbi
 > **Docs**: <!replace --- URL to the library's official documentation --- or add a link--->
+
+Brian2: https://brian2.readthedocs.io/ | SBI: https://sbi-dev.github.io/sbi/
 > **Purpose**: This document provides the correct API surface for the
 > primary domain library that your agent wraps or exposes. It is the
 > authoritative reference for parameter names, types, defaults, and return
@@ -699,6 +743,8 @@ async def my_tool(param1: str, param2: float = 1.0) -> str:
 ## Table of Contents
 
 <!replace --- A numbered list linking to each major section --- or add a link--->
+
+See [computational-neuro library table of contents](docs/domains/computational-neuro/library-api.md) for full reference.
 
 1. [Core Classes](#1-core-classes)
 2. [Key Functions](#2-key-functions)
@@ -711,6 +757,8 @@ async def my_tool(param1: str, param2: float = 1.0) -> str:
 
 <!replace --- Document the main classes the agent will use. For each class, include: import statement, constructor signature with parameter descriptions, and key methods with their signatures and return types --- or add a link--->
 
+See [computational-neuro core classes](docs/domains/computational-neuro/library-api.md#brian2) for Brian2, SSM, and SBI class references.
+
 *Document your primary library's core classes here.*
 
 ---
@@ -718,6 +766,8 @@ async def my_tool(param1: str, param2: float = 1.0) -> str:
 ## 2. Key Functions
 
 <!replace --- Document standalone functions the agent will call. For each function: signature, parameter table, return value description --- or add a link--->
+
+See [computational-neuro key functions](docs/domains/computational-neuro/library-api.md#brian2) for function references.
 
 *Document your primary library's key functions here.*
 
@@ -727,6 +777,8 @@ async def my_tool(param1: str, param2: float = 1.0) -> str:
 
 <!replace --- List gotchas, common mistakes, and parameter confusion that the agent should avoid --- or add a link--->
 
+See [computational-neuro common pitfalls](docs/domains/computational-neuro/library-api.md#brian2-1) for per-library pitfall lists.
+
 *List common mistakes and gotchas specific to this library.*
 
 ---
@@ -734,6 +786,8 @@ async def my_tool(param1: str, param2: float = 1.0) -> str:
 ## 4. Quick-Start Recipes
 
 <!replace --- Copy-paste code snippets for the most common tasks. Each recipe should be self-contained with imports, data loading, analysis, and result access --- or add a link--->
+
+See [computational-neuro recipes](docs/domains/computational-neuro/library-api.md#quick-start-recipe-hh-neuron) for copy-paste code examples.
 
 *Provide copy-paste recipes for common analysis tasks.*
 
@@ -801,14 +855,24 @@ SciAgent ships 15 skills in `templates/skills/`.  Copy them into
 
 ## <!replace --- The skill's display name, e.g. "Spike Analysis", "Quality Control" --- or add a link--->
 
+See [computational-neuro skills](docs/domains/computational-neuro/skills.md) for domain skill definitions (Brian2, SSM, SBI, Domain Expertise).
+
 **File**: <!replace --- Path to the skill definition file, e.g. "skills/spike_analysis/SKILL.md" --- or add a link--->
 
+See `docs/domains/computational-neuro/skills/` for SKILL.md files.
+
 **Purpose**: <!replace --- One sentence describing the skill's purpose --- or add a link--->
+
+See [computational-neuro skills](docs/domains/computational-neuro/skills.md) for purposes.
 
 **Key Capabilities**:
 <!replace --- A bullet list of specific capabilities --- or add a link--->
 
+See [computational-neuro skills](docs/domains/computational-neuro/skills.md) for capabilities per skill.
+
 **Trigger Keywords**: <!replace --- Comma-separated keywords or phrases that should activate this skill --- or add a link--->
+
+See [computational-neuro skills](docs/domains/computational-neuro/skills.md) for trigger keywords.
 
 ---
 

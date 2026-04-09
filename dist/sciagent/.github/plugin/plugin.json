@@ -17,8 +17,8 @@
     "report-writing"
   ],
   "agents": [
+    "./agents/sci-analysis-planner.md",
     "./agents/sci-coder.md",
-    "./agents/sci-coordinator.md",
     "./agents/sci-docs-ingestor.md",
     "./agents/sci-domain-assembler.md",
     "./agents/sci-report-writer.md",

@@ -49,8 +49,8 @@ Clone this repo and add to your VS Code settings:
 
 | Agent | Description |
 |-------|-------------|
+| `@sci-analysis-planner` | Designs step-by-step analysis plans before any code runs |
 | `@sci-coder` | Implements analysis code with built-in rigor enforcement |
-| `@sci-coordinator` | Routes tasks to the right specialist agent |
 | `@sci-docs-ingestor` | Ingests Python library docs into structured API references |
 | `@sci-domain-assembler` | Configures SciAgent for your specific research domain |
 | `@sci-report-writer` | Generates publication-quality reports with uncertainty quantification |

@@ -1,14 +1,15 @@
 ---
 name: analysis-planner
-description: Creates step-by-step analysis plans for scientific data — designs the pipeline, specifies parameters, anticipates risks, and defines success criteria before any code is executed.
+description: Iterative analysis planning — researches the workspace, clarifies requirements, designs the pipeline, specifies parameters, anticipates risks, and defines success criteria before any code is executed.
 argument-hint: Describe your data and research question to get an analysis plan.
 ---
 
 # Analysis Planning
 
 Use this skill when you need to design a scientific analysis pipeline
-before writing or running any code. The planning phase ensures a sound
-methodology before committing to implementation.
+before writing or running any code. Work iteratively: gather context
+from the workspace, clarify requirements with the user, design the plan,
+then refine until approved.
 
 ## Planning Methodology
 

@@ -16,8 +16,8 @@ tools:
   - terminal
 handoffs:
   - label: "Plan Analysis"
-    agent: sci-coordinator
-    prompt: "Use the /analysis-planner skill to create a step-by-step analysis plan for the task described above. Do not write implementation code — plan only."
+    agent: sci-analysis-planner
+    prompt: "Library documentation has been ingested. Plan an analysis using this library and the data available in the workspace."
     send: false
 ---
 
