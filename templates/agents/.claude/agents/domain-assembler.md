@@ -1,10 +1,6 @@
 ---
 name: domain-assembler
-description: >-
-  Self-assembly agent that configures SciAgent for your research domain
-  — interviews you, discovers relevant packages, and fills in template
-  files. Invoke directly or via /configure-domain, /update-domain, and
-  /switch-domain skills.
+description: Self-assembly agent that configures SciAgent for your research domain —
 tools: Read, Write, Edit, Grep, Glob, Fetch
 ---
 

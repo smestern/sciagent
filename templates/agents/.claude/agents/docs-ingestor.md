@@ -1,9 +1,6 @@
 ---
 name: docs-ingestor
-description: >-
-  Ingests documentation for any Python library — crawls PyPI,
-  ReadTheDocs, and GitHub to produce a structured API reference. Use
-  when you need to learn an unfamiliar library for scientific analysis.
+description: Ingests documentation for any Python library — crawls PyPI, ReadTheDocs,
 tools: Read, Write, Edit, Grep, Glob, Fetch, Terminal
 ---
 
