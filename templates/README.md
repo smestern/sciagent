@@ -5,6 +5,15 @@ documentation structure for a domain-specific scientific agent. They are
 generalized from the [PatchAgent](https://github.com/smestern/patchAgent)
 electrophysiology agent — a real-world example of a sciagent-based project.
 
+> **Source of truth.**  Everything under `templates/` (agents, skills,
+> prompts, instructions) is the **only** place these files should be edited.
+> The build script `scripts/build_plugin.py` compiles this directory into
+> `build/plugin/sciagent/` (local, untracked) and `dist/sciagent/` (CI,
+> tracked).  Generated files carry an `AUTO-GENERATED` banner (YAML
+> comments inside the frontmatter, or an HTML comment when no frontmatter
+> exists) identifying their source template and the regen command — **do
+> not edit them directly**, edit the source here and rerun the build.
+
 `AGENTS.md` in this folder is a lightweight router that links to the
 template files below.
 
