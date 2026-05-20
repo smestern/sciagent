@@ -5,8 +5,6 @@ src/sciagent.egg-info/*
 __pycache__/
 /build/
 build/**/*
-!build/plugin/
-!build/plugin/**
 /dist/
 dist/**/*
 !dist/sciagent/
