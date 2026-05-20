@@ -312,7 +312,8 @@ class ScientificCLI:
         try:
             self._session = await self._agent.resume_session(cli_session_id)
             console.print("[green]Resumed previous session![/green]\n")
-        except Exception:
+        except Exception as e:
+            logger.debug("Session resume failed: %s", e, exc_info=True)
             self._session = await self._agent.create_session(
                 session_id=cli_session_id
             )
@@ -356,7 +357,8 @@ class ScientificCLI:
                         console.print("[yellow]Session expired — attempting to resume…[/yellow]")
                         try:
                             self._session = await self._agent.resume_session(cli_session_id)
-                        except Exception:
+                        except Exception as resume_err:
+                            logger.debug("Session resume failed: %s", resume_err, exc_info=True)
                             console.print("[yellow]Resume failed — creating new session…[/yellow]")
                             self._session = await self._agent.create_session(
                                 session_id=cli_session_id

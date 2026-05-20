@@ -42,7 +42,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from copilot import CopilotClient
-from copilot.types import Tool, ToolInvocation, ToolResult, SessionConfig, CustomAgentConfig
+from copilot.types import Tool, ToolInvocation, ToolResult, SessionConfig, ResumeSessionConfig, CustomAgentConfig
 from copilot.types import PermissionHandler
 
 
@@ -470,28 +470,19 @@ class BaseScientificAgent:
         await self._client.stop()
         logger.info("%s stopped", self.config.display_name)
 
-    async def create_session(
+    def _build_session_config_base(
         self,
-        session_id: Optional[str] = None,
         custom_system_message: Optional[str] = None,
         model: Optional[str] = None,
         additional_tools: Optional[List[Tool]] = None,
-    ):
-        """Create a new agent session.
+    ) -> Dict[str, Any]:
+        """Build the shared session config fields used by create/resume.
 
-        Args:
-            session_id: Optional custom session ID for persistence/resumption.
-            custom_system_message: Optional extra text appended to the system message.
-            model: Optional model override for this session.
-            additional_tools: Extra tools merged into the session.
-
-        Returns:
-            The created ``CopilotSession`` object.
+        Returns a plain dict suitable for casting to SessionConfig or
+        ResumeSessionConfig. Does NOT include session_id.
         """
-        # Reset session log for the new session
+        # Reset session log and re-wire file-loaded hook
         self._session_log.clear()
-
-        # Wire up the file-loaded hook via ExecutionContext
         self._exec_ctx.on_file_loaded = self.update_working_dir_from_file
 
         base_system = self._get_system_message()
@@ -513,36 +504,81 @@ class BaseScientificAgent:
             "infer": True,
         }
 
-        config = SessionConfig(
-            model=model or self.model,
-            tools=all_tools,
-            system_message=system_message,
-            custom_agents=[agent_config, *[x.to_copilot_config() for x in self._subagents.values()]], #brute force inject subagent configs as custom agents (since the SDK doesn't have a first-class subagent concept)
-            streaming=True,
-            on_permission_request=PermissionHandler.approve_all,
-            hooks={"on_error_occurred": _model_error_handler},
-        )
+        cfg: Dict[str, Any] = {
+            "model": model or self.model,
+            "tools": all_tools,
+            "system_message": system_message,
+            # brute force inject subagent configs as custom agents
+            # (since the SDK doesn't have a first-class subagent concept)
+            "custom_agents": [
+                agent_config,
+                *[x.to_copilot_config() for x in self._subagents.values()],
+            ],
+            "streaming": True,
+            "on_permission_request": PermissionHandler.approve_all,
+            "hooks": {"on_error_occurred": _model_error_handler},
+        }
         available_tools = self._get_available_tools()
         excluded_tools = self._get_excluded_tools()
         if available_tools:
-            config["available_tools"] = available_tools
+            cfg["available_tools"] = available_tools
         elif excluded_tools:
-            config["excluded_tools"] = excluded_tools
-        if session_id:
-            config["session_id"] = session_id
+            cfg["excluded_tools"] = excluded_tools
+        return cfg
 
+    async def create_session(
+        self,
+        session_id: Optional[str] = None,
+        custom_system_message: Optional[str] = None,
+        model: Optional[str] = None,
+        additional_tools: Optional[List[Tool]] = None,
+    ):
+        """Create a new agent session.
+
+        Args:
+            session_id: Optional custom session ID for persistence/resumption.
+            custom_system_message: Optional extra text appended to the system message.
+            model: Optional model override for this session.
+            additional_tools: Extra tools merged into the session.
+
+        Returns:
+            The created ``CopilotSession`` object.
+        """
+        cfg = self._build_session_config_base(
+            custom_system_message=custom_system_message,
+            model=model,
+            additional_tools=additional_tools,
+        )
+        if session_id:
+            cfg["session_id"] = session_id
+
+        config = SessionConfig(**cfg)
         session = await self._client.create_session(config)
         self._sessions[session.session_id] = session
         logger.info("Created session: %s", session.session_id)
         return session
 
-    async def resume_session(self, session_id: str):
+    async def resume_session(
+        self,
+        session_id: str,
+        custom_system_message: Optional[str] = None,
+        model: Optional[str] = None,
+        additional_tools: Optional[List[Tool]] = None,
+    ):
         """Resume an existing session by id.
 
         The session must have been previously created and destroyed
-        (but not deleted) so that its data persists on disk.
+        (but not deleted) so that its data persists on disk. The session
+        is re-initialised with the same tools, system message, custom
+        agents, hooks, and permission handler as a freshly created session.
         """
-        session = await self._client.resume_session(session_id)
+        cfg = self._build_session_config_base(
+            custom_system_message=custom_system_message,
+            model=model,
+            additional_tools=additional_tools,
+        )
+        config = ResumeSessionConfig(**cfg)
+        session = await self._client.resume_session(session_id, config)
         self._sessions[session_id] = session
         logger.info("Resumed session: %s", session_id)
         return session
